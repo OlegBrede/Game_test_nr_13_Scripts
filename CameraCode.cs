@@ -16,7 +16,7 @@ public partial class CameraCode : Camera2D
         var pawn = GameMNGR_Script.Instance.SelectedPawn;
         if (pawn != null)
         {
-            marker = pawn.TargetMarker;
+            marker = pawn.TargetMarkerRef;
         }
     }
     public override void _Input(InputEvent @event)
