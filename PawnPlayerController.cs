@@ -15,7 +15,7 @@ public partial class PawnPlayerController : Node
 
     private Vector2 texSize;
     private float baseRadius;
-
+    bool Actionconfimrm = false;
     public override void _Ready()
     {
         MACircleSprite.Visible = false;
@@ -36,18 +36,16 @@ public partial class PawnPlayerController : Node
     {
         if (StatsUI.Visible)
         {
-            StatsLabel.Text = $"{Pawn.UnitName}\nHP {Pawn.HP}\nMA {Pawn.MA}";
+            StatsLabel.Text = $"{Pawn.UnitName}\nHP {Pawn.HP}\nMP {Pawn.MP}";
         }
     }
 
     private void OnMouseEnter() => StatsUI.Visible = true;
-
     private void OnMouseExit()
     {
         if (!isSelected)
             StatsUI.Visible = false;
     }
-
     private void ChangeVisibleMASpriteSize()
     {
         texSize = MACircleSprite.Texture.GetSize();
@@ -55,12 +53,37 @@ public partial class PawnPlayerController : Node
         float scale = Pawn.MA / baseRadius;
         MACircleSprite.Scale = new Vector2(scale, scale);
     }
+    private bool IsTargetPositionFree(Vector2 pos)
+    {
+        var area = TargetMarker.GetNode<Area2D>("Area2D");
+        area.GlobalPosition = pos;
+
+        // poczekaj jedną fizyczną klatkę żeby silnik zaktualizował overlapy
+        area.ForceUpdateTransform();
+
+        var overlaps = area.GetOverlappingBodies();
+
+        foreach (var body in overlaps)
+        {
+            if (body is StaticBody2D || body is CharacterBody2D)
+            {
+                return false; // kolizja
+            }
+        }
+        return true;
+    }
+    void Button_ACT1() // Move order complete
+    {
+        Pawn.GlobalPosition = TargetMarker.GlobalPosition;
+        TargetMarker.Visible = false;
+        Pawn.MP--;
+    }
 
     private void OnAreaInputEvent(Node viewport, InputEvent inputEvent, long shapeIdx)
     {
         if (inputEvent is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
         {
-            if (!isSelected)
+            if (!isSelected && Pawn.MP > 0)
             {
                 isSelected = true;
                 waitingForTarget = true;   // czekamy na klik w obszar ruchu
@@ -83,14 +106,22 @@ public partial class PawnPlayerController : Node
             var circle = MAarea.GetNode<CollisionShape2D>("CollisionShape2D").Shape as CircleShape2D;
             if (circle != null)
             {
-                circle.Radius = Pawn.MA;
-                if (localPos.Length() <= circle.Radius)
-                {
-                    TargetMarker.Visible = true;
-                    TargetMarker.GlobalPosition = worldPos;
+                if (Pawn.MP > 0) {
+                    circle.Radius = Pawn.MA;
+                    if (localPos.Length() <= circle.Radius)
+                    {
+                        if (IsTargetPositionFree(worldPos))
+                        {
+                            TargetMarker.Visible = true;
+                            TargetMarker.GlobalPosition = worldPos;
+                        }
+                        else
+                        {
+                            GD.Print("Nie moge tu stanąć");
+                        }
+                    }  
                 }
             }
-
             // zakończ wybór
             isSelected = false;
             waitingForTarget = false;

@@ -8,7 +8,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public string UnitName = "Princess"; // TEMP
     [Export] public string UnitType = "Human"; // TEMP
     [Export] public int HP = 100; //TEMP
-    [Export] public int MA = 3750; // movement allowance
+    [Export] public int MA = 3750; // movement allowance for walk distance
+    [Export] public int MP = 2; //movement points (how many times can a pawn move in one turn)
     [Export] public string Weapon = "Sword"; //TEMP
     [Export] public int TeamId = 0;
     public Node2D TargetMarkerRef;
@@ -32,5 +33,9 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public void SetTeam(int teamId)
     {
         TeamId = teamId;
+    }
+    void ResetMP()
+    {
+        MP = 2;
     }
 }

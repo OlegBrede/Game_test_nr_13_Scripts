@@ -8,15 +8,25 @@ public partial class CameraCode : Camera2D
     private Vector2 dragStart;
     private Vector2 cameraStart;
     private Vector2 zoomLevel = new Vector2(0.1f, 0.1f);
+    private Vector2 ScaleLevel = new Vector2(1f, 1f);
     private bool draggingTarget = false;
     private float moveRadius = 1200f; // promień ruchu wokół pionka
     Node2D marker;
+    GameMNGR_Script gameMNGR_Script;
+    public override void _Ready()
+    {
+        gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
+    }
+
     public override void _Process(double delta)
     {
-        var pawn = GameMNGR_Script.Instance.SelectedPawn;
-        if (pawn != null)
+        if (gameMNGR_Script.SetupDone == true)
         {
-            marker = pawn.TargetMarkerRef;
+            var pawn = gameMNGR_Script.SelectedPawn;
+            if (pawn != null)
+            {
+                marker = pawn.TargetMarkerRef;
+            }
         }
     }
     public override void _Input(InputEvent @event)
@@ -71,7 +81,7 @@ public partial class CameraCode : Camera2D
                 zoomLevel += new Vector2(zoomspeed, zoomspeed) * 0.002f;
                 Zoom = zoomLevel;
             }
-            //GD.Print(Zoom);
+            //GD.Print(Scale);
         }
         
     }
