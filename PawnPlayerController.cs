@@ -36,7 +36,7 @@ public partial class PawnPlayerController : Node
     {
         if (StatsUI.Visible)
         {
-            StatsLabel.Text = $"{Pawn.UnitName}\nHP {Pawn.HP}\nMP {Pawn.MP}";
+            StatsLabel.Text = $"{Pawn.UnitName}\n{Pawn.TeamId}\nHP {Pawn.HP}\nMP {Pawn.MP}";
         }
     }
 
@@ -110,15 +110,20 @@ public partial class PawnPlayerController : Node
                     circle.Radius = Pawn.MA;
                     if (localPos.Length() <= circle.Radius)
                     {
+                        TargetMarker.Visible = true;
+                        TargetMarker.GlobalPosition = worldPos;
+                        /*
+                        TO DO , ogarnąć jak podejżeć collisionshape w edytorze bo chyba zmienili a potem naprawić to szajstwo 
                         if (IsTargetPositionFree(worldPos))
                         {
-                            TargetMarker.Visible = true;
+                             TargetMarker.Visible = true;
                             TargetMarker.GlobalPosition = worldPos;
                         }
                         else
                         {
                             GD.Print("Nie moge tu stanąć");
                         }
+                        */
                     }  
                 }
             }

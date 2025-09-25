@@ -4,6 +4,7 @@ using System;
 public partial class CameraCode : Camera2D
 {
     [Export] float zoomspeed = 0.05f;
+    [Export] Node2D Test;
     private bool isDragging = false;
     private Vector2 dragStart;
     private Vector2 cameraStart;
@@ -16,6 +17,9 @@ public partial class CameraCode : Camera2D
     public override void _Ready()
     {
         gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
+        if (Test != null) {
+            GlobalPosition = Test.GlobalPosition;
+        }
     }
 
     public override void _Process(double delta)
