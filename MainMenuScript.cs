@@ -14,6 +14,7 @@ public partial class MainMenuScript : Node2D
     [Export] Node2D TeamFillupBucket;
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
     private int VisibleMenuScreenID;
+    public int TeamCallInCount = 0;
     List<TeamFillupBarScript> TeamQuerryConfinginfo = new List<TeamFillupBarScript>();
     public override void _Ready()
     {
@@ -128,6 +129,7 @@ public partial class MainMenuScript : Node2D
             cfg.teams.Add(new GameMNGR_Script.TeamConfig
             {
                 name = team.teamName,
+                team_colour = team.TeamColorCoding,
                 AI_Active = team.AI_Active,
                 PawnCount = team.PawnCount // zakładam, że masz pole/prop w node
             });

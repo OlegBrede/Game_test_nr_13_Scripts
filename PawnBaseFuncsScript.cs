@@ -11,7 +11,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public int MA = 3750; // movement allowance for walk distance
     [Export] public int MP = 2; //movement points (how many times can a pawn move in one turn)
     [Export] public string Weapon = "Sword"; //TEMP
-    [Export] public string TeamId = "Team1";
+    public string TeamId = "Team1";
+    [Export] Node2D ColoredPartsNode;
     public Node2D TargetMarkerRef;
     public PawnState State { get; private set; } = PawnState.Standing;
 
@@ -30,9 +31,10 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         QueueFree();
     }
 
-    public void SetTeam(string teamId)
+    public void SetTeam(string teamId, Color TeamColors)
     {
         TeamId = teamId;
+        ColoredPartsNode.Modulate = TeamColors;
     }
     void ResetMP()
     {

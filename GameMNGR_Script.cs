@@ -14,7 +14,7 @@ public partial class GameMNGR_Script : Node2D
     public class TeamConfig
     {
         public string name { get; set; }
-        public string team_colour { get; set; }
+        public Color team_colour { get; set; }
         public int PawnCount { get; set; }
         public bool AI_Active { get; set; }
     }
@@ -59,7 +59,7 @@ public partial class GameMNGR_Script : Node2D
             GD.Print($"Drużyna: {team.name}");
             Node2D Pawn = PawnScene.Instantiate<Node2D>();
             PawnBucketRef.AddChild(Pawn);
-            Pawn.Call("SetTeam",team.name);
+            Pawn.Call("SetTeam", team.name, team.team_colour);
         }
 
         SetupDone = true;
