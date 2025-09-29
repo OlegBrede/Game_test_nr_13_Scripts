@@ -12,6 +12,7 @@ public partial class MainMenuScript : Node2D
     [Export] Node2D OptionsNode;
     [Export] Node2D Creditsnode;
     [Export] Node2D TeamFillupBucket;
+    [Export] Label LowPlaerCountWarnin;
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
     private int VisibleMenuScreenID;
     public int TeamCallInCount = 0;
@@ -24,6 +25,11 @@ public partial class MainMenuScript : Node2D
     }
     public override void _Process(double delta)
     {
+        if (TeamCallInCount < 2 && GameSetupNode.Visible == true) {
+            LowPlaerCountWarnin.Visible = true;
+        } else {
+            LowPlaerCountWarnin.Visible = false;
+        }
         switch (VisibleMenuScreenID)
         {
             case 1:
@@ -31,12 +37,12 @@ public partial class MainMenuScript : Node2D
                 OptionsNode.Visible = false;
                 Creditsnode.Visible = false;
                 break;
-                case 2:
+            case 2:
                 GameSetupNode.Visible = false;
                 OptionsNode.Visible = true;
                 Creditsnode.Visible = false;
                 break;
-                case 3:
+            case 3:
                 GameSetupNode.Visible = false;
                 OptionsNode.Visible = false;
                 Creditsnode.Visible = true;
@@ -63,7 +69,10 @@ public partial class MainMenuScript : Node2D
     {
         if (SceneToLoad != null)
         {
-            OnStartPressed();
+            if (TeamCallInCount >= 2)
+            {
+                OnStartPressed();
+            }
         }
         else
         {

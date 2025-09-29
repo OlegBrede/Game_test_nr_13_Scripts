@@ -8,7 +8,7 @@ public partial class TeamFillupBarScript : Control
     PackedScene TeamAddPrefab;
     [Export] public bool AI_Active = false;
     public string teamName = "Team 1";
-    public int PawnCount = 0;
+    public int PawnCount = 1; // ponieważ dana strona konfliktu musi mieć przynajmniej jeden pionek w drużynie
     public Color TeamColorCoding = new Color(1,1,1);
     string urchildname = "Team_Fillup";
     MainMenuScript MenuScript;
@@ -19,6 +19,7 @@ public partial class TeamFillupBarScript : Control
     private bool colorpickeractive = false;
     public override void _Ready()
     {
+
         ColorPanel.Visible = false;
         MenuScript = GetTree().Root.GetNode<MainMenuScript>("MainMenu");
         TeamAddPrefab = GD.Load<PackedScene>("res://Prefabs/team_fillup_Bar_Prefab.tscn");

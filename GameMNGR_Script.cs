@@ -7,7 +7,7 @@ using System.Text.Json;
 public partial class GameMNGR_Script : Node2D
 {
     public int Round = 1;
-    public int Turn = 1;
+    public string Turn = "";
     public static GameMNGR_Script Instance { get; private set; }
     public PawnBaseFuncsScript SelectedPawn { get; private set; }
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
@@ -21,15 +21,15 @@ public partial class GameMNGR_Script : Node2D
 
     public class GameConfig
     {
-        public List<TeamConfig> teams { get; set; } = new List<TeamConfig>();
+        public List<TeamConfig> teams { get; set; } = new List<TeamConfig>(); // lista do inicjalizacji w konfiguracji
     }
-
+    public List<string> TeamTurnTable = new List<string>(); // lista do tur
+    public List<TeamConfig> ActiveTeams = new List<TeamConfig>(); // aktywne w danej grze 
     Node2D PopUpRef;
-    Node2D PawnBucketRef;
     SamplePopUpScript PopUpRefScript;
     Label GameInfoLabelRef;
     CanvasLayer CamUICanvasRef;
-    PackedScene PawnScene;
+    PawnSpawnerScript pawnSpawnerScript;
     public bool SetupDone = false;
     public override void _Ready()
     {
@@ -38,30 +38,17 @@ public partial class GameMNGR_Script : Node2D
 
     public void SetupGameScene()
     {
-        PawnBucketRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/UnitsBucket");
-
+        pawnSpawnerScript = GetNode<PawnSpawnerScript>("SpawnPoints");
         Vector2I windowSize = DisplayServer.WindowGetSize();
         CamUICanvasRef = GetTree().Root.GetNode<CanvasLayer>("BaseTestScene/Camera2D/CanvasLayer");
         CamUICanvasRef.Offset = new Vector2(windowSize.X / 2, windowSize.Y / 2);
         PopUpRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/Camera2D/CanvasLayer/SamplePopUp");
         GameInfoLabelRef = GetTree().Root.GetNode<Label>("BaseTestScene/Camera2D/CanvasLayer/GameInfoLabel");
         PopUpRefScript = PopUpRef as SamplePopUpScript;
-        PawnScene = GD.Load<PackedScene>("res://Prefabs/pawn_base_prefab.tscn");
-        if (!File.Exists(SaveFilePath))
-        {
-            GD.Print("Brak pliku JSON!");
-            return;
-        }
+        pawnSpawnerScript.Call("SpawnSelectedPawns");
         string json = File.ReadAllText(SaveFilePath);
         var cfg = JsonSerializer.Deserialize<GameConfig>(json);
-        foreach (var team in cfg.teams)
-        {
-            GD.Print($"Drużyna: {team.name}");
-            Node2D Pawn = PawnScene.Instantiate<Node2D>();
-            PawnBucketRef.AddChild(Pawn);
-            Pawn.Call("SetTeam", team.name, team.team_colour);
-        }
-
+        InitTurnOrder(cfg);
         SetupDone = true;
     }
     public void SelectPawn(PawnBaseFuncsScript pawn)
@@ -72,26 +59,86 @@ public partial class GameMNGR_Script : Node2D
     public void DeselectPawn() => SelectedPawn = null;
     public override void _Process(double delta)
     {
-        if (SetupDone) {
-           GameInfoLabelRef.Text = $" Round {Round} | Turn {Turn}"; // zamienić na odwołanie się do tablicy statycznej z nazwą drużyny
+        if (SetupDone)
+        {
+            GameInfoLabelRef.Text = $" Round {Round} | Turn {Turn}"; // zamienić na odwołanie się do tablicy statycznej z nazwą drużyny
 
             if (Input.IsActionJustPressed("MYSPACE") && PopUpRefScript != null)
             {
-                PopUpRefScript.Call("PopUpContentsFunc", "Do you want to end your turn ?");
-            } 
+                if (TeamTurnTable.Count <= 1)
+                {
+                    PopUpRefScript.Call("PopUpContentsFunc", "Do you want to end the round ?", true);
+                }
+                else
+                {
+                    PopUpRefScript.Call("PopUpContentsFunc", "Do you want to end your turn ?", false);
+                }
+            }
         }
     }
     void NextRoundFunc()
     {
-        var UnitsBucket = GetNode<Node>("UnitsBucket");
+        GD.Print("New round!");
+        Round++;
 
-        foreach (Node child in UnitsBucket.GetChildren()) // czy trzeba to zmienić na sprawdzanie listy? nie wiem, sprawdzanie pawnbucket nie jest złym pomysłem  
+        // reset MP wszystkim pionkom
+        var UnitsBucket = GetNode<Node>("UnitsBucket");
+        foreach (Node child in UnitsBucket.GetChildren())
         {
             if (child is PawnBaseFuncsScript pawn)
             {
-                pawn.Call("ResetMP"); // przykładowa funkcja w PawnBaseFuncsScript
+                pawn.Call("ResetMP");
             }
         }
-        Round++;
+
+        // przefiltruj drużyny – usuń martwe
+        ActiveTeams.RemoveAll(t => t.PawnCount <= 0);
+        // jeśli jedna drużyna została → koniec gry
+        if (ActiveTeams.Count <= 1)
+        {
+            GD.Print("Game Over! Winner: " + (ActiveTeams.Count == 1 ? ActiveTeams[0].name : "None"));
+            return;
+        }
+
+        // przetasuj kolejność wg pionków
+        ActiveTeams.Sort((a, b) => b.PawnCount.CompareTo(a.PawnCount));
+
+        TeamTurnTable.Clear();
+        foreach (var team in ActiveTeams)
+        {
+            TeamTurnTable.Add(team.name);
+        }
+
+        Turn = TeamTurnTable[0];
+    }
+
+    public void InitTurnOrder(GameConfig cfg)
+    {
+        ActiveTeams = new List<TeamConfig>(cfg.teams);
+
+        // sortuj wg liczby pionków malejąco
+        ActiveTeams.Sort((a, b) => b.PawnCount.CompareTo(a.PawnCount));
+
+        // wyciągnij same nazwy do kolejki tur
+        TeamTurnTable.Clear();
+        foreach (var team in ActiveTeams)
+        {
+            if (team.PawnCount > 0)
+                TeamTurnTable.Add(team.name);
+        }
+
+        if (TeamTurnTable.Count > 0)
+        {
+            Turn = TeamTurnTable[0]; // zaczyna pierwsza drużyna
+        }
+    }
+    void NextTurnFunc()
+    {
+        if (TeamTurnTable.Count == 0)
+            return;
+        // przesuwamy obecną drużynę na koniec kolejki
+        TeamTurnTable.RemoveAt(0);
+        // nowa drużyna
+        Turn = TeamTurnTable[0];
     }
 }

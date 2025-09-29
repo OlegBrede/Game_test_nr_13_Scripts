@@ -9,15 +9,15 @@ public partial class PawnPlayerController : Node
     [Export] public Node2D TargetMarker;
     [Export] public Area2D MAarea;
     [Export] public Sprite2D MACircleSprite;
-
+    GameMNGR_Script gameMNGR_Script;
     private bool isSelected = false;
     private bool waitingForTarget = false;
-
     private Vector2 texSize;
     private float baseRadius;
     bool Actionconfimrm = false;
     public override void _Ready()
     {
+        gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
         MACircleSprite.Visible = false;
 
         var statArea = Pawn.GetNode<Area2D>("Area2DStatBox");
@@ -83,7 +83,7 @@ public partial class PawnPlayerController : Node
     {
         if (inputEvent is InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true })
         {
-            if (!isSelected && Pawn.MP > 0)
+            if (!isSelected && Pawn.MP > 0 && Pawn.TeamId == gameMNGR_Script.Turn) // jeśli nie jest zaznaczony, jeśli ma punkty ruchu i jak należy do ciebie 
             {
                 isSelected = true;
                 waitingForTarget = true;   // czekamy na klik w obszar ruchu
