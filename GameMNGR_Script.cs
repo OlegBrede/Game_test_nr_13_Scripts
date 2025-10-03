@@ -39,8 +39,8 @@ public partial class GameMNGR_Script : Node2D
     public void SetupGameScene()
     {
         pawnSpawnerScript = GetNode<PawnSpawnerScript>("SpawnPoints");
-        Vector2I windowSize = DisplayServer.WindowGetSize();
         CamUICanvasRef = GetTree().Root.GetNode<CanvasLayer>("BaseTestScene/Camera2D/CanvasLayer");
+        Vector2I windowSize = DisplayServer.WindowGetSize();
         CamUICanvasRef.Offset = new Vector2(windowSize.X / 2, windowSize.Y / 2);
         PopUpRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/Camera2D/CanvasLayer/SamplePopUp");
         GameInfoLabelRef = GetTree().Root.GetNode<Label>("BaseTestScene/Camera2D/CanvasLayer/GameInfoLabel");
@@ -54,6 +54,7 @@ public partial class GameMNGR_Script : Node2D
     public void SelectPawn(PawnBaseFuncsScript pawn)
     {
         SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
+
         //GD.Print($"Selected pawn is {SelectedPawn}");
     }
     public void DeselectPawn() => SelectedPawn = null;
@@ -74,6 +75,7 @@ public partial class GameMNGR_Script : Node2D
                     PopUpRefScript.Call("PopUpContentsFunc", "Do you want to end your turn ?", false);
                 }
             }
+            
         }
     }
     void NextRoundFunc()

@@ -10,8 +10,10 @@ public partial class PawnSpawnerScript : Node2D
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
     PackedScene PawnScene;
     Node2D PawnBucketRef;
+    RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     public override void _Ready()
     {
+        RNGGEN.Randomize();
         // zbyt późno niektóre ustawienia się ustawiały zostały przeniesione wyżej 
     }
     void SpawnSelectedPawns()
@@ -29,10 +31,14 @@ public partial class PawnSpawnerScript : Node2D
         foreach (var team in cfg.teams)
         {
             GD.Print($"Drużyna: {team.name}");
-            Node2D Pawn = PawnScene.Instantiate<Node2D>();
-            PawnBucketRef.AddChild(Pawn);
-            Pawn.Call("SetTeam", team.name, team.team_colour);
-            
+            for(int i = 0; i < team.PawnCount;i++){
+                Node2D Pawn = PawnScene.Instantiate<Node2D>();
+                PawnBucketRef.AddChild(Pawn);
+                Pawn.Call("SetTeam", team.name, team.team_colour);
+                Pawn.GlobalPosition = new Vector2(RNGGEN.RandfRange(-1000f, 1000f),RNGGEN.RandfRange(-1000f, 1000f));
+                GD.Print($"This pawns global pos .: {Pawn.GlobalPosition}");
+                Pawn.Call("ActivateCollision");
+            }
         }
     }
 }

@@ -19,7 +19,6 @@ public partial class NodeCompButtonUni1FuncScript : Node2D
 		ButtonLabelRef = GetNode<Label>("Label");
 		Menager = GetNode<Node>(ParentPath);
 		ButtonLabelRef.Text = ChangedLabel;
-		currentsize = ButtonLabelRef.GetThemeFontSize("font_size");
 		ButtonLabelRef.AddThemeFontSizeOverride("font_size", currentsize);
 	}
 	void OnACTButtonPressed()

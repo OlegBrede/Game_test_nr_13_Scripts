@@ -15,6 +15,7 @@ public partial class TeamFillupBarScript : Control
     [Export] Control ColorPanel;
     [Export] LineEdit TeamNameEdit;
     [Export] TextureButton Colorpickerbutton;
+    [Export] CheckBox TeamIsBot;
     private int TeamToMenuID = 0;
     private bool colorpickeractive = false;
     public override void _Ready()
@@ -40,8 +41,9 @@ public partial class TeamFillupBarScript : Control
     {
         teamName = TeamNameEdit.Text;
         TeamColorCoding = Colorpickerbutton.SelfModulate;// głupie ale jak działa to chuj
+        AI_Active = TeamIsBot.ButtonPressed;
     }
-    void Button_ACT1()
+    void Button_ACT1() // dodanie nowej drużyny
     {
         Control AddTeam = TeamAddPrefab.Instantiate<Control>();
         TeamFillupBarScript AddTeamScript = AddTeam as TeamFillupBarScript;
@@ -78,6 +80,14 @@ public partial class TeamFillupBarScript : Control
             MenuScript.TeamCallInCount = TeamToMenuID;
             //GD.Print("Liczba drużyn .: " + TeamToMenuID);
         }
+    }
+    void Button_ACT2() // otwarcie okna dodawania jednostek
+    {
+        GD.Print("button works PS . dodaj funkcję scrollującej listy");
+    }
+    void Button_ACT3() // zatwierdzenie okna i zamknięcie panelu dodawania jednostek
+    {
+        GD.Print("button works dodaj opcję zamknięcia listy pls");
     }
     void TextButton_ACT1()
     {
