@@ -8,7 +8,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public string UnitName = "Princess"; // TEMP
     [Export] public string UnitType = "Human"; // TEMP
     [Export] public int HP = 100; //TEMP
-    [Export] public int MA = 3750; // movement allowance for walk distance
+    [Export] public float MAD = 3750; // movement allowence distance 
     [Export] public int WeaponRange = 4000; // powinno być 11250
     [Export] public int WeaponDamage = 50;
     [Export] public int MP = 2; //movement points (how many times can a pawn move in one turn)
@@ -31,6 +31,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public void TakeDamage(int dmg)
     {
         HP -= dmg;
+        GD.Print($"{UnitName} took {dmg} dmg");
         if (HP <= 0)
             Die();
     }

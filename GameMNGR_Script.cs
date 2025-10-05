@@ -6,6 +6,7 @@ using System.Text.Json;
 
 public partial class GameMNGR_Script : Node2D
 {
+    string SceneToLoad = "res://Scenes/MultiGameOverScreen.tscn";
     public int Round = 1;
     public string Turn = "";
     public static GameMNGR_Script Instance { get; private set; }
@@ -81,27 +82,8 @@ public partial class GameMNGR_Script : Node2D
     void NextRoundFunc()
     {
         GD.Print("New round!");
+        RecalculationTeamStatus();
         Round++;
-
-        // reset MP wszystkim pionkom
-        var UnitsBucket = GetNode<Node>("UnitsBucket");
-        foreach (Node child in UnitsBucket.GetChildren())
-        {
-            if (child is PawnBaseFuncsScript pawn)
-            {
-                pawn.Call("ResetMP");
-            }
-        }
-
-        // przefiltruj drużyny – usuń martwe
-        ActiveTeams.RemoveAll(t => t.PawnCount <= 0);
-        // jeśli jedna drużyna została → koniec gry
-        if (ActiveTeams.Count <= 1)
-        {
-            GD.Print("Game Over! Winner: " + (ActiveTeams.Count == 1 ? ActiveTeams[0].name : "None"));
-            return;
-        }
-
         // przetasuj kolejność wg pionków
         ActiveTeams.Sort((a, b) => b.PawnCount.CompareTo(a.PawnCount));
 
@@ -113,7 +95,38 @@ public partial class GameMNGR_Script : Node2D
 
         Turn = TeamTurnTable[0];
     }
+    void RecalculationTeamStatus() // podlicza żywe drużyny, dodaje pionkom MP, wyznacza wygraną
+    {
+        foreach (TeamConfig ActiveTeam in ActiveTeams)
+        {
+            ActiveTeam.PawnCount = 0;
+        }
+        var UnitsBucket = GetNode<Node>("UnitsBucket");
+        foreach (Node child in UnitsBucket.GetChildren())
+        {
+            if (child is PawnBaseFuncsScript pawn)
+            {
+                foreach (TeamConfig ActiveTeam in ActiveTeams)
+                {
+                    if (ActiveTeam.name == pawn.TeamId)
+                    {
+                        ActiveTeam.PawnCount++;
+                    }
+                }
+                pawn.Call("ResetMP");
+            }
+        }
+        // TO DO usuń z TeamTurnTable teamy co nie majo pionków
+        ActiveTeams.RemoveAll(t => t.PawnCount <= 0);
+        // jeśli jedna drużyna została → koniec gry
+        if (ActiveTeams.Count <= 1)
+        {
+            GD.Print("Game Over! Winner: " + (ActiveTeams.Count == 1 ? ActiveTeams[0].name : "None"));
+            GetTree().ChangeSceneToFile(SceneToLoad);
+            return;
+        }
 
+    }
     public void InitTurnOrder(GameConfig cfg)
     {
         ActiveTeams = new List<TeamConfig>(cfg.teams);
@@ -136,6 +149,7 @@ public partial class GameMNGR_Script : Node2D
     }
     void NextTurnFunc()
     {
+        RecalculationTeamStatus();
         if (TeamTurnTable.Count == 0)
             return;
         // przesuwamy obecną drużynę na koniec kolejki
