@@ -12,6 +12,7 @@ public partial class MainMenuScript : Node2D
     [Export] Node2D OptionsNode;
     [Export] Node2D Creditsnode;
     [Export] Node2D TeamFillupBucket;
+    [Export] public Node2D ThisTeaMsunitListRoot;
     [Export] Label LowPlaerCountWarnin;
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
     private int VisibleMenuScreenID;
@@ -19,9 +20,11 @@ public partial class MainMenuScript : Node2D
     List<TeamFillupBarScript> TeamQuerryConfinginfo = new List<TeamFillupBarScript>();
     public override void _Ready()
     {
+        ThisTeaMsunitListRoot.Visible = false;
         GameSetupNode.Visible = false;
         OptionsNode.Visible = false;
         Creditsnode.Visible = false;
+        // Otwieranie Prefabów jednostek do selekcji w custom
     }
     public override void _Process(double delta)
     {
@@ -69,7 +72,7 @@ public partial class MainMenuScript : Node2D
     {
         if (SceneToLoad != null)
         {
-            if (TeamCallInCount >= 2)
+            if (TeamCallInCount >= 2) // to do .: dodaj więcej parametrów które blokują start. Chwilowo potrzebne blokady to .: - nie można nazwać dwóch innych drużyn tą samą nazwą 
             {
                 OnStartPressed();
             }
@@ -108,6 +111,44 @@ public partial class MainMenuScript : Node2D
         GD.Print("Exiting");
         GetTree().Quit();
     }
+    void Button_ACT5() // zamykanie okna wyboru jednostek dla danej drużyny
+    {
+        ThisTeaMsunitListRoot.Visible = false;
+        GD.Print("ekszit paper doe");
+    }
+    List<PackedScene> LoadUnitPrefabs(string path) // to do, trza okomentować
+    {
+        var dir = DirAccess.Open(path);
+        var prefabs = new List<PackedScene>();
+
+        if (dir == null)
+        {
+            GD.PrintErr($"Nie można otworzyć folderu: {path}");
+            return prefabs;
+        }
+
+        dir.ListDirBegin();
+        string fileName = dir.GetNext();
+
+        while (fileName != "")
+        {
+            if (!dir.CurrentIsDir() && fileName.EndsWith(".tscn"))
+            {
+                string fullPath = $"{path}/{fileName}";
+                PackedScene scene = GD.Load<PackedScene>(fullPath);
+
+                if (scene != null)
+                {
+                    prefabs.Add(scene);
+                    GD.Print($"Załadowano prefab: {fileName}");
+                }
+            }
+            fileName = dir.GetNext();
+        }
+
+        dir.ListDirEnd();
+        return prefabs;
+    }
     void CollectDescendants(Node node)
     {
         foreach (Node child in node.GetChildren())
@@ -128,7 +169,7 @@ public partial class MainMenuScript : Node2D
         }
         var cfg = new GameMNGR_Script.GameConfig();
         TeamQuerryConfinginfo.Clear(); // zawsze najpierw czyścimy listę
-        CollectDescendants(TeamFillupBucket);
+        CollectDescendants(TeamFillupBucket); // rekursywnie zbieramy wszyskie dzieci
 
         GD.Print("Znaleziono drużyn: " + TeamQuerryConfinginfo.Count);
 

@@ -12,15 +12,18 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public int WeaponRange = 4000; // powinno być 11250
     [Export] public int WeaponDamage = 50;
     [Export] public int MP = 2; //movement points (how many times can a pawn move in one turn)
-    [Export] public string Weapon = ""; //TEMP
-    public string TeamId = "Team1";
+    public string Weapon = ""; //TEMP
+    public string TeamId = "";
     [Export] Node2D ColoredPartsNode;
+    [Export] Node2D PCNP; // player controller node path
+    [Export] Node2D AICNP; // AI controller node path
     public Node2D TargetMarkerRef;
     public PawnState State { get; private set; } = PawnState.Standing;
     private bool AC = false;
     public override void _Process(double delta)
     {
-        if (AC == true) {
+        if (AC == true)
+        {
             //MoveAndSlide();
         }
     }
@@ -52,5 +55,15 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     void ResetMP()
     {
         MP = 2;
+    }
+    void DeleteUnusedControlNodes(bool TrueisAI)
+    {
+        if (TrueisAI == true) {
+            PCNP.QueueFree();
+            GD.Print($"kontrola Gracza Ununięta z {UnitName} od drużyny {TeamId}");
+        } else {
+            AICNP.QueueFree();
+            GD.Print($"kontrola Gracza Ununięta z {UnitName} od drużyny {TeamId}");
+        }
     }
 }

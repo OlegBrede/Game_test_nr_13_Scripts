@@ -52,7 +52,8 @@ public partial class PawnPlayerController : Node2D
 
     public override void _Process(double delta)
     {
-        // WYŚWIETLANE STATYSTYKI PIONKA 
+        // WYŚWIETLANE STATYSTYKI PIONKA
+        StatsUI.GlobalPosition = Pawn.GlobalPosition;// coś sie zjebało z pozycją gui, naprawa natychmiastowa , SZYBKO
         if (StatsUI.Visible)
         {
             StatsLabel.Text = $"{Pawn.UnitName}\n{Pawn.TeamId}\nHP {Pawn.HP}\nMP {Pawn.MP}";

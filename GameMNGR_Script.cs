@@ -19,7 +19,11 @@ public partial class GameMNGR_Script : Node2D
         public int PawnCount { get; set; }
         public bool AI_Active { get; set; }
     }
-
+    public class UnitSelection
+    {
+        public string ScenePath { get; set; } // ścierzka do prefabu pionka
+        public int Count { get; set; } // iloćś pionków dla danego teamu (liczba na typ) TO DO .: (chwilowo nie uwzględnia wyposarzenia) poprawić na system uwzględniający wyposarzenie jednostki
+    }
     public class GameConfig
     {
         public List<TeamConfig> teams { get; set; } = new List<TeamConfig>(); // lista do inicjalizacji w konfiguracji
@@ -113,11 +117,20 @@ public partial class GameMNGR_Script : Node2D
                         ActiveTeam.PawnCount++;
                     }
                 }
+                GD.Print("reset MP dokonany");
                 pawn.Call("ResetMP");
             }
         }
-        // TO DO usuń z TeamTurnTable teamy co nie majo pionków
-        ActiveTeams.RemoveAll(t => t.PawnCount <= 0);
+        ActiveTeams.RemoveAll(t => t.PawnCount <= 0); //nieaktywna drużyna generalnie 
+        TeamTurnTable.RemoveAll(name => !ActiveTeams.Exists(t => t.name == name)); //nieaktywna drużyna tej rundy 
+        // jeśli obecna tura należy do martwej drużyny — przeskocz
+        if (!ActiveTeams.Exists(t => t.name == Turn))
+        {
+            if (TeamTurnTable.Count > 0)
+                Turn = TeamTurnTable[0];
+            else
+                GD.Print("Brak drużyn do gry");
+        }
         // jeśli jedna drużyna została → koniec gry
         if (ActiveTeams.Count <= 1)
         {
@@ -150,10 +163,18 @@ public partial class GameMNGR_Script : Node2D
     void NextTurnFunc()
     {
         RecalculationTeamStatus();
-        if (TeamTurnTable.Count == 0)
-            return;
-        // przesuwamy obecną drużynę na koniec kolejki
+        GD.Print($"koniec rundy dla drużyny {TeamTurnTable[0]}");
         TeamTurnTable.RemoveAt(0);
+        while (TeamTurnTable.Count > 0 && !ActiveTeams.Exists(t => t.name == TeamTurnTable[0]))
+        {
+            GD.Print($"drużyna {TeamTurnTable[0]} usunięta z racji na brak pionków ");
+            TeamTurnTable.RemoveAt(0);
+        }
+        if (TeamTurnTable.Count == 0)
+        {
+            GD.Print("No teams left to take turns!");
+            return;
+        }
         // nowa drużyna
         Turn = TeamTurnTable[0];
     }

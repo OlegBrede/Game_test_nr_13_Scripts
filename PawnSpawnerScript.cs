@@ -35,9 +35,11 @@ public partial class PawnSpawnerScript : Node2D
                 Node2D Pawn = PawnScene.Instantiate<Node2D>();
                 PawnBucketRef.AddChild(Pawn);
                 Pawn.Call("SetTeam", team.name, team.team_colour);
+                Pawn.Call("ActivateCollision");
+                Pawn.Call("DeleteUnusedControlNodes",team.AI_Active);
                 Pawn.GlobalPosition = new Vector2(RNGGEN.RandfRange(-1000f, 1000f),RNGGEN.RandfRange(-1000f, 1000f));
                 GD.Print($"This pawns global pos .: {Pawn.GlobalPosition}");
-                Pawn.Call("ActivateCollision");
+                
             }
         }
     }

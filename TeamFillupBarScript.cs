@@ -39,7 +39,11 @@ public partial class TeamFillupBarScript : Control
     }
     public override void _Process(double delta)
     {
-        teamName = TeamNameEdit.Text;
+        if (string.IsNullOrWhiteSpace(TeamNameEdit.Text)) { // trzeba sprawdzić czy jest coś w boksie
+            teamName = TeamNameEdit.PlaceholderText;
+        } else {
+            teamName = TeamNameEdit.Text;
+        }
         TeamColorCoding = Colorpickerbutton.SelfModulate;// głupie ale jak działa to chuj
         AI_Active = TeamIsBot.ButtonPressed;
     }
@@ -83,11 +87,7 @@ public partial class TeamFillupBarScript : Control
     }
     void Button_ACT2() // otwarcie okna dodawania jednostek
     {
-        GD.Print("button works PS . dodaj funkcję scrollującej listy");
-    }
-    void Button_ACT3() // zatwierdzenie okna i zamknięcie panelu dodawania jednostek
-    {
-        GD.Print("button works dodaj opcję zamknięcia listy pls");
+        MenuScript.ThisTeaMsunitListRoot.Visible = true;
     }
     void TextButton_ACT1()
     {
@@ -95,56 +95,56 @@ public partial class TeamFillupBarScript : Control
     }
     void TextButton_ACT2()
     {
-        GD.Print("kolor czerwony");
+        //GD.Print("kolor czerwony");
         TeamColorCoding = new Color(Colors.Red);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
     }
     void TextButton_ACT3()
     {
-        GD.Print("kolor pomarańczowy");
+        //GD.Print("kolor pomarańczowy");
         TeamColorCoding = new Color(Colors.OrangeRed);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
     }
     void TextButton_ACT4()
     {
-        GD.Print("kolor biały");
+        //GD.Print("kolor biały");
         TeamColorCoding = new Color(Colors.White);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
     }
     void TextButton_ACT5()
     {
-        GD.Print("kolor niebieski");
+        //GD.Print("kolor niebieski");
         TeamColorCoding = new Color(Colors.Blue);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
     }
     void TextButton_ACT6()
     {
-        GD.Print("kolor zielony");
+        //GD.Print("kolor zielony");
         TeamColorCoding = new Color(Colors.Green);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
     }
     void TextButton_ACT7()
     {
-        GD.Print("kolor żółty");
+        //GD.Print("kolor żółty");
         TeamColorCoding = new Color(Colors.Yellow);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
     }
     void TextButton_ACT8()
     {
-        GD.Print("kolor brązowy");
+        //GD.Print("kolor brązowy");
         TeamColorCoding = new Color(Colors.SaddleBrown);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
     }
     void TextButton_ACT9()
     {
-        GD.Print("kolor różowy");
+        //GD.Print("kolor różowy");
         TeamColorCoding = new Color(255f,0f,255f); // no i teraz to jest róż 
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
