@@ -49,6 +49,6 @@ public partial class UNI_LOSRayCalcScript : RayCast2D
             }
         }
 		startPoint  = endPoint - (endPoint.Normalized() * 75);
-        DrawLine(startPoint , endPoint, Colors.Blue, 20);
+        DrawLine(startPoint , endPoint, Colors.Red, 35);
     }
 }

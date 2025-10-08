@@ -17,9 +17,14 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] Node2D ColoredPartsNode;
     [Export] Node2D PCNP; // player controller node path
     [Export] Node2D AICNP; // AI controller node path
+    [Export] AnimationPlayer UNIAnimPlayerRef;
     public Node2D TargetMarkerRef;
     public PawnState State { get; private set; } = PawnState.Standing;
     private bool AC = false;
+    public override void _Ready()
+    {
+        UNIAnimPlayerRef.Play("StandStill");
+    }
     public override void _Process(double delta)
     {
         if (AC == true)
@@ -34,6 +39,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public void TakeDamage(int dmg)
     {
         HP -= dmg;
+        UNIAnimPlayerRef.Play("Damage");
         GD.Print($"{UnitName} took {dmg} dmg");
         if (HP <= 0)
             Die();

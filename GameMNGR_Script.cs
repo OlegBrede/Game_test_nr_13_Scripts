@@ -36,6 +36,7 @@ public partial class GameMNGR_Script : Node2D
     CanvasLayer CamUICanvasRef;
     PawnSpawnerScript pawnSpawnerScript;
     public bool SetupDone = false;
+    private bool AccessNextTurnPopup;
     public override void _Ready()
     {
         Instance = this;
@@ -46,7 +47,7 @@ public partial class GameMNGR_Script : Node2D
         pawnSpawnerScript = GetNode<PawnSpawnerScript>("SpawnPoints");
         CamUICanvasRef = GetTree().Root.GetNode<CanvasLayer>("BaseTestScene/Camera2D/CanvasLayer");
         Vector2I windowSize = DisplayServer.WindowGetSize();
-        CamUICanvasRef.Offset = new Vector2(windowSize.X / 2, windowSize.Y / 2);
+        //CamUICanvasRef.Offset = new Vector2(windowSize.X / 2, windowSize.Y / 2);
         PopUpRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/Camera2D/CanvasLayer/SamplePopUp");
         GameInfoLabelRef = GetTree().Root.GetNode<Label>("BaseTestScene/Camera2D/CanvasLayer/GameInfoLabel");
         PopUpRefScript = PopUpRef as SamplePopUpScript;
@@ -63,13 +64,19 @@ public partial class GameMNGR_Script : Node2D
         //GD.Print($"Selected pawn is {SelectedPawn}");
     }
     public void DeselectPawn() => SelectedPawn = null;
+    void Button_ACT1() // to samo co spacja robi
+    {
+        AccessNextTurnPopup = true;
+    }
     public override void _Process(double delta)
     {
         if (SetupDone)
         {
             GameInfoLabelRef.Text = $" Round {Round} | Turn {Turn}"; // zamienić na odwołanie się do tablicy statycznej z nazwą drużyny
-
-            if (Input.IsActionJustPressed("MYSPACE") && PopUpRefScript != null)
+            if (Input.IsActionJustPressed("MYSPACE")){
+                AccessNextTurnPopup = true;
+            }
+            if (AccessNextTurnPopup == true && PopUpRefScript != null)
             {
                 if (TeamTurnTable.Count <= 1)
                 {
@@ -79,8 +86,9 @@ public partial class GameMNGR_Script : Node2D
                 {
                     PopUpRefScript.Call("PopUpContentsFunc", "Do you want to end your turn ?", false);
                 }
+                AccessNextTurnPopup = false;
             }
-            
+
         }
     }
     void NextRoundFunc()

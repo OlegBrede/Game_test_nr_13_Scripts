@@ -75,7 +75,7 @@ public partial class CameraCode : Camera2D
         }
         if (@event is InputEventMouseButton scrollEvent)
         {
-            if (scrollEvent.ButtonIndex == MouseButton.WheelDown && scrollEvent.Pressed && zoomLevel.X > 0.1f && zoomLevel.Y > 0.1f)
+            if (scrollEvent.ButtonIndex == MouseButton.WheelDown && scrollEvent.Pressed && zoomLevel.X > 0.0825f && zoomLevel.Y > 0.0825f)
             {
                 zoomLevel -= new Vector2(zoomspeed, zoomspeed) * 0.002f;
                 Zoom = zoomLevel;
