@@ -7,6 +7,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
 {
     [Export] public string UnitName = "Princess"; // TEMP
     [Export] public string UnitType = "Human"; // TEMP
+    [Export] public string UnitDesignation = "";
     [Export] public int HP = 100; //TEMP
     [Export] public float MAD = 3750; // movement allowence distance 
     [Export] public int WeaponRange = 4000; // powinno być 11250
@@ -69,7 +70,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             GD.Print($"kontrola Gracza Ununięta z {UnitName} od drużyny {TeamId}");
         } else {
             AICNP.QueueFree();
-            GD.Print($"kontrola Gracza Ununięta z {UnitName} od drużyny {TeamId}");
+            GD.Print($"kontrola AI Ununięta z {UnitName} od drużyny {TeamId}");
         }
     }
 }

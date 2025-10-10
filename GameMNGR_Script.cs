@@ -18,6 +18,7 @@ public partial class GameMNGR_Script : Node2D
         public Color team_colour { get; set; }
         public int PawnCount { get; set; }
         public bool AI_Active { get; set; }
+        public List<UnitSelection> UnitsForThisTeam { get; set; } = new List<UnitSelection>();
     }
     public class UnitSelection
     {

@@ -12,8 +12,11 @@ public partial class MainMenuScript : Node2D
     [Export] Node2D OptionsNode;
     [Export] Node2D Creditsnode;
     [Export] Node2D TeamFillupBucket;
+    [Export] public Node2D UnitSelectionCloseHook;
     [Export] public Node2D ThisTeaMsunitListRoot;
     [Export] Label LowPlaerCountWarnin;
+    [Export] Label NoPawnsWarning;
+    [Export] public Control UnitList;
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
     private int VisibleMenuScreenID;
     public int TeamCallInCount = 0;
@@ -111,44 +114,6 @@ public partial class MainMenuScript : Node2D
         GD.Print("Exiting");
         GetTree().Quit();
     }
-    void Button_ACT5() // zamykanie okna wyboru jednostek dla danej drużyny
-    {
-        ThisTeaMsunitListRoot.Visible = false;
-        GD.Print("ekszit paper doe");
-    }
-    List<PackedScene> LoadUnitPrefabs(string path) // to do, trza okomentować
-    {
-        var dir = DirAccess.Open(path);
-        var prefabs = new List<PackedScene>();
-
-        if (dir == null)
-        {
-            GD.PrintErr($"Nie można otworzyć folderu: {path}");
-            return prefabs;
-        }
-
-        dir.ListDirBegin();
-        string fileName = dir.GetNext();
-
-        while (fileName != "")
-        {
-            if (!dir.CurrentIsDir() && fileName.EndsWith(".tscn"))
-            {
-                string fullPath = $"{path}/{fileName}";
-                PackedScene scene = GD.Load<PackedScene>(fullPath);
-
-                if (scene != null)
-                {
-                    prefabs.Add(scene);
-                    GD.Print($"Załadowano prefab: {fileName}");
-                }
-            }
-            fileName = dir.GetNext();
-        }
-
-        dir.ListDirEnd();
-        return prefabs;
-    }
     void CollectDescendants(Node node)
     {
         foreach (Node child in node.GetChildren())
@@ -181,8 +146,14 @@ public partial class MainMenuScript : Node2D
                 name = team.teamName,
                 team_colour = team.TeamColorCoding,
                 AI_Active = team.AI_Active,
-                PawnCount = team.PawnCount // zakładam, że masz pole/prop w node
+                PawnCount = team.PawnCount,
+                UnitsForThisTeam = team.USQA
             });
+            if (team.USQA.Count == 0) { // tu też jest break na włączenie startu gry, ta wiem powinno być uniform ale jestem zmęczony, będzie to stwarzać problem to wtedy się na mnie złość 
+                GD.Print($"Drużyna {team.teamName} nie ma pionków do gry");
+                NoPawnsWarning.Call("ShowFadeWarning",team.teamName);
+                return;
+            }
         }
 
         string json = JsonSerializer.Serialize(cfg);
