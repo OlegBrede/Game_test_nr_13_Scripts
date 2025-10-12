@@ -6,6 +6,7 @@ using System.Text.Json;
 
 public partial class GameMNGR_Script : Node2D
 {
+    [Export] Camera2D FocusCam;
     string SceneToLoad = "res://Scenes/MultiGameOverScreen.tscn";
     public int Round = 1;
     public string Turn = "";
@@ -61,8 +62,16 @@ public partial class GameMNGR_Script : Node2D
     }
     public void SelectPawn(PawnBaseFuncsScript pawn)
     {
+        if (SelectedPawn != null) // trzeba wysłać reset do skryptu gracza bo inaczej zaznaczenie się zduplikuje 
+        {
+            SelectedPawn.Call("RSSP");
+        }
         SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
-
+        //GD.Print($"Selected Pawn Now is {SelectedPawn}");
+        if (FocusCam != null)
+        {
+            FocusCam.Position = pawn.GlobalPosition;
+        }
         //GD.Print($"Selected pawn is {SelectedPawn}");
     }
     public void DeselectPawn() => SelectedPawn = null;

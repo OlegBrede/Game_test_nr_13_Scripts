@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 
 public partial class MainMenuScript : Node2D
@@ -137,7 +138,18 @@ public partial class MainMenuScript : Node2D
         CollectDescendants(TeamFillupBucket); // rekursywnie zbieramy wszyskie dzieci
 
         GD.Print("Znaleziono drużyn: " + TeamQuerryConfinginfo.Count);
-
+        // Sprawdzenie duplikatów nazw drużyn
+        var duplicateNames = TeamQuerryConfinginfo
+            .GroupBy(t => t.teamName)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+        if (duplicateNames.Count > 0)
+        {
+            GD.Print($"Wykryto drużyny o zduplikowanych nazwach: {string.Join(", ", duplicateNames)}");
+            NoPawnsWarning.Call("ShowFadeWarning", $"TEAMS CANNOT SHARE NAMES, CHANGE {string.Join(", ", duplicateNames)}");
+            return;
+        }
         foreach (var team in TeamQuerryConfinginfo)
         {
             GD.Print("Team: " + team.teamName + " | AI: " + team.AI_Active + " | PawnCount: " + team.PawnCount);
@@ -151,7 +163,7 @@ public partial class MainMenuScript : Node2D
             });
             if (team.USQA.Count == 0) { // tu też jest break na włączenie startu gry, ta wiem powinno być uniform ale jestem zmęczony, będzie to stwarzać problem to wtedy się na mnie złość 
                 GD.Print($"Drużyna {team.teamName} nie ma pionków do gry");
-                NoPawnsWarning.Call("ShowFadeWarning",team.teamName);
+                NoPawnsWarning.Call("ShowFadeWarning",$"TEAM {team.teamName} NEEDS AT LEAST ONE PAWN ");
                 return;
             }
         }

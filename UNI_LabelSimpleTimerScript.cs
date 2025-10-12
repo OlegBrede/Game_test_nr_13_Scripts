@@ -10,10 +10,10 @@ public partial class UNI_LabelSimpleTimerScript : Label
         FadeoutTimer = GetNode<Timer>("FadeoutTimer");
         FadeoutTimer.Timeout += HideLabel;
     }
-    void ShowFadeWarning(string TeamWithNoPawns)
+    void ShowFadeWarning(string messig)
     {
         Visible = true;
-        Text = $"TEAM {TeamWithNoPawns} NEEDS AT LEAST ONE PAWN ";
+        Text = messig;
         FadeoutTimer.Start();
     }
     void HideLabel()

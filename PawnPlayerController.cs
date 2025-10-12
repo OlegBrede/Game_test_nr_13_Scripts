@@ -52,8 +52,6 @@ public partial class PawnPlayerController : Node2D
 
     public override void _Process(double delta)
     {
-        // WYŚWIETLANE STATYSTYKI PIONKA
-        // coś sie zjebało z pozycją gui, naprawa natychmiastowa , SZYBKO
         if (StatsUI.Visible)
         {
             StatsLabel.Text = $"{Pawn.UnitName}\n{Pawn.TeamId}\nHP {Pawn.HP}\nMP {Pawn.MP}";
@@ -178,11 +176,14 @@ public partial class PawnPlayerController : Node2D
         TargetMarker.Visible = false;
         ResetSelectedStatus();
     }
-    void ResetSelectedStatus()
+    public void ResetSelectedStatus()
     {
         ChosenAction = PlayersChosenAction.None;
+        gameMNGR_Script.Call("DeselectPawn");
         isSelected = false;
         StatsUI.Visible = false;
+        BFPC1.Visible = false;
+        BFPC2.Visible = false;
     }
 
     private void OnAreaInputEvent(Node viewport, InputEvent inputEvent, long shapeIdx) // selekcja Danego pionka 
@@ -191,9 +192,25 @@ public partial class PawnPlayerController : Node2D
         {
             if (!isSelected && Pawn.MP > 0 && Pawn.TeamId == gameMNGR_Script.Turn) // jeśli nie jest zaznaczony, jeśli ma punkty ruchu i jak należy do ciebie 
             {
-                isSelected = true;
-                BFPC1.Visible = true;
-                BFPC2.Visible = true;
+                gameMNGR_Script.Call("SelectPawn", Pawn);
+                if (gameMNGR_Script.SelectedPawn.Name == Pawn.Name)
+                {
+                    isSelected = true;
+                    BFPC1.Visible = true;
+                    BFPC2.Visible = true;
+                }
+                else // to już chyba nie potrzebne ale
+                {
+                    isSelected = false;
+                    BFPC1.Visible = false;
+                    BFPC2.Visible = false;
+                }
+            }
+            else
+            {
+                isSelected = false;
+                BFPC1.Visible = false;
+                BFPC2.Visible = false;
             }
         }
     }

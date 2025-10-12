@@ -96,12 +96,19 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     void DeleteUnusedControlNodes(bool TrueisAI)
     {
-        if (TrueisAI == true) {
+        if (TrueisAI == true)
+        {
             PCNP.QueueFree();
             GD.Print($"kontrola Gracza Ununięta z {UnitName} od drużyny {TeamId}");
-        } else {
+        }
+        else
+        {
             AICNP.QueueFree();
             GD.Print($"kontrola AI Ununięta z {UnitName} od drużyny {TeamId}");
         }
+    }
+    public void RSSP() // reset selected status player
+    {
+        PCNP.Call("ResetSelectedStatus");
     }
 }
