@@ -11,11 +11,10 @@ public partial class UnitMenuSelectionBoxScript : Label
     public int InternalTeamDesignation;
     Label UnitInfoLabel;
     Label UnitCountLabel;
-    Node2D ViewerAttachmentRootNode;
+    [Export]Node2D ViewerAttachmentRootNode;
     TeamFillupBarScript Bitch; // chodzi o gracza który wybiera pionki
     public override void _Ready()
     {
-        ViewerAttachmentRootNode = GetNode<Node2D>("ViewerAttachmentRoot");
         UnitInfoLabel = GetNode<Label>("UnitInfoLabelNode");
         UnitCountLabel = GetNode<Label>("UnitCountLabelNode");
         UnitInfoLabel.Text = $"Name .: {NameOnLabel}\nHP .: {HPOnLabel}\nDMG .: {DMGOnLabel}\nPoints Value.: ";
@@ -43,9 +42,19 @@ public partial class UnitMenuSelectionBoxScript : Label
         Bitch.Call("ReciveUnits", ThisUnitsCount, PathToThisPawn);
         GD.Print($"Drużyna dostała {ThisUnitsCount} pionków typu {PathToThisPawn}");
     }
-    void RecivePawnInfo(string Name, int HP, int DMG)// do otrzymywania informacji o dokonanych wyborach 
+    void RecivePawnInfo(string Name,Node2D Picture, int HP, int DMG)// do otrzymywania informacji o dokonanych wyborach 
     {
         NameOnLabel = Name;
+        if (Picture != null)
+        {
+            ViewerAttachmentRootNode.AddChild(Picture);
+        }
+        else
+        {
+            Sprite2D DefPicture = new Sprite2D();
+            DefPicture.Texture = (Texture2D)GD.Load("res://Sprites/Base Ludzik.png");
+            ViewerAttachmentRootNode.AddChild(DefPicture);
+        }
         HPOnLabel = HP;
         DMGOnLabel = DMG;
     }

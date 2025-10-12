@@ -162,6 +162,7 @@ public partial class PawnPlayerController : Node2D
     void Button_ACT4() // accept atack order
     {
         Pawn.MP--;
+        Pawn.PlayAttackAnim();
         TargetMarker.Visible = false;
         ShootingRay.Rayactive = false;
         if (ShootingRay.RayHittenTarget != null) {

@@ -158,21 +158,30 @@ public partial class TeamFillupBarScript : Control
         var UnitSelectPrefabs = LoadUnitPrefabs("res://Prefabs/Units/");
         UnitMenuSelectionPath = GD.Load<PackedScene>("res://Prefabs/UnitMenuSelectionBoxPrefab.tscn");
         MenuScript.ThisTeaMsunitListRoot.Visible = true;
-        Control PawnSelect = UnitMenuSelectionPath.Instantiate<Control>();
+        Dictionary<string, Control> unitBoxes = new();
         foreach (var prefab in UnitSelectPrefabs)
         {
+            Control PawnSelect = UnitMenuSelectionPath.Instantiate<Control>();
             Node unitsINFO = prefab.Instantiate(); // instancja pionka na chwile
-            PawnBaseFuncsScript unitScript = unitsINFO as PawnBaseFuncsScript; // dajemy go jako skrypt
-            PawnSelect.Call("RecivePawnInfo", unitScript.UnitType, unitScript.HP, unitScript.WeaponDamage); // ze skryptu bieremy info
-            unitsINFO.QueueFree(); // z pamięci precz
+            PawnBaseFuncsScript unitScript = unitsINFO as PawnBaseFuncsScript;
+            PawnSelect.Call("RecivePawnInfo", unitScript.UnitType, unitScript.ProfilePick, unitScript.HP, unitScript.WeaponDamage); // ze skryptu bieremy info
             //GD.Print($"Prefab path: {prefab.ResourcePath}");
             MenuScript.UnitList.AddChild(PawnSelect); // dodajemy box
             PawnSelect.Call("WhosBitchin", this, prefab.ResourcePath); // wysyłamy zarówno godność gracza jak i ścierzkę do pionka
+            unitsINFO.QueueFree(); // z pamięci precz
+            unitBoxes[prefab.ResourcePath] = PawnSelect;
         }
         foreach (GameMNGR_Script.UnitSelection SU in USQA)
         {
-            PawnSelect.Call("ReciveTeamCompInfo", SU.Count);
-            GD.Print($"ten miał {SU.Count} {SU.ScenePath}");
+            if (unitBoxes.TryGetValue(SU.ScenePath, out var box))
+            {
+                box.Call("ReciveTeamCompInfo", SU.Count);
+                GD.Print($"Powiązano {SU.ScenePath} z boxem, Count = {SU.Count}");
+            }
+            else
+            {
+                GD.PrintErr($"Nie znaleziono boxa dla {SU.ScenePath}");
+            }
         }
         // tu musisz zadzwonić do UnitMenuSelectionBoxScript i powiedzieć hello tu jest twoja jednostka, więc chyba tworzenie tego musi zejść na tworzenie kilku instancji UnitMenuSelectionBoxScript z tego tu skryptu, inaczej tego nie widzę 
     }

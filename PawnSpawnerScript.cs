@@ -18,7 +18,6 @@ public partial class PawnSpawnerScript : Node2D
     }
     void SpawnSelectedPawns()
     {
-        PawnScene = GD.Load<PackedScene>("res://Prefabs/pawn_base_prefab.tscn");
         gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
         PawnBucketRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/UnitsBucket");
         if (!File.Exists(SaveFilePath))
@@ -31,7 +30,10 @@ public partial class PawnSpawnerScript : Node2D
         foreach (var team in cfg.teams)
         {
             GD.Print($"Drużyna: {team.name}");
-            for(int i = 0; i < team.PawnCount;i++){
+            foreach (var TeamsPawn in team.UnitsForThisTeam)
+            {
+                for(int i = 0; i < TeamsPawn.Count;i++){
+                PawnScene = GD.Load<PackedScene>(TeamsPawn.ScenePath);
                 Node2D Pawn = PawnScene.Instantiate<Node2D>();
                 PawnBucketRef.AddChild(Pawn);
                 Pawn.Call("SetTeam", team.name, team.team_colour);
@@ -39,8 +41,9 @@ public partial class PawnSpawnerScript : Node2D
                 Pawn.Call("DeleteUnusedControlNodes",team.AI_Active);
                 Pawn.GlobalPosition = new Vector2(RNGGEN.RandfRange(-1000f, 1000f),RNGGEN.RandfRange(-1000f, 1000f));
                 GD.Print($"This pawns global pos .: {Pawn.GlobalPosition}");
-                
+                }
             }
+            
         }
     }
 }

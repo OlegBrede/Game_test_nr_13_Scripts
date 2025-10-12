@@ -38,6 +38,7 @@ public partial class GameMNGR_Script : Node2D
     PawnSpawnerScript pawnSpawnerScript;
     public bool SetupDone = false;
     private bool AccessNextTurnPopup;
+    public string Winner;
     public override void _Ready()
     {
         Instance = this;
@@ -140,9 +141,9 @@ public partial class GameMNGR_Script : Node2D
             else
                 GD.Print("Brak drużyn do gry");
         }
-        // jeśli jedna drużyna została → koniec gry
         if (ActiveTeams.Count <= 1)
         {
+            Winner = ActiveTeams[0].name;
             GD.Print("Game Over! Winner: " + (ActiveTeams.Count == 1 ? ActiveTeams[0].name : "None"));
             GetTree().ChangeSceneToFile(SceneToLoad);
             return;

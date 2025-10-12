@@ -125,7 +125,7 @@ public partial class MainMenuScript : Node2D
             }
         }
     }
-    private void OnStartPressed()
+    private void OnStartPressed() // tu tworzymy JSON i otwieramy gre
     {
         if (File.Exists(SaveFilePath))
         {
