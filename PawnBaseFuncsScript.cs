@@ -7,6 +7,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
 {
     [Export] public string UnitName = "Princess"; // TEMP
     [Export] public string UnitType = "Human"; // TEMP
+    [Export] public string Descriptor = "Lorem\nIpsum\ndolor sit amet";
+    [Export] public int PV = 1; // precalculated point value
     [Export] public int HP = 100; //TEMP
     [Export] public float MAD = 3750; // movement allowence distance 
     [Export] public int WeaponRange = 4000; // powinno być 11250
@@ -51,7 +53,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         if (HP <= 0)
             Die();
     }
-
     public void Die()
     {
         State = PawnState.Dead;
@@ -77,7 +78,18 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             QueueFree();
         }
     }
-
+    public void ShowSelection(bool ShowAnim)
+    {
+        if (ShowAnim == true)
+        {
+            UNIAnimPlayerRef.Play("SelectionFlash");
+        }
+        else
+        {
+            UNIAnimPlayerRef.Stop();
+            UNIAnimPlayerRef.Play("StandStill");
+        }
+    }
     public void SetTeam(string teamId, Color TeamColors)
     {
         TeamId = teamId;

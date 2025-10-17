@@ -157,6 +157,7 @@ public partial class MainMenuScript : Node2D
             {
                 name = team.teamName,
                 team_colour = team.TeamColorCoding,
+                Spawn_ID = team.SpawnPosID,
                 AI_Active = team.AI_Active,
                 PawnCount = team.PawnCount,
                 UnitsForThisTeam = team.USQA

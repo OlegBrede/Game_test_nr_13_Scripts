@@ -22,10 +22,13 @@ public partial class TeamFillupBarScript : Control
     [Export] CheckBox TeamIsBot;
     [Export] Node2D TFBFAUC; // ThisFuckinButtonForAcceptingUserChoice
     PackedScene UnitMenuSelectionPath;
+    Label SpawnPosNumLabel;
     private int TeamToMenuID = 0;
+    public int SpawnPosID = 0;
     private bool colorpickeractive = false;
     public override void _Ready()
     {
+        SpawnPosNumLabel = GetNode<Label>("SpawnPosNum");
         MenuScript = GetTree().Root.GetNode<MainMenuScript>("MainMenu");
         TFBFAUC.Visible = false;
         TFBFAUC.GlobalPosition = MenuScript.UnitSelectionCloseHook.GlobalPosition;
@@ -43,6 +46,8 @@ public partial class TeamFillupBarScript : Control
         }
         MenuScript.TeamCallInCount++;
         TeamToMenuID = MenuScript.TeamCallInCount;
+        SpawnPosNumLabel.Text = TeamToMenuID.ToString();
+        SpawnPosID = TeamToMenuID;
         TeamNameEdit.PlaceholderText = "Team " + MenuScript.TeamCallInCount;
         //GD.Print("Liczba drużyn .: " + TeamToMenuID);
     }
@@ -195,8 +200,12 @@ public partial class TeamFillupBarScript : Control
             PawnCount = PawnCount + UMSBS.ThisUnitsCount;
             ShitMenuButtons.QueueFree();
         }
-        GD.Print("zwalnianie tej głupiej listy");
+        //GD.Print("zwalnianie tej głupiej listy");
         TFBFAUC.Visible = false;
+    }
+    void Button_ACT4()
+    {
+        GD.Print("wybór spawnu");
     }
     void TextButton_ACT1()
     {

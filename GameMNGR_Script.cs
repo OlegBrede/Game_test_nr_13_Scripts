@@ -10,6 +10,7 @@ public partial class GameMNGR_Script : Node2D
     string SceneToLoad = "res://Scenes/MultiGameOverScreen.tscn";
     public int Round = 1;
     public string Turn = "";
+    public bool ChosenActionFinished = true;
     public static GameMNGR_Script Instance { get; private set; }
     public PawnBaseFuncsScript SelectedPawn { get; private set; }
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
@@ -19,6 +20,7 @@ public partial class GameMNGR_Script : Node2D
         public Color team_colour { get; set; }
         public int PawnCount { get; set; }
         public bool AI_Active { get; set; }
+        public int Spawn_ID { get; set; }
         public List<UnitSelection> UnitsForThisTeam { get; set; } = new List<UnitSelection>();
     }
     public class UnitSelection
@@ -31,14 +33,17 @@ public partial class GameMNGR_Script : Node2D
         public List<TeamConfig> teams { get; set; } = new List<TeamConfig>(); // lista do inicjalizacji w konfiguracji
     }
     public List<string> TeamTurnTable = new List<string>(); // lista do tur
-    public List<TeamConfig> ActiveTeams = new List<TeamConfig>(); // aktywne w danej grze 
+    public List<TeamConfig> ActiveTeams = new List<TeamConfig>(); // aktywne w danej grze
+    List<PawnBaseFuncsScript> ActiveTeamPawns = new List<PawnBaseFuncsScript>();
     Node2D PopUpRef;
+    Node2D PawnBucketRef;
     SamplePopUpScript PopUpRefScript;
     Label GameInfoLabelRef;
     CanvasLayer CamUICanvasRef;
     PawnSpawnerScript pawnSpawnerScript;
     public bool SetupDone = false;
     private bool AccessNextTurnPopup;
+    private int IntForUnitSelection = 0;
     public string Winner;
     public override void _Ready()
     {
@@ -47,6 +52,7 @@ public partial class GameMNGR_Script : Node2D
 
     public void SetupGameScene()
     {
+        PawnBucketRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/UnitsBucket");
         pawnSpawnerScript = GetNode<PawnSpawnerScript>("SpawnPoints");
         CamUICanvasRef = GetTree().Root.GetNode<CanvasLayer>("BaseTestScene/Camera2D/CanvasLayer");
         Vector2I windowSize = DisplayServer.WindowGetSize();
@@ -58,33 +64,106 @@ public partial class GameMNGR_Script : Node2D
         string json = File.ReadAllText(SaveFilePath);
         var cfg = JsonSerializer.Deserialize<GameConfig>(json);
         InitTurnOrder(cfg);
+        CalculateActiveTeamPawns(true);
         SetupDone = true;
     }
     public void SelectPawn(PawnBaseFuncsScript pawn)
     {
-        if (SelectedPawn != null) // trzeba wysłać reset do skryptu gracza bo inaczej zaznaczenie się zduplikuje 
+        if (ChosenActionFinished == true)
         {
-            SelectedPawn.Call("RSSP");
+            if (SelectedPawn != null) // trzeba wysłać reset do skryptu gracza bo inaczej zaznaczenie się zduplikuje 
+            {
+                SelectedPawn.Call("ShowSelection" , false);
+                SelectedPawn.Call("RSSP");
+            }
+            SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
+            //GD.Print($"Selected Pawn Now is {SelectedPawn}");
+            if (FocusCam != null)
+            {
+                FocusCam.Position = pawn.GlobalPosition;
+                pawn.Call("ShowSelection" , true);
+            }
+            //GD.Print($"Selected pawn is {SelectedPawn}");
         }
-        SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
-        //GD.Print($"Selected Pawn Now is {SelectedPawn}");
-        if (FocusCam != null)
+        else
         {
-            FocusCam.Position = pawn.GlobalPosition;
+            GD.Print("Nie można zaznaczyć pionka bo gracz nie zfinalizował akcji");
         }
-        //GD.Print($"Selected pawn is {SelectedPawn}");
     }
     public void DeselectPawn() => SelectedPawn = null;
     void Button_ACT1() // to samo co spacja robi
     {
         AccessNextTurnPopup = true;
     }
+    void Button_ACT2() // next unit
+    {
+        CalculateActiveTeamPawns(false);
+        //ActiveTeamPawns.RemoveAll(p => p == null || !p.IsInsideTree());
+        if (ActiveTeamPawns.Count == 0)
+        {
+            GD.Print("Nie ma pionka do którego możnaby przejść");
+            return;
+        }
+
+        if (IntForUnitSelection >= ActiveTeamPawns.Count)
+        {
+            IntForUnitSelection = 0;
+        }
+        // Znajdź najbliższą nie-null jednostkę
+        int startIndex = IntForUnitSelection;
+        do
+        {
+            var NextPawn = ActiveTeamPawns[IntForUnitSelection];
+            if (NextPawn != null && NextPawn.IsInsideTree())
+            {
+                SelectPawn(NextPawn);
+
+                IntForUnitSelection = (IntForUnitSelection + 1) % ActiveTeamPawns.Count;
+                GD.Print($"Wybrano jednostkę o indeksie {IntForUnitSelection}");
+                return;
+            }
+            IntForUnitSelection = (IntForUnitSelection + 1) % ActiveTeamPawns.Count;
+        }
+        while (IntForUnitSelection != startIndex);       
+    }
+    void Button_ACT3() // prev unit 
+    {
+        CalculateActiveTeamPawns(false);
+        //ActiveTeamPawns.RemoveAll(p => p == null || !p.IsInsideTree());
+        if (ActiveTeamPawns.Count == 0)
+        {
+            GD.Print("Nie ma pionka do którego możnaby przejść");
+            return;
+        }
+
+        if (IntForUnitSelection <= 0)
+        {
+            IntForUnitSelection = ActiveTeamPawns.Count - 1; // pierdole, działa częściowo, mam wyjebane
+        }
+        // Znajdź najbliższą nie-null jednostkę
+        int startIndex = IntForUnitSelection;
+        do
+        {
+            var NextPawn = ActiveTeamPawns[IntForUnitSelection];
+            if (NextPawn != null && NextPawn.IsInsideTree())
+            {
+                SelectPawn(NextPawn);
+
+                IntForUnitSelection = (IntForUnitSelection - 1) % ActiveTeamPawns.Count;
+                GD.Print($"Wybrano jednostkę o indeksie {IntForUnitSelection}");
+                return;
+            }
+            IntForUnitSelection = (IntForUnitSelection - 1) % ActiveTeamPawns.Count;
+        }
+        while (IntForUnitSelection != startIndex);   
+    }
     public override void _Process(double delta)
     {
         if (SetupDone)
         {
             GameInfoLabelRef.Text = $" Round {Round} | Turn {Turn}"; // zamienić na odwołanie się do tablicy statycznej z nazwą drużyny
-            if (Input.IsActionJustPressed("MYSPACE")){
+            if (Input.IsActionJustPressed("MYSPACE"))
+            {
                 AccessNextTurnPopup = true;
             }
             if (AccessNextTurnPopup == true && PopUpRefScript != null)
@@ -101,6 +180,23 @@ public partial class GameMNGR_Script : Node2D
             }
 
         }
+    }
+    void CalculateActiveTeamPawns(bool FirstTime)
+    {
+        if (FirstTime == true)
+        {
+            IntForUnitSelection = 0;
+        }        
+        ActiveTeamPawns.Clear();
+        foreach (PawnBaseFuncsScript TeamPawn in PawnBucketRef.GetChildren())
+        {
+            if (TeamPawn.TeamId == Turn)
+            {
+                //GD.Print($"do listy dodano {TeamPawn.Name}");
+                ActiveTeamPawns.Add(TeamPawn);
+            }
+        }
+        //GD.Print("Dodano pionki do listy odczytu dla teamu");
     }
     void NextRoundFunc()
     {
@@ -182,6 +278,7 @@ public partial class GameMNGR_Script : Node2D
     void NextTurnFunc()
     {
         RecalculationTeamStatus();
+        CalculateActiveTeamPawns(true);
         GD.Print($"koniec rundy dla drużyny {TeamTurnTable[0]}");
         TeamTurnTable.RemoveAt(0);
         while (TeamTurnTable.Count > 0 && !ActiveTeams.Exists(t => t.name == TeamTurnTable[0]))

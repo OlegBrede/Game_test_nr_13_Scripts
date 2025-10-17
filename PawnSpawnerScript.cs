@@ -11,6 +11,15 @@ public partial class PawnSpawnerScript : Node2D
     PackedScene PawnScene;
     Node2D PawnBucketRef;
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
+    [Export] Node2D Spawn1;
+    [Export] Node2D Spawn2;
+    [Export] Node2D Spawn3;
+    [Export] Node2D Spawn4;
+    [Export] Node2D Spawn5;
+    [Export] Node2D Spawn6;
+    [Export] Node2D Spawn7;
+    [Export] Node2D Spawn8;
+
     public override void _Ready()
     {
         RNGGEN.Randomize();
@@ -32,18 +41,44 @@ public partial class PawnSpawnerScript : Node2D
             GD.Print($"Drużyna: {team.name}");
             foreach (var TeamsPawn in team.UnitsForThisTeam)
             {
-                for(int i = 0; i < TeamsPawn.Count;i++){
-                PawnScene = GD.Load<PackedScene>(TeamsPawn.ScenePath);
-                Node2D Pawn = PawnScene.Instantiate<Node2D>();
-                PawnBucketRef.AddChild(Pawn);
-                Pawn.Call("SetTeam", team.name, team.team_colour);
-                Pawn.Call("ActivateCollision");
-                Pawn.Call("DeleteUnusedControlNodes",team.AI_Active);
-                Pawn.GlobalPosition = new Vector2(RNGGEN.RandfRange(-1000f, 1000f),RNGGEN.RandfRange(-1000f, 1000f));
-                GD.Print($"This pawns global pos .: {Pawn.GlobalPosition}");
+                for (int i = 0; i < TeamsPawn.Count; i++)
+                {
+                    PawnScene = GD.Load<PackedScene>(TeamsPawn.ScenePath);
+                    Node2D Pawn = PawnScene.Instantiate<Node2D>();
+                    PawnBucketRef.AddChild(Pawn);
+                    Pawn.Call("SetTeam", team.name, team.team_colour);
+                    Pawn.Call("ActivateCollision");
+                    Pawn.Call("DeleteUnusedControlNodes", team.AI_Active);
+                    Pawn.GlobalPosition = new Vector2(SpawnPointPos(team.Spawn_ID).X + RNGGEN.RandfRange(-1000f, 1000f),SpawnPointPos(team.Spawn_ID).Y + RNGGEN.RandfRange(-1000f, 1000f));
+                    //GD.Print($"This pawns global pos .: {Pawn.GlobalPosition}");
                 }
             }
-            
+
+        }
+    }
+    Vector2 SpawnPointPos(int ChosenSpawnIDNum)
+    {
+        switch (ChosenSpawnIDNum)
+        {
+            case 1:
+                return Spawn1.GlobalPosition;
+                case 2:
+                return Spawn2.GlobalPosition;
+                case 3:
+                return Spawn3.GlobalPosition;
+                case 4:
+                return Spawn4.GlobalPosition;
+                case 5:
+                return Spawn5.GlobalPosition;
+                case 6:
+                return Spawn6.GlobalPosition;
+                case 7:
+                return Spawn7.GlobalPosition;
+                case 8:
+                return Spawn8.GlobalPosition;
+            default:
+                GD.Print("spawn nie został ustalony");
+                return new Vector2(0,0);
         }
     }
 }

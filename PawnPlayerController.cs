@@ -12,8 +12,7 @@ public partial class PawnPlayerController : Node2D
     [Export] public NavigationAgent2D NavAgent;
     [Export] Sprite2D movementsprite;
     [Export] UNI_LOSRayCalcScript ShootingRay;
-    Node2D BFPC1; // button for player controll
-    Node2D BFPC2; // button for player controll
+    [Export] Node2D IBBN; // interact buttons bucket node 
     Node2D MovementAllowenceInyk_ator;
     GameMNGR_Script gameMNGR_Script;
     Area2D area;
@@ -29,11 +28,9 @@ public partial class PawnPlayerController : Node2D
     
     public override void _Ready()
     {
-        BFPC1 = GetNode<Node2D>("SampleButton");
-        BFPC2 = GetNode<Node2D>("SampleButton2");
+        GD.Print("PAMIĘTAJ by zawsze sprawdzić na którym pionku testujesz swe dodatki");
         MovementAllowenceInyk_ator = GetNode<Node2D>("MoveIndicator");
-        BFPC1.Visible = false;
-        BFPC2.Visible = false;
+        
         MovementAllowenceInyk_ator.Visible = false;
         gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
 
@@ -48,6 +45,7 @@ public partial class PawnPlayerController : Node2D
         area = MoveMarker.GetNode<Area2D>("Area2D");
         var circle = Pawn.GetNode<CollisionShape2D>("CollisionShape2D").Shape as CircleShape2D;
         NavAgent.Radius = circle.Radius;
+        IBBN.Visible = false;
     }
 
     public override void _Process(double delta)
@@ -117,8 +115,8 @@ public partial class PawnPlayerController : Node2D
     {
         if (isSelected == true)
         {
-            BFPC1.Visible = false;
-            BFPC2.Visible = false;
+            gameMNGR_Script.ChosenActionFinished = false;
+            IBBN.Visible = false;
             ChosenAction = PlayersChosenAction.MoveAction;
             MovementAllowenceInyk_ator.Visible = true;
             NavAgent.DebugEnabled = true;
@@ -129,12 +127,20 @@ public partial class PawnPlayerController : Node2D
     {
         if (isSelected == true)
         {
-            BFPC1.Visible = false;
-            BFPC2.Visible = false;
+            gameMNGR_Script.ChosenActionFinished = false;
+            IBBN.Visible = false;
             ChosenAction = PlayersChosenAction.AttackAction;
             ShootingRay.Rayactive = true;
             //GD.Print("teraz gracz wybiera cel...");
         }
+    }
+    void Button_ACT7() // Urzycie wybrano z akcji
+    {
+        GD.Print("teraz gracz wybiera urzycie...");
+    }
+    void Button_ACT8() // Atak wręcz wybrano z akcji
+    {
+        GD.Print("teraz gracz wybiera atak wręcz...");
     }
     void Button_ACT1() // accept move order 
     {
@@ -180,10 +186,10 @@ public partial class PawnPlayerController : Node2D
     {
         ChosenAction = PlayersChosenAction.None;
         gameMNGR_Script.Call("DeselectPawn");
+        gameMNGR_Script.ChosenActionFinished = true;
         isSelected = false;
         StatsUI.Visible = false;
-        BFPC1.Visible = false;
-        BFPC2.Visible = false;
+        IBBN.Visible = false;
     }
 
     private void OnAreaInputEvent(Node viewport, InputEvent inputEvent, long shapeIdx) // selekcja Danego pionka 
@@ -196,21 +202,18 @@ public partial class PawnPlayerController : Node2D
                 if (gameMNGR_Script.SelectedPawn.Name == Pawn.Name)
                 {
                     isSelected = true;
-                    BFPC1.Visible = true;
-                    BFPC2.Visible = true;
+                    IBBN.Visible = true;
                 }
                 else // to już chyba nie potrzebne ale
                 {
                     isSelected = false;
-                    BFPC1.Visible = false;
-                    BFPC2.Visible = false;
+                    IBBN.Visible = false;
                 }
             }
             else
             {
                 isSelected = false;
-                BFPC1.Visible = false;
-                BFPC2.Visible = false;
+                IBBN.Visible = false;
             }
         }
     }
