@@ -7,10 +7,12 @@ using System.Text.Json;
 public partial class PawnSpawnerScript : Node2D
 {
     GameMNGR_Script gameMNGR_Script;
+    
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
     PackedScene PawnScene;
     Node2D PawnBucketRef;
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
+    [Export] RngNameToolScript rngNameToolScript;
     [Export] Node2D Spawn1;
     [Export] Node2D Spawn2;
     [Export] Node2D Spawn3;
@@ -23,10 +25,11 @@ public partial class PawnSpawnerScript : Node2D
     public override void _Ready()
     {
         RNGGEN.Randomize();
-        // zbyt późno niektóre ustawienia się ustawiały zostały przeniesione wyżej 
     }
+
     void SpawnSelectedPawns()
     {
+        rngNameToolScript.LoadNames("res://Mem Bank/RNGNameList.json"); // pierdole
         gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
         PawnBucketRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/UnitsBucket");
         if (!File.Exists(SaveFilePath))
@@ -49,11 +52,34 @@ public partial class PawnSpawnerScript : Node2D
                     Pawn.Call("SetTeam", team.name, team.team_colour);
                     Pawn.Call("ActivateCollision");
                     Pawn.Call("DeleteUnusedControlNodes", team.AI_Active);
+                    int Gender = RNGGEN.RandiRange(0, 1);
+                    string Category;
+                    string Surname;
+                    if (Gender == 1)
+                    {
+                        Category = "male";
+                        Surname = rngNameToolScript.GetRandomName("surname");
+                    }
+                    else
+                    {
+                        Category = "female";
+                        Surname = rngNameToolScript.GetRandomName("surname");
+                        char lastChar = Surname[Surname.Length - 1];
+                        // jeśli kończy się na "i" – zamień na "a"
+                        if (lastChar == 'i')
+                        {
+                            Surname = Surname.Substring(0, Surname.Length - 1) + "a";
+                        }
+                        if (lastChar == 'y')
+                        {
+                            Surname = Surname.Substring(0, Surname.Length - 1) + "a";
+                        }
+                    }
+                    Pawn.Call("Namechange",rngNameToolScript.GetRandomName(Category) + " " + Surname);
                     Pawn.GlobalPosition = new Vector2(SpawnPointPos(team.Spawn_ID).X + RNGGEN.RandfRange(-1000f, 1000f),SpawnPointPos(team.Spawn_ID).Y + RNGGEN.RandfRange(-1000f, 1000f));
                     //GD.Print($"This pawns global pos .: {Pawn.GlobalPosition}");
                 }
             }
-
         }
     }
     Vector2 SpawnPointPos(int ChosenSpawnIDNum)

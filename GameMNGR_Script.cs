@@ -7,6 +7,8 @@ using System.Text.Json;
 public partial class GameMNGR_Script : Node2D
 {
     [Export] Camera2D FocusCam;
+    [Export] Label UnitInfoGuiLabel;
+    [Export] GUIButtonsToPawnScript GBTPS;
     string SceneToLoad = "res://Scenes/MultiGameOverScreen.tscn";
     public int Round = 1;
     public string Turn = "";
@@ -52,6 +54,7 @@ public partial class GameMNGR_Script : Node2D
 
     public void SetupGameScene()
     {
+        UnitInfoGuiLabel.Text = "";
         PawnBucketRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/UnitsBucket");
         pawnSpawnerScript = GetNode<PawnSpawnerScript>("SpawnPoints");
         CamUICanvasRef = GetTree().Root.GetNode<CanvasLayer>("BaseTestScene/Camera2D/CanvasLayer");
@@ -73,10 +76,13 @@ public partial class GameMNGR_Script : Node2D
         {
             if (SelectedPawn != null) // trzeba wysłać reset do skryptu gracza bo inaczej zaznaczenie się zduplikuje 
             {
-                SelectedPawn.Call("ShowSelection" , false);
+                SelectedPawn.Call("ShowSelection", false);
                 SelectedPawn.Call("RSSP");
+                
             }
+            UnitInfoGuiLabel.Text = $"Unit {pawn.UnitType}\nName {pawn.UnitName}\nHP {pawn.HP}\nMP {pawn.MP}";
             SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
+            GBTPS.ShowActions(); // pokaż akcje które może podjąć pionek na GUI
             //GD.Print($"Selected Pawn Now is {SelectedPawn}");
             if (FocusCam != null)
             {
@@ -90,7 +96,15 @@ public partial class GameMNGR_Script : Node2D
             GD.Print("Nie można zaznaczyć pionka bo gracz nie zfinalizował akcji");
         }
     }
-    public void DeselectPawn() => SelectedPawn = null;
+    public void DeselectPawn()
+    {
+        SelectedPawn = null;
+        UnitInfoGuiLabel.Text = "";
+    }
+    public void PlayerPhoneCallback()
+    {
+        GBTPS.PALO(); // aktywacja widoczności potwierdzenia akcji
+    }
     void Button_ACT1() // to samo co spacja robi
     {
         AccessNextTurnPopup = true;

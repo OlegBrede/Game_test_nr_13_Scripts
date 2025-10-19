@@ -169,7 +169,7 @@ public partial class TeamFillupBarScript : Control
             Control PawnSelect = UnitMenuSelectionPath.Instantiate<Control>();
             Node unitsINFO = prefab.Instantiate(); // instancja pionka na chwile
             PawnBaseFuncsScript unitScript = unitsINFO as PawnBaseFuncsScript;
-            PawnSelect.Call("RecivePawnInfo", unitScript.UnitType, unitScript.ProfilePick, unitScript.HP, unitScript.WeaponDamage); // ze skryptu bieremy info
+            PawnSelect.Call("RecivePawnInfo", unitScript.UnitType, unitScript.ProfilePick, unitScript.PV, unitScript.Descriptor, unitScript.HP, unitScript.WeaponDamage); // ze skryptu bieremy info
             //GD.Print($"Prefab path: {prefab.ResourcePath}");
             MenuScript.UnitList.AddChild(PawnSelect); // dodajemy box
             PawnSelect.Call("WhosBitchin", this, prefab.ResourcePath); // wysyłamy zarówno godność gracza jak i ścierzkę do pionka

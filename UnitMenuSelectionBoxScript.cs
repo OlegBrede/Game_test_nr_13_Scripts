@@ -9,6 +9,8 @@ public partial class UnitMenuSelectionBoxScript : Label
     public int HPOnLabel = 0;
     public int DMGOnLabel = 0;
     public int InternalTeamDesignation;
+    public int PVOnLabel = 1; 
+    public string DescriptorOnLabel;
     Label UnitInfoLabel;
     Label UnitCountLabel;
     [Export]Node2D ViewerAttachmentRootNode;
@@ -17,7 +19,7 @@ public partial class UnitMenuSelectionBoxScript : Label
     {
         UnitInfoLabel = GetNode<Label>("UnitInfoLabelNode");
         UnitCountLabel = GetNode<Label>("UnitCountLabelNode");
-        UnitInfoLabel.Text = $"Name .: {NameOnLabel}\nHP .: {HPOnLabel}\nDMG .: {DMGOnLabel}\nPoints Value.: ";
+        UnitInfoLabel.Text = $"Name .: {NameOnLabel}\nHP .: {HPOnLabel}\nDMG .: {DMGOnLabel}\nPoints Value.: {PVOnLabel}\nDescription.: {DescriptorOnLabel}";
     }
     public override void _Process(double delta)
     {
@@ -42,7 +44,7 @@ public partial class UnitMenuSelectionBoxScript : Label
         Bitch.Call("ReciveUnits", ThisUnitsCount, PathToThisPawn);
         GD.Print($"Drużyna dostała {ThisUnitsCount} pionków typu {PathToThisPawn}");
     }
-    void RecivePawnInfo(string Name,Node2D Picture, int HP, int DMG)// do otrzymywania informacji o dokonanych wyborach 
+    void RecivePawnInfo(string Name,Sprite2D Picture,int PV, string Description, int HP, int DMG)// do otrzymywania informacji o dokonanych wyborach 
     {
         NameOnLabel = Name;
         if (Picture != null)
@@ -57,6 +59,8 @@ public partial class UnitMenuSelectionBoxScript : Label
         }
         HPOnLabel = HP;
         DMGOnLabel = DMG;
+        PVOnLabel = PV;
+        DescriptorOnLabel = Description;
     }
     void ReciveTeamCompInfo(int ILE)
     {
