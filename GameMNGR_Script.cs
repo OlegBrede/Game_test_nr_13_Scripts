@@ -78,9 +78,8 @@ public partial class GameMNGR_Script : Node2D
             {
                 SelectedPawn.Call("ShowSelection", false);
                 SelectedPawn.Call("RSSP");
-                
             }
-            UnitInfoGuiLabel.Text = $"Unit {pawn.UnitType}\nName {pawn.UnitName}\nHP {pawn.HP}\nMP {pawn.MP}";
+            UnitInfoGuiLabel.Text = $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({pawn.HP})\nMP ({pawn.MP})";
             SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
             GBTPS.ShowActions(); // pokaż akcje które może podjąć pionek na GUI
             //GD.Print($"Selected Pawn Now is {SelectedPawn}");
@@ -104,6 +103,11 @@ public partial class GameMNGR_Script : Node2D
     public void PlayerPhoneCallback()
     {
         GBTPS.PALO(); // aktywacja widoczności potwierdzenia akcji
+    }
+    public void CaptureAction(Vector2 Giver, Vector2 Recypiant)
+    {
+        FocusCam.GlobalPosition = Recypiant; // to jest leprzy placeholder, bo upiększanie tego byłoby trochę teraz nieistotne
+        //FocusCam.GlobalPosition = (Giver + Recypiant) / 2; // zmęczony jestem i mam wydupione 
     }
     void Button_ACT1() // to samo co spacja robi
     {
@@ -133,7 +137,7 @@ public partial class GameMNGR_Script : Node2D
                 SelectPawn(NextPawn);
 
                 IntForUnitSelection = (IntForUnitSelection + 1) % ActiveTeamPawns.Count;
-                GD.Print($"Wybrano jednostkę o indeksie {IntForUnitSelection}");
+                //GD.Print($"Wybrano jednostkę o indeksie {IntForUnitSelection}");
                 return;
             }
             IntForUnitSelection = (IntForUnitSelection + 1) % ActiveTeamPawns.Count;
@@ -164,7 +168,7 @@ public partial class GameMNGR_Script : Node2D
                 SelectPawn(NextPawn);
 
                 IntForUnitSelection = (IntForUnitSelection - 1) % ActiveTeamPawns.Count;
-                GD.Print($"Wybrano jednostkę o indeksie {IntForUnitSelection}");
+                //GD.Print($"Wybrano jednostkę o indeksie {IntForUnitSelection}");
                 return;
             }
             IntForUnitSelection = (IntForUnitSelection - 1) % ActiveTeamPawns.Count;

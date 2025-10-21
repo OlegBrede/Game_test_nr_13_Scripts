@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 public partial class PawnPlayerController : Node2D
 {
@@ -61,12 +62,14 @@ public partial class PawnPlayerController : Node2D
         if (ChosenAction == PlayersChosenAction.MoveAction)
         {
             bool CanGoThere;
-            if (MoveMarker.Visible == false) { // jeśli nie ma postawionego punktu ruchu śledź kursor
+            if (MoveMarker.Visible == false)
+            { // jeśli nie ma postawionego punktu ruchu śledź kursor
                 MovementAllowenceInyk_ator.GlobalPosition = GetGlobalMousePosition();
                 NavAgent.TargetPosition = MovementAllowenceInyk_ator.GlobalPosition;
                 NavAgent.GetNextPathPosition();
+                OverlapingBodiesArea.GlobalPosition = GetGlobalMousePosition();
             }
-            if (NavAgent.GetPathLength() <= Pawn.MAD) // pokazujemy graczu że może tam stanąć 
+            if (NavAgent.GetPathLength() <= Pawn.MAD && IsTargetPositionFreeAsync()) // pokazujemy graczu że może tam stanąć 
             {
                 movementsprite.Modulate = new Color(0, 1, 0);
                 CanGoThere = true;
@@ -78,8 +81,9 @@ public partial class PawnPlayerController : Node2D
             }
             if (Input.IsActionJustPressed("MYMOUSELEFT") && CanGoThere == true && MoveMarker.Visible == false) // można wybrać marker tylko wtedy gdy jego pozycja jest potwierdzona przez dystans 
             {
-                MoveMarker.Visible = true;
                 MoveMarker.GlobalPosition = GetGlobalMousePosition();
+                OverlapingBodiesArea.GlobalPosition = MoveMarker.GlobalPosition;
+                MoveMarker.Visible = true;
                 gameMNGR_Script.PlayerPhoneCallback();
             }
         }
@@ -109,31 +113,24 @@ public partial class PawnPlayerController : Node2D
                 MeleeMarker.GlobalPosition = GetGlobalMousePosition();
                 gameMNGR_Script.PlayerPhoneCallback();
             }
-            
+
         }
     }
-
+    private bool IsTargetPositionFreeAsync()
+    {
+        var overlaps = OverlapingBodiesArea.GetOverlappingBodies();
+        foreach (var body in overlaps)
+        {
+            if (body is StaticBody2D || body is CharacterBody2D)
+                return false;
+        }
+        return true;
+    }
     private void OnMouseEnter() => StatsUI.Visible = true;
     private void OnMouseExit()
     {
         if (!isSelected)
             StatsUI.Visible = false;
-    }
-    private bool IsTargetPositionFree(Vector2 pos) // chwilowo nieurzywany natomiast potrzebny później
-    {
-        // poczekaj jedną fizyczną klatkę żeby silnik zaktualizował overlapy
-        
-        OverlapingBodiesArea.ForceUpdateTransform();
-        var overlaps = OverlapingBodiesArea.GetOverlappingBodies();
-
-        foreach (var body in overlaps)
-        {
-            if (body is StaticBody2D || body is CharacterBody2D)
-            {
-                return false; // kolizja
-            }
-        }
-        return true;
     }
     void Button_ACT2() // ruch wybrano z akcji
     {
@@ -237,7 +234,8 @@ public partial class PawnPlayerController : Node2D
                 TargetMarker.Visible = false;
                 ShootingRay.Rayactive = false;
                 if (ShootingRay.RayHittenTarget != null) {
-                    ShootingRay.RayHittenTarget.Call("TakeDamage",Pawn.WeaponDamage);
+                    ShootingRay.RayHittenTarget.Call("CalculateHit", Pawn.WeaponDamage, 2.5f);
+                    gameMNGR_Script.Call("CaptureAction",Pawn.GlobalPosition,ShootingRay.RayHittenTarget.GlobalPosition);
                 }
                 ShootingRay.OverrideTarget = null;
                 ResetSelectedStatus();
@@ -252,9 +250,9 @@ public partial class PawnPlayerController : Node2D
                     if (body is CharacterBody2D)
                     {
                         PawnBaseFuncsScript PS = body as PawnBaseFuncsScript;
-                        if (PS.TeamId != Pawn.TeamId)
+                        if (PS.TeamId != Pawn.TeamId) // nie wiem po chuj to jest bo pionek uderzający przecierz może przywalić w swojego 
                         {
-                            PS.Call("TakeDamage",Pawn.MeleeDamage);
+                            PS.Call("CalculateHit",Pawn.MeleeDamage,2.5f);
                         }
                     }
                 }

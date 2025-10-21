@@ -11,9 +11,12 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public string Descriptor = "Lorem\nIpsum\ndolor sit amet";
     [Export] public int PV = 1; // precalculated point value
     [Export] public int HP = 100; //TEMP
-    [Export] public float MAD = 3750; // movement allowence distance 
+    [Export] public float MAD = 3750; // movement allowence distance
+    [Export] public bool TrueisMelee = false; // typ broni
+    bool isWeaponDropped = false; // czy broń została upuszczona
     [Export] public int WeaponRange = 4000; // powinno być 11250
     [Export] public int WeaponDamage = 50; // może w wypadku broni białej może dałoby się mieć "rzut" zamiast strzału ? ale znowu , trzeba byłoby jakoś coś zrobić z tym tamtym mieczem shotgun
+    [Export] public int WeaponAmmo = 7;
     [Export] public int MeleeDamage = 75; // TEMP 
     [Export] public int MP = 2; //movement points (how many times can a pawn move in one turn)
     public string TeamId = "";
@@ -23,16 +26,27 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] AnimationPlayer UNIAnimPlayerRef;
     [Export] AnimationPlayer SpecificAnimPlayer;
     [Export] public Sprite2D ProfilePick;
+    public float PrekalkulowanaObjętośćPionka = 0;
+    public int kills; // TEMP
     public Node2D TargetMarkerRef;
     public PawnState State { get; private set; } = PawnState.Standing;
     private bool AC = false;
+    RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     public override void _Ready()
     {
+        RNGGEN.Randomize();
         UNIAnimPlayerRef.Play("StandStill");
         if (SpecificAnimPlayer != null)
         {
             SpecificAnimPlayer.AnimationFinished += OnAnimDone;
             SpecificAnimPlayer.Play("None");
+        }
+        CollisionShape2D KształtPionka = GetNode<CollisionShape2D>("CollisionShape2D");
+        var circle = (CircleShape2D)KształtPionka.Shape;
+        float radius = circle.Radius;
+        if (radius != PrekalkulowanaObjętośćPionka)
+        {
+            PrekalkulowanaObjętośćPionka = radius;
         }
     }
     public override void _Process(double delta)
@@ -50,7 +64,20 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         AC = true;
     }
-    public void TakeDamage(int dmg)
+    public void CalculateHit(int dmg,float probability)
+    {
+        float FloatDice = RNGGEN.RandfRange(0, 10);
+        if (FloatDice >= probability) // rzucarz na liczbę powyżej kostki
+        {
+            GD.Print($"hit on {FloatDice}");
+            TakeDamage(dmg);
+        }
+        else
+        {
+            GD.Print($"miss on {FloatDice}");
+        }
+    }
+    void TakeDamage(int dmg)
     {
         HP -= dmg;
         UNIAnimPlayerRef.Play("Damage");
@@ -116,12 +143,12 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         if (TrueisAI == true)
         {
             PCNP.QueueFree();
-            GD.Print($"kontrola Gracza Ununięta z {UnitName} od drużyny {TeamId}");
+            GD.Print($"kontrola Gracza Usunięta z {UnitName} od drużyny {TeamId}");
         }
         else
         {
             AICNP.QueueFree();
-            GD.Print($"kontrola AI Ununięta z {UnitName} od drużyny {TeamId}");
+            GD.Print($"kontrola AI Usunięta z {UnitName} od drużyny {TeamId}");
         }
     }
     public void RSSP() // reset selected status player
