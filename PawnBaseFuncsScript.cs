@@ -30,10 +30,12 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public int kills; // TEMP
     public Node2D TargetMarkerRef;
     public PawnState State { get; private set; } = PawnState.Standing;
+    GameMNGR_Script gameMNGR_Script;
     private bool AC = false;
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     public override void _Ready()
     {
+        gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
         RNGGEN.Randomize();
         UNIAnimPlayerRef.Play("StandStill");
         if (SpecificAnimPlayer != null)
@@ -64,38 +66,41 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         AC = true;
     }
-    public void CalculateHit(int dmg,float probability)
+    public void CalculateHit(int dmg,float probability,string Bname)
     {
         float FloatDice = RNGGEN.RandfRange(0, 10);
         if (FloatDice >= probability) // rzucarz na liczbę powyżej kostki
         {
-            GD.Print($"hit on {FloatDice}");
+            //GD.Print($"hit on {FloatDice}");
+            gameMNGR_Script.GenerateActionLog($"{Bname} Hit {UnitName}");
             TakeDamage(dmg);
         }
         else
         {
-            GD.Print($"miss on {FloatDice}");
+            //GD.Print($"miss on {FloatDice}");
+            gameMNGR_Script.GenerateActionLog($"{Bname} Missed {UnitName}");
         }
     }
     void TakeDamage(int dmg)
     {
         HP -= dmg;
         UNIAnimPlayerRef.Play("Damage");
-        GD.Print($"{UnitName} took {dmg} dmg");
+        gameMNGR_Script.GenerateActionLog($"{UnitName} took {dmg} damage");
+        //GD.Print($"{UnitName} took {dmg} damage");
         if (HP <= 0)
             Die();
     }
     public void Die()
     {
         State = PawnState.Dead;
-        
+        gameMNGR_Script.GenerateActionLog($"{UnitName} is dead.");
         if (SpecificAnimPlayer != null)
         {
             SpecificAnimPlayer.Play("Death");
         }
         else
         {
-            GD.Print($"NO_DEAD_ANIM_VER {UnitName} is dead.");
+            //GD.Print($"NO_DEAD_ANIM_VER {UnitName} is dead.");
             ProcessMode = ProcessModeEnum.Disabled;
             QueueFree();
         }
@@ -105,7 +110,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         if (animName == "Death")
         {
-            GD.Print($"ANIM_VER {UnitName} is dead.");
+            //GD.Print($"ANIM_VER {UnitName} is dead.");
             ProcessMode = ProcessModeEnum.Disabled;
             QueueFree();
         }
@@ -143,12 +148,12 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         if (TrueisAI == true)
         {
             PCNP.QueueFree();
-            GD.Print($"kontrola Gracza Usunięta z {UnitName} od drużyny {TeamId}");
+            //GD.Print($"kontrola Gracza Usunięta z {UnitName} od drużyny {TeamId}");
         }
         else
         {
             AICNP.QueueFree();
-            GD.Print($"kontrola AI Usunięta z {UnitName} od drużyny {TeamId}");
+            //GD.Print($"kontrola AI Usunięta z {UnitName} od drużyny {TeamId}");
         }
     }
     public void RSSP() // reset selected status player

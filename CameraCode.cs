@@ -4,7 +4,9 @@ using System;
 public partial class CameraCode : Camera2D
 {
     [Export] float zoomspeed = 0.05f;
+    [Export] Area2D NonoScroolZone;
     private bool isDragging = false;
+    private bool CanScroll = true;
     private Vector2 dragStart;
     private Vector2 cameraStart;
     private Vector2 zoomLevel = new Vector2(0.1f, 0.1f);
@@ -16,6 +18,8 @@ public partial class CameraCode : Camera2D
     public override void _Ready()
     {
         gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
+        NonoScroolZone.MouseEntered += OnMouseEnter;
+        NonoScroolZone.MouseExited += OnMouseExit;
     }
 
     public override void _Process(double delta)
@@ -28,6 +32,14 @@ public partial class CameraCode : Camera2D
                 marker = pawn.TargetMarkerRef;
             }
         }
+    }
+    void OnMouseEnter()
+    {
+        CanScroll = false;
+    }
+    void OnMouseExit()
+    {
+        CanScroll = true;
     }
     public override void _Input(InputEvent @event)
     {
@@ -71,15 +83,18 @@ public partial class CameraCode : Camera2D
         }
         if (@event is InputEventMouseButton scrollEvent)
         {
-            if (scrollEvent.ButtonIndex == MouseButton.WheelDown && scrollEvent.Pressed && zoomLevel.X > 0.0825f && zoomLevel.Y > 0.0825f)
+            if (CanScroll == true)
             {
-                zoomLevel -= new Vector2(zoomspeed, zoomspeed) * 0.002f;
-                Zoom = zoomLevel;
-            }
-            else if (scrollEvent.ButtonIndex == MouseButton.WheelUp && scrollEvent.Pressed && zoomLevel.X < 0.4f && zoomLevel.Y < 0.4f)
-            {
-                zoomLevel += new Vector2(zoomspeed, zoomspeed) * 0.002f;
-                Zoom = zoomLevel;
+                if (scrollEvent.ButtonIndex == MouseButton.WheelDown && scrollEvent.Pressed && zoomLevel.X > 0.0825f && zoomLevel.Y > 0.0825f)
+                {
+                    zoomLevel -= new Vector2(zoomspeed, zoomspeed) * 0.002f;
+                    Zoom = zoomLevel;
+                }
+                else if (scrollEvent.ButtonIndex == MouseButton.WheelUp && scrollEvent.Pressed && zoomLevel.X < 0.4f && zoomLevel.Y < 0.4f)
+                {
+                    zoomLevel += new Vector2(zoomspeed, zoomspeed) * 0.002f;
+                    Zoom = zoomLevel;
+                }
             }
             //GD.Print(Scale);
         }

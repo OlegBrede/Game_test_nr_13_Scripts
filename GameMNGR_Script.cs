@@ -9,6 +9,8 @@ public partial class GameMNGR_Script : Node2D
     [Export] Camera2D FocusCam;
     [Export] Label UnitInfoGuiLabel;
     [Export] GUIButtonsToPawnScript GBTPS;
+    [Export] VBoxContainer LogBucket;
+    [Export] ScrollContainer KontenrLogów;
     string SceneToLoad = "res://Scenes/MultiGameOverScreen.tscn";
     public int Round = 1;
     public string Turn = "";
@@ -199,6 +201,14 @@ public partial class GameMNGR_Script : Node2D
 
         }
     }
+    public void GenerateActionLog(string Message)
+    {
+        Label Log = new Label();
+        Log.Text = Message;
+        Log.AddThemeFontSizeOverride("font_size", 160);
+        LogBucket.AddChild(Log);
+        KontenrLogów.ScrollVertical = (int)KontenrLogów.GetVScrollBar().MaxValue;
+    }
     void CalculateActiveTeamPawns(bool FirstTime)
     {
         if (FirstTime == true)
@@ -220,10 +230,13 @@ public partial class GameMNGR_Script : Node2D
     {
         GD.Print("New round!");
         RecalculationTeamStatus();
+        foreach (var log in LogBucket.GetChildren())
+        {
+            log.QueueFree();
+        }
         Round++;
         // przetasuj kolejność wg pionków
         ActiveTeams.Sort((a, b) => b.PawnCount.CompareTo(a.PawnCount));
-
         TeamTurnTable.Clear();
         foreach (var team in ActiveTeams)
         {
@@ -231,6 +244,7 @@ public partial class GameMNGR_Script : Node2D
         }
 
         Turn = TeamTurnTable[0];
+        GenerateActionLog($"## Round {Round} ##");
     }
     void RecalculationTeamStatus() // podlicza żywe drużyny, dodaje pionkom MP, wyznacza wygraną
     {
@@ -311,5 +325,6 @@ public partial class GameMNGR_Script : Node2D
         }
         // nowa drużyna
         Turn = TeamTurnTable[0];
+        GenerateActionLog($"## Team {Turn} starts thier Turn ##");
     }
 }

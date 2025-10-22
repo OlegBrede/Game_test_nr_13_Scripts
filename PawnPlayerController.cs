@@ -234,7 +234,7 @@ public partial class PawnPlayerController : Node2D
                 TargetMarker.Visible = false;
                 ShootingRay.Rayactive = false;
                 if (ShootingRay.RayHittenTarget != null) {
-                    ShootingRay.RayHittenTarget.Call("CalculateHit", Pawn.WeaponDamage, 2.5f);
+                    ShootingRay.RayHittenTarget.Call("CalculateHit", Pawn.WeaponDamage, 2.5f,Pawn.UnitName);
                     gameMNGR_Script.Call("CaptureAction",Pawn.GlobalPosition,ShootingRay.RayHittenTarget.GlobalPosition);
                 }
                 ShootingRay.OverrideTarget = null;
@@ -252,7 +252,7 @@ public partial class PawnPlayerController : Node2D
                         PawnBaseFuncsScript PS = body as PawnBaseFuncsScript;
                         if (PS.TeamId != Pawn.TeamId) // nie wiem po chuj to jest bo pionek uderzający przecierz może przywalić w swojego 
                         {
-                            PS.Call("CalculateHit",Pawn.MeleeDamage,2.5f);
+                            PS.Call("CalculateHit",Pawn.MeleeDamage,2.5f,Pawn.UnitName);
                         }
                     }
                 }
