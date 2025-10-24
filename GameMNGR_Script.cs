@@ -81,7 +81,7 @@ public partial class GameMNGR_Script : Node2D
                 SelectedPawn.Call("ShowSelection", false);
                 SelectedPawn.Call("RSSP");
             }
-            UnitInfoGuiLabel.Text = $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({pawn.HP})\nMP ({pawn.MP})";
+            UnitInfoGuiLabel.Text = $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nMP ({pawn.MP})";
             SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
             GBTPS.ShowActions(); // pokaż akcje które może podjąć pionek na GUI
             //GD.Print($"Selected Pawn Now is {SelectedPawn}");
@@ -205,7 +205,7 @@ public partial class GameMNGR_Script : Node2D
     {
         Label Log = new Label();
         Log.Text = Message;
-        Log.AddThemeFontSizeOverride("font_size", 160);
+        Log.AddThemeFontSizeOverride("font_size", 110);
         LogBucket.AddChild(Log);
         KontenrLogów.ScrollVertical = (int)KontenrLogów.GetVScrollBar().MaxValue;
     }

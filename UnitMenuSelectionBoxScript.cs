@@ -6,7 +6,6 @@ public partial class UnitMenuSelectionBoxScript : Label
     public int ThisUnitsCount = 0;
     public string NameOnLabel = "";
     public string PathToThisPawn = "";
-    public int HPOnLabel = 0;
     public int DMGOnLabel = 0;
     public int InternalTeamDesignation;
     public int PVOnLabel = 1; 
@@ -19,7 +18,7 @@ public partial class UnitMenuSelectionBoxScript : Label
     {
         UnitInfoLabel = GetNode<Label>("UnitInfoLabelNode");
         UnitCountLabel = GetNode<Label>("UnitCountLabelNode");
-        UnitInfoLabel.Text = $"Name .: {NameOnLabel}\nHP .: {HPOnLabel}\nDMG .: {DMGOnLabel}\nPoints Value.: {PVOnLabel}\nDescription.: {DescriptorOnLabel}";
+        UnitInfoLabel.Text = $"Name .: {NameOnLabel}\nDMG .: {DMGOnLabel}\nPoints Value.: {PVOnLabel}\nDescription.: {DescriptorOnLabel}";
     }
     public override void _Process(double delta)
     {
@@ -44,7 +43,7 @@ public partial class UnitMenuSelectionBoxScript : Label
         Bitch.Call("ReciveUnits", ThisUnitsCount, PathToThisPawn);
         GD.Print($"Drużyna dostała {ThisUnitsCount} pionków typu {PathToThisPawn}");
     }
-    void RecivePawnInfo(string Name,Sprite2D Picture,int PV, string Description, int HP, int DMG)// do otrzymywania informacji o dokonanych wyborach 
+    void RecivePawnInfo(string Name,Sprite2D Picture,int PV, string Description, int DMG)// do otrzymywania informacji o dokonanych wyborach 
     {
         NameOnLabel = Name;
         if (Picture != null)
@@ -57,7 +56,6 @@ public partial class UnitMenuSelectionBoxScript : Label
             DefPicture.Texture = (Texture2D)GD.Load("res://Sprites/Base Ludzik.png");
             ViewerAttachmentRootNode.AddChild(DefPicture);
         }
-        HPOnLabel = HP;
         DMGOnLabel = DMG;
         PVOnLabel = PV;
         DescriptorOnLabel = Description;

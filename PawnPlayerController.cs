@@ -57,7 +57,7 @@ public partial class PawnPlayerController : Node2D
     {
         if (StatsUI.Visible)
         {
-            StatsLabel.Text = $"{Pawn.UnitName}\n{Pawn.TeamId}\nHP {Pawn.HP}\nMP {Pawn.MP}";
+            StatsLabel.Text = $"{Pawn.UnitName}\n{Pawn.TeamId}\nHP {Mathf.RoundToInt((float)Pawn.Integrity / (float)Pawn.BaseIntegrity * 100f)}%\nMP {Pawn.MP}";
         }
         if (ChosenAction == PlayersChosenAction.MoveAction)
         {
@@ -226,7 +226,7 @@ public partial class PawnPlayerController : Node2D
                 MoveMarker.Visible = false;
                 MovementAllowenceInyk_ator.Visible = false;
                 NavAgent.DebugEnabled = false;
-                ResetSelectedStatus();
+                ResetSelectedStatus(); // ten reset statusu będzie musiał zostać usunięty z tąd gdyż to że dany pionek zakończył TEN ruch nie oznacza że nie może zrobić kolejnego, więc pomyśl nad sprawdzeniem selekcji i deselekcji by działała poprawnie
                 break;
             case 2:
                 Pawn.MP--;
