@@ -102,9 +102,13 @@ public partial class GameMNGR_Script : Node2D
         SelectedPawn = null;
         UnitInfoGuiLabel.Text = "";
     }
-    public void PlayerPhoneCallback()
+    public void PlayerPhoneCallbackFlag(string CalledFuncName, bool Flag)
     {
-        GBTPS.PALO(); // aktywacja widoczności potwierdzenia akcji
+        GBTPS.Call(CalledFuncName, Flag); // aktywacja widoczności potwierdzenia akcji
+    }
+    public void PlayerPhoneCallbackInt(string CalledFuncName,int NumVal)
+    {
+        GBTPS.Call(CalledFuncName,NumVal); // aktywacja widoczności potwierdzenia akcji
     }
     public void CaptureAction(Vector2 Giver, Vector2 Recypiant)
     {
@@ -274,9 +278,11 @@ public partial class GameMNGR_Script : Node2D
         if (!ActiveTeams.Exists(t => t.name == Turn))
         {
             if (TeamTurnTable.Count > 0)
+            {
                 Turn = TeamTurnTable[0];
-            else
+            }else{
                 GD.Print("Brak drużyn do gry");
+            }
         }
         if (ActiveTeams.Count <= 1)
         {

@@ -7,6 +7,9 @@ public partial class GUIButtonsToPawnScript : Node2D
     Node2D Panel;
     [Export] Node2D Confirmations;
     [Export] Node2D Actions;
+    [Export] Node2D MoveButton;
+    [Export] Node2D ShootButton;
+    [Export] Node2D MeleeButton;
     int Parameter = 0;
     public override void _Ready()
     {
@@ -19,9 +22,27 @@ public partial class GUIButtonsToPawnScript : Node2D
         Actions.Visible = true;
         Confirmations.Visible = false;
     }
-    public void PALO()
+    public void PALO(bool Vis) // Player Action LOader
     {
-        Confirmations.Visible = true;
+        Confirmations.Visible = Vis;
+    }
+    public void DisableAction(int Whom)
+    {
+        switch (Whom)
+        {
+            case 1:
+                MoveButton.Call("OnDisablebutton");
+                break;
+            case 2:
+                ShootButton.Call("OnDisablebutton");
+                break;
+            case 3:
+                MeleeButton.Call("OnDisablebutton");
+                break;
+            default:
+                GD.Print("Wyłączenie wypada poza wyznaczenie, nic nie zostaje wyłączone");
+                break;
+        }
     }
     void Button_ACT1()
     {

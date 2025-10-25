@@ -22,12 +22,19 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public int Integrity = 0; //TEMP
     public int BaseIntegrity = 0;
     [Export] public float MAD = 3750; // movement allowence distance
-    [Export] public bool TrueisMelee = false; // typ broni
-    bool isWeaponDropped = false; // czy broń została upuszczona
-    [Export] public int WeaponRange = 4000; // powinno być 11250
-    [Export] public int WeaponDamage = 100; // może w wypadku broni białej może dałoby się mieć "rzut" zamiast strzału ? ale znowu , trzeba byłoby jakoś coś zrobić z tym tamtym mieczem shotgun
+    public float DistanceMovedByThisPawn = 0;
+    public int MeleeAllowence = 0;
+    public int ShootingAllowence = 0;
+    public int MovinCapability = 0;
+    [Export]public float Penalty_range = 1.15f;
+    [Export]public float Penalty_shooter = 0.64f;
+    [Export]public float Penalty_target = 0.42f;
+    [Export] public float WeaponRange = 1750; // jest to mierzone w innyhc jednostkach od tych systemowych, może kiedyś zrobię parser
+    [Export] public float DistanceZero = 10000; // dystans który jest objętością pionka w lokalnych jednostkach raycast'u by wszystko grało spójnie
+    [Export] public int WeaponDamage = 85; // może w wypadku broni białej może dałoby się mieć "rzut" zamiast strzału ? ale znowu , trzeba byłoby jakoś coś zrobić z tym tamtym mieczem shotgun
     [Export] public int WeaponAmmo = 7;
-    [Export] public int MeleeDamage = 75; // TEMP 
+    [Export] public int MeleeDamage = 38; 
+    [Export] public int MeleeWeaponDamage = 120; 
     [Export] public int MP = 2; //movement points (how many times can a pawn move in one turn)
     public string TeamId = "";
     [Export] Node2D ColoredPartsNode;
@@ -38,10 +45,11 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public Sprite2D ProfilePick;
     [Export] string[] CriticalParts; // części ciała pionka bez których nie może on funkcjonować 
     [Export] public PawnPart[] PawnParts { get; set; } // części ciała pionka
-    public float PrekalkulowanaObjętośćPionka = 0;
+    public float PrevDistance = 0;
+    public float ObjętośćPionka = 0;
     public int kills; // TEMP
     public Node2D TargetMarkerRef;
-    public PawnMoveState State { get; private set; } = PawnMoveState.Standing;
+    public PawnMoveState PawnMoveStatus { get; set; } = PawnMoveState.Standing;
     public PawnStatusEffect PawnsActiveStates = PawnStatusEffect.None;
     GameMNGR_Script gameMNGR_Script;
     private bool AC = false;
@@ -59,14 +67,27 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         CollisionShape2D KształtPionka = GetNode<CollisionShape2D>("CollisionShape2D");
         var circle = (CircleShape2D)KształtPionka.Shape;
         float radius = circle.Radius;
-        if (radius != PrekalkulowanaObjętośćPionka)
+        if (radius != ObjętośćPionka)
         {
-            PrekalkulowanaObjętośćPionka = radius;
+            ObjętośćPionka = radius;
         }
         foreach (var Bodypart in PawnParts)
         {
-            Integrity += Bodypart.HP;
+            Integrity += Bodypart.HP; // kalkulacja wyświetlanego hp 
+            if (Bodypart.MeleeCapability == true)
+            {
+                MeleeAllowence++;
+            }
+            if (Bodypart.ShootingCapability == true)
+            {
+                ShootingAllowence++;
+            }
+            if (Bodypart.EsentialForMovement == true)
+            {
+                MovinCapability++;
+            }
         }
+        GD.Print($"ShootingAllowence is {ShootingAllowence}, MeleeAllowence is {MeleeAllowence}");
         BaseIntegrity = Integrity;
     }
     public override void _Process(double delta)
@@ -127,6 +148,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         {
             PawnParts[PlacementRoll_INDEX].HP -= dmg;
             finalBodyPart = PlacementRoll_INDEX;
+            
         }
         else
         {
@@ -145,6 +167,10 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         }
         //GD.Print($"{UnitName} took {dmg} damage");
         GD.Print($"dany pionek ma {CriticalParts.Count()} krytyczne części");
+        if (PawnParts[finalBodyPart].HP <= 0)
+        {
+            DecreseFightCapability(PawnParts[finalBodyPart].MeleeCapability, PawnParts[finalBodyPart].ShootingCapability,PawnParts[finalBodyPart].EsentialForMovement);
+        }
         foreach (string CriticalPart in CriticalParts)
         {
             if (CriticalPart == PawnParts[finalBodyPart].Name && PawnParts[finalBodyPart].HP <= 0)
@@ -184,9 +210,38 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             return FindPartToDamage(parentIndex);
         }
     }
+    void DecreseFightCapability(bool Melee, bool Shootah,bool Legs)
+    {
+        GD.Print("Częśćciała zniszczona, efektywność walki zmniejszona");
+        if (Melee == true)
+        {
+            MeleeAllowence--;
+        }
+        if (Shootah == true)
+        {
+            ShootingAllowence--;
+        }
+        if (Legs == true)
+        {
+            MAD = MAD / MovinCapability; // tu odejmowana jest możliwość szybszego ruchu gdy postać ma mniej nóg
+            MovinCapability--;
+        }
+        if (ShootingAllowence <= 0)
+        {
+            gameMNGR_Script.PlayerPhoneCallbackInt("DisableAction", 2);
+        }
+        if (MeleeAllowence <= 0)
+        {
+            gameMNGR_Script.PlayerPhoneCallbackInt("DisableAction", 3);
+        }
+        if (MovinCapability <= 0)
+        {
+            gameMNGR_Script.PlayerPhoneCallbackInt("DisableAction", 1);
+        }
+    }
     public void Die()
     {
-        State = PawnMoveState.Dead;
+        PawnMoveStatus = PawnMoveState.Dead;
         PawnsActiveStates = PawnStatusEffect.None;
         gameMNGR_Script.GenerateActionLog($"{UnitName} is dead.");
         if (SpecificAnimPlayer != null)
@@ -229,7 +284,16 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     void ResetMP()
     {
-        MP = 2;
+        if (gameMNGR_Script.Turn == TeamId) // tylko gdy nadchodzi tura 
+        {
+            MP = 2;
+            if (PawnMoveStatus == PawnMoveState.Moving && PawnMoveStatus != PawnMoveState.Fainted)
+            {
+                PawnMoveStatus = PawnMoveState.Standing;
+                DistanceMovedByThisPawn = 0;
+                PrevDistance = 0;
+            }
+        }
     }
     public void PlayAttackAnim()
     {

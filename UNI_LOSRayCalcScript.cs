@@ -4,6 +4,7 @@ using System;
 public partial class UNI_LOSRayCalcScript : RayCast2D
 {
     public bool Rayactive;
+    public float Raylengh = 0;
     public CharacterBody2D RayHittenTarget;
     public Node2D OverrideTarget;
     public override void _Process(double delta)
@@ -36,11 +37,11 @@ public partial class UNI_LOSRayCalcScript : RayCast2D
             var collider = GetCollider();
             if (collider is StaticBody2D)
             {
-                endPoint = ToLocal(GetCollisionPoint());
+                endPoint = ToLocal(GetCollisionPoint()); 
             }
             if (collider is CharacterBody2D Charachter)
             {
-                endPoint = ToLocal(GetCollisionPoint());
+                endPoint = ToLocal(GetCollisionPoint()); 
                 RayHittenTarget = Charachter;
             }
             else
@@ -48,7 +49,8 @@ public partial class UNI_LOSRayCalcScript : RayCast2D
                 RayHittenTarget = null;
             }
         }
-		startPoint  = endPoint - (endPoint.Normalized() * 75);
+        startPoint = endPoint - (endPoint.Normalized() * 60);
+        Raylengh = GlobalPosition.DistanceTo(endPoint);
         DrawLine(startPoint , endPoint, Colors.Red, 35);
     }
 }

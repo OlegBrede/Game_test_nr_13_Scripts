@@ -62,7 +62,7 @@ public partial class PawnSpawnerScript : Node2D
                         // potrzebne do przypisania pionkowi pozycji
                         if (iniFirstPawnRadius == false)
                         {
-                            ThisSpecificPawnsRadius = PawnScript.PrekalkulowanaObjętośćPionka;
+                            ThisSpecificPawnsRadius = PawnScript.ObjętośćPionka;
                             GD.Print($"Prekalkulowana objętość Pionka wynosi {ThisSpecificPawnsRadius}");
                             ASS[0] = ThisSpecificPawnsRadius;
                             ASS[1] = ThisSpecificPawnsRadius;
@@ -106,7 +106,7 @@ public partial class PawnSpawnerScript : Node2D
                                 ASS[1] = ASS[1] + (ThisSpecificPawnsRadius * 2);
                             }
                             Pawn.GlobalPosition = new Vector2(SpawnPointPos(team.Spawn_ID).X + ASS[0], SpawnPointPos(team.Spawn_ID).Y + ASS[1]);
-                            ASS[0] = ASS[0] + (PawnScript.PrekalkulowanaObjętośćPionka * 2);// przesunięcie w prawo
+                            ASS[0] = ASS[0] + (PawnScript.ObjętośćPionka * 2);// przesunięcie w prawo
                             GD.Print($"ASS[0] to {ASS[0]} ASS[1] to {ASS[1]}");
                         }
                         else
