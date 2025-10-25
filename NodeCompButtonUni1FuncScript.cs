@@ -42,9 +42,14 @@ public partial class NodeCompButtonUni1FuncScript : Node2D
 	}
 	void OnDisablebutton()
 	{
-		GD.Print("BUTTON DISABLED");
+		//GD.Print("BUTTON DISABLED");
 		TextButtRef.Disabled = true;
 	}
+	void OnEnablebutton()
+    {
+        //GD.Print("BUTTON ENABLED");
+		TextButtRef.Disabled = false;
+    }
 	void ButtonVisibility(bool visible)
 	{
 		Visible = visible; 

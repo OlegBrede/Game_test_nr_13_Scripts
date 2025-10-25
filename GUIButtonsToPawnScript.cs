@@ -5,8 +5,10 @@ public partial class GUIButtonsToPawnScript : Node2D
 {
     GameMNGR_Script gameMNGR_Script;
     Node2D Panel;
+    Node2D Paperdollref;
     [Export] Node2D Confirmations;
     [Export] Node2D Actions;
+    [Export] Node2D PaperDoll;
     [Export] Node2D MoveButton;
     [Export] Node2D ShootButton;
     [Export] Node2D MeleeButton;
@@ -26,22 +28,72 @@ public partial class GUIButtonsToPawnScript : Node2D
     {
         Confirmations.Visible = Vis;
     }
-    public void DisableAction(int Whom)
+    public void DisableNEnableAction(int Whom,bool what)
     {
         switch (Whom)
         {
             case 1:
-                MoveButton.Call("OnDisablebutton");
+                if (what == false)
+                {
+                    MoveButton.Call("OnDisablebutton");
+                }
+                else
+                {
+                    MoveButton.Call("OnEnablebutton");
+                }
                 break;
             case 2:
-                ShootButton.Call("OnDisablebutton");
+                if (what == false)
+                {
+                    ShootButton.Call("OnDisablebutton");
+                }
+                else
+                {
+                    ShootButton.Call("OnEnablebutton");
+                }
                 break;
             case 3:
-                MeleeButton.Call("OnDisablebutton");
+                if (what == false)
+                {
+                    MeleeButton.Call("OnDisablebutton");
+                }
+                else
+                {
+                    MeleeButton.Call("OnEnablebutton");
+                }
                 break;
             default:
                 GD.Print("Wyłączenie wypada poza wyznaczenie, nic nie zostaje wyłączone");
                 break;
+        }
+    }
+    public void RecivePaperdoll(string PathtoPaperdoll)
+    {
+        if (PathtoPaperdoll == null)
+        {
+            GD.Print("Ten Pionek nie ma paperdoll");
+            return;
+        }
+        PackedScene PaperDollPath = GD.Load<PackedScene>(PathtoPaperdoll);
+        Paperdollref = PaperDollPath.Instantiate<Node2D>();
+        PaperDoll.AddChild(Paperdollref);
+    }
+    public void DeletePaperDoll()
+    {
+        if (Paperdollref != null)
+        {
+            Paperdollref.QueueFree();
+        }
+        else
+        {
+            GD.Print("Nie ma paperdoll do usunięcia");
+        }
+    }
+    public void ReciveWellBeingInfo(string Part, int HP)
+    {
+        if (Paperdollref != null)
+        {
+            Paperdollref.Call("HP_InfoParser",Part,HP);
         }
     }
     void Button_ACT1()

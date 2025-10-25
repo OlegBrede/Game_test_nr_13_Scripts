@@ -16,8 +16,9 @@ public enum PawnStatusEffect // TEMP
 public partial class PawnBaseFuncsScript : CharacterBody2D
 {
     [Export] public string UnitName = "Princess"; // TEMP
-    [Export] public string UnitType = "Human"; 
+    [Export] public string UnitType = "Human";
     [Export] public string Descriptor = "Lorem\nIpsum\ndolor sit amet";
+    [Export] public string PathToPaperDoll;
     [Export] public int PV = 1; // precalculated point value
     public int Integrity = 0; //TEMP
     public int BaseIntegrity = 0;
@@ -210,7 +211,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             return FindPartToDamage(parentIndex);
         }
     }
-    void DecreseFightCapability(bool Melee, bool Shootah,bool Legs)
+    void DecreseFightCapability(bool Melee, bool Shootah, bool Legs)
     {
         GD.Print("Częśćciała zniszczona, efektywność walki zmniejszona");
         if (Melee == true)
@@ -226,17 +227,33 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             MAD = MAD / MovinCapability; // tu odejmowana jest możliwość szybszego ruchu gdy postać ma mniej nóg
             MovinCapability--;
         }
+        CheckFightingCapability();
+    }
+    public void CheckFightingCapability()
+    {
         if (ShootingAllowence <= 0)
         {
-            gameMNGR_Script.PlayerPhoneCallbackInt("DisableAction", 2);
+            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 2,false);
+        }
+        else
+        {
+            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 2,true);
         }
         if (MeleeAllowence <= 0)
         {
-            gameMNGR_Script.PlayerPhoneCallbackInt("DisableAction", 3);
+            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 3, false);
+        }
+        else
+        {
+            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 3,true);
         }
         if (MovinCapability <= 0)
         {
-            gameMNGR_Script.PlayerPhoneCallbackInt("DisableAction", 1);
+            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 1,false);
+        }
+        else
+        {
+            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 1,true);
         }
     }
     public void Die()

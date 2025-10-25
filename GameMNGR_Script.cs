@@ -84,6 +84,12 @@ public partial class GameMNGR_Script : Node2D
             UnitInfoGuiLabel.Text = $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nMP ({pawn.MP})";
             SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
             GBTPS.ShowActions(); // pokaż akcje które może podjąć pionek na GUI
+            GBTPS.RecivePaperdoll(pawn.PathToPaperDoll);
+            pawn.CheckFightingCapability();
+            foreach (PawnPart part in pawn.PawnParts)
+            {
+                GBTPS.ReciveWellBeingInfo(part.Name,part.HP);
+            }
             //GD.Print($"Selected Pawn Now is {SelectedPawn}");
             if (FocusCam != null)
             {
@@ -99,16 +105,21 @@ public partial class GameMNGR_Script : Node2D
     }
     public void DeselectPawn()
     {
+        GBTPS.DeletePaperDoll();
         SelectedPawn = null;
         UnitInfoGuiLabel.Text = "";
     }
     public void PlayerPhoneCallbackFlag(string CalledFuncName, bool Flag)
     {
-        GBTPS.Call(CalledFuncName, Flag); // aktywacja widoczności potwierdzenia akcji
+        GBTPS.Call(CalledFuncName, Flag);
     }
-    public void PlayerPhoneCallbackInt(string CalledFuncName,int NumVal)
+    public void PlayerPhoneCallbackInt(string CalledFuncName, int NumVal)
     {
-        GBTPS.Call(CalledFuncName,NumVal); // aktywacja widoczności potwierdzenia akcji
+        GBTPS.Call(CalledFuncName, NumVal); 
+    }
+    public void PlayerPhoneCallbackIntBool(string CalledFuncName,int NumVal,bool Flag)
+    {
+        GBTPS.Call(CalledFuncName,NumVal,Flag);
     }
     public void CaptureAction(Vector2 Giver, Vector2 Recypiant)
     {
