@@ -8,13 +8,15 @@ public partial class GameMNGR_Script : Node2D
 {
     [Export] Camera2D FocusCam;
     [Export] Label UnitInfoGuiLabel;
+    [Export] Label TotalMPLabel;
     [Export] GUIButtonsToPawnScript GBTPS;
     [Export] VBoxContainer LogBucket;
     [Export] ScrollContainer KontenrLogów;
     string SceneToLoad = "res://Scenes/MultiGameOverScreen.tscn";
-    public int Round = 1;
+    public int Round = 1; // zmienić by kod wchodząc do sceny zaczynał next round i zobaczyć gdzie to nas zaniesie 
     public string Turn = "";
     public bool ChosenActionFinished = true;
+    public int TeamsCollectiveMP;
     public static GameMNGR_Script Instance { get; private set; }
     public PawnBaseFuncsScript SelectedPawn { get; private set; }
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
@@ -81,14 +83,14 @@ public partial class GameMNGR_Script : Node2D
                 SelectedPawn.Call("ShowSelection", false);
                 SelectedPawn.Call("RSSP");
             }
-            UnitInfoGuiLabel.Text = $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nMP ({pawn.MP})";
+            UnitInfoGuiLabel.Text = $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nAmmo({pawn.WeaponAmmo}/{pawn.WeaponMaxAmmo})\nMP ({pawn.MP})";
             SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
             GBTPS.ShowActions(); // pokaż akcje które może podjąć pionek na GUI
             GBTPS.RecivePaperdoll(pawn.PathToPaperDoll);
             pawn.CheckFightingCapability();
             foreach (PawnPart part in pawn.PawnParts)
             {
-                GBTPS.ReciveWellBeingInfo(part.Name,part.HP);
+                GBTPS.ReciveWellBeingInfo(part.Name,part.HP,part.MAXHP);
             }
             //GD.Print($"Selected Pawn Now is {SelectedPawn}");
             if (FocusCam != null)
@@ -173,7 +175,7 @@ public partial class GameMNGR_Script : Node2D
 
         if (IntForUnitSelection <= 0)
         {
-            IntForUnitSelection = ActiveTeamPawns.Count - 1; // pierdole, działa częściowo, mam wyjebane
+            IntForUnitSelection = (IntForUnitSelection - 1 + ActiveTeamPawns.Count) % ActiveTeamPawns.Count; // tym bardziej pierdole, liczba razy ile mi się nie udało tego kodu naprawić .: 2
         }
         // Znajdź najbliższą nie-null jednostkę
         int startIndex = IntForUnitSelection;
@@ -190,13 +192,33 @@ public partial class GameMNGR_Script : Node2D
             }
             IntForUnitSelection = (IntForUnitSelection - 1) % ActiveTeamPawns.Count;
         }
-        while (IntForUnitSelection != startIndex);   
+        while (IntForUnitSelection != startIndex);
+    }
+    void Button_ACT4() //current active
+    {
+        if (SelectedPawn != null)
+        {
+            // nie wiem jeszcze jak się do tego zabiuorę 
+        }
+    }
+    void Button_ACT5() // prev active
+    {
+
+    }
+    void Button_ACT6() // next active
+    {
+
+    }
+    void Button_ACT7() // Escape Menu
+    {
+        
     }
     public override void _Process(double delta)
     {
         if (SetupDone)
         {
             GameInfoLabelRef.Text = $" Round {Round} | Turn {Turn}"; // zamienić na odwołanie się do tablicy statycznej z nazwą drużyny
+            TotalMPLabel.Text = TeamsCollectiveMP.ToString();
             if (Input.IsActionJustPressed("MYSPACE"))
             {
                 AccessNextTurnPopup = true;
@@ -205,7 +227,7 @@ public partial class GameMNGR_Script : Node2D
             {
                 if (TeamTurnTable.Count <= 1)
                 {
-                    PopUpRefScript.Call("PopUpContentsFunc", "Do you want to end the round ?", true);
+                    PopUpRefScript.Call("PopUpContentsFunc", $"Do you want to end round {Round} ?", true);
                 }
                 else
                 {
@@ -213,8 +235,11 @@ public partial class GameMNGR_Script : Node2D
                 }
                 AccessNextTurnPopup = false;
             }
-
         }
+    }
+    void UltimatePawnSwitchingFunc(bool TrueisFront,bool TrueisMPActive)
+    {
+        
     }
     public void GenerateActionLog(string Message)
     {
@@ -243,6 +268,7 @@ public partial class GameMNGR_Script : Node2D
     }
     void NextRoundFunc()
     {
+        TeamsCollectiveMP = 0;
         GD.Print("New round!");
         RecalculationTeamStatus();
         foreach (var log in LogBucket.GetChildren())
@@ -259,9 +285,22 @@ public partial class GameMNGR_Script : Node2D
         }
 
         Turn = TeamTurnTable[0];
+        var UnitsBucket = GetNode<Node>("UnitsBucket");
+        foreach (Node child in UnitsBucket.GetChildren())
+        {
+            if (child is PawnBaseFuncsScript pawn)
+            {
+                if (Turn == pawn.TeamId) // jeśli pionek należy do drużyny która teraz zaczyna to dostaje reset MP
+                {
+                    GD.Print("reset MP dokonany");
+                    pawn.Call("ResetMP");
+                    TeamsCollectiveMP += 2; // tu ustalany jest ogólny licznik MP 
+                }
+            }
+        }
         GenerateActionLog($"## Round {Round} ##");
     }
-    void RecalculationTeamStatus() // podlicza żywe drużyny, dodaje pionkom MP, wyznacza wygraną
+    void RecalculationTeamStatus() // podlicza żywe drużyny, wyznacza wygraną
     {
         foreach (TeamConfig ActiveTeam in ActiveTeams)
         {
@@ -277,10 +316,9 @@ public partial class GameMNGR_Script : Node2D
                     if (ActiveTeam.name == pawn.TeamId)
                     {
                         ActiveTeam.PawnCount++;
+                        
                     }
                 }
-                GD.Print("reset MP dokonany");
-                pawn.Call("ResetMP");
             }
         }
         ActiveTeams.RemoveAll(t => t.PawnCount <= 0); //nieaktywna drużyna generalnie 
@@ -343,5 +381,24 @@ public partial class GameMNGR_Script : Node2D
         // nowa drużyna
         Turn = TeamTurnTable[0];
         GenerateActionLog($"## Team {Turn} starts thier Turn ##");
+    }
+    public void SetResolution(int option)
+    {
+        Vector2I resolution = Vector2I.Zero;
+        switch (option)
+        {
+            case 0: resolution = new Vector2I(854, 480); break;   // 480p
+            case 1: resolution = new Vector2I(1280, 720); break;  // 720p
+            case 2: resolution = new Vector2I(1600, 900); break;  // 900p
+            case 3: resolution = new Vector2I(1920, 1080); break; // 1080p
+            case 4: resolution = new Vector2I(2560, 1440); break; // 1440p
+            case 5: resolution = new Vector2I(3840, 2160); break; // 4K
+            default: resolution = new Vector2I(1280, 720); break;
+        }
+
+        DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
+        DisplayServer.WindowSetSize(resolution);
+
+        GD.Print($"Ustawiono rozdzielczość na: {resolution}");
     }
 }

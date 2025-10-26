@@ -89,11 +89,11 @@ public partial class GUIButtonsToPawnScript : Node2D
             GD.Print("Nie ma paperdoll do usunięcia");
         }
     }
-    public void ReciveWellBeingInfo(string Part, int HP)
+    public void ReciveWellBeingInfo(string Part, int HP,int MAXHP)
     {
         if (Paperdollref != null)
         {
-            Paperdollref.Call("HP_InfoParser",Part,HP);
+            Paperdollref.Call("HP_InfoParser",Part,HP,MAXHP);
         }
     }
     void Button_ACT1()
@@ -161,7 +161,7 @@ public partial class GUIButtonsToPawnScript : Node2D
         {
             if (gameMNGR_Script.SelectedPawn.MP > 0)
             {
-                gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Confirm", Parameter);
+                gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Confirm", Parameter); // by tu modyfikować ilość punktów ruchu co do akcji jest głupie, bo nie uwzględnia to potwierdzeń z fizycznego markera, nie rób tego więcej 
                 Confirmations.Visible = false;
             }
         }

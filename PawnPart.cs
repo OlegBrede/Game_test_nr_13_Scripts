@@ -5,6 +5,7 @@ using System;
 public partial class PawnPart : Resource
 {
     [Export] public string Name { get; set; } = "Unnamed";
+    [Export] public int MAXHP { get; set; } = 100; // maksymalna ilość hp dla tej części ciała
     [Export] public int HP { get; set; } = 100; // integralność danej części ciała
     [Export] public int ChanceToHit { get; set; } = 3; //ile razy zostaje zapisana część na liście do losowania trafienia
     [Export] public string ParentPart { get; set; } = null; //jeśli trafienie jest w tę część ciała, ale ma ona 0 hp, to wtedy dmg przejdzie na tę część

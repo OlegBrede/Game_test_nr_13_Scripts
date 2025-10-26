@@ -62,7 +62,7 @@ public partial class PawnPlayerController : Node2D
     {
         if (StatsUI.Visible)
         {
-            StatsLabel.Text = $"{PawnScript.UnitName}\n{PawnScript.TeamId}\nHP {Mathf.RoundToInt((float)PawnScript.Integrity / (float)PawnScript.BaseIntegrity * 100f)}%\nMP {PawnScript.MP}\nStatus {PawnScript.PawnMoveStatus}\nDistance ({PawnScript.DistanceMovedByThisPawn})";
+            StatsLabel.Text = $"{PawnScript.UnitName}\n{PawnScript.TeamId}\nHP {Mathf.RoundToInt((float)PawnScript.Integrity / (float)PawnScript.BaseIntegrity * 100f)}%\nMP {PawnScript.MP}\nStatus {PawnScript.PawnMoveStatus}\nAmmo ({PawnScript.WeaponAmmo}/{PawnScript.WeaponMaxAmmo})";
         }
         if (ChosenAction == PlayersChosenAction.MoveAction)
         {
@@ -280,6 +280,7 @@ public partial class PawnPlayerController : Node2D
         switch(Index){
             case 1:
                 PawnScript.MP--;
+                gameMNGR_Script.TeamsCollectiveMP--;
                 var path = NavAgent.GetCurrentNavigationPath();
                 if (path.Length > 0)
                 {
@@ -300,29 +301,33 @@ public partial class PawnPlayerController : Node2D
                 ResetSelectedStatus(); // ten reset statusu będzie musiał zostać usunięty z tąd gdyż to że dany pionek zakończył TEN ruch nie oznacza że nie może zrobić kolejnego, więc pomyśl nad sprawdzeniem selekcji i deselekcji by działała poprawnie
                 break;
             case 2:
-                if (PawnScript.ShootingAllowence <= 0)
+                PawnScript.MP--;
+                gameMNGR_Script.TeamsCollectiveMP--;
+                if (PawnScript.ShootingAllowence <= 0 || PawnScript.WeaponAmmo <= 0)
                 {
                     GD.Print("You cant shoot fucko' ");
                     ResetSelectedStatus();
                     break;
                 }
-                PawnScript.MP--;
+                PawnScript.WeaponAmmo--;
                 PawnScript.PlayAttackAnim();
                 if (ShootingRayScript.RayHittenTarget != null)
                 {
                     ShootingRayScript.RayHittenTarget.Call("CalculateHit", PawnScript.WeaponDamage, ShootingFinalDiceVal, PawnScript.UnitName);
+                    GD.Print($"Kość floatDice10 musi przebić nad {ShootingFinalDiceVal}");
                     gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, ShootingRayScript.RayHittenTarget.GlobalPosition);
                 }
                 ResetSelectedStatus();
                 break;
             case 3:
+                PawnScript.MP--;
+                gameMNGR_Script.TeamsCollectiveMP--;
                 if (PawnScript.MeleeAllowence <= 0)
                 {
                     GD.Print("You cant melee fucko' ");
                     ResetSelectedStatus();
                     break;
                 }
-                PawnScript.MP--;
                 PawnScript.PlayAttackAnim();
                 MeleeAttackArea.ForceUpdateTransform();
                 var overlaps = MeleeAttackArea.GetOverlappingBodies();
@@ -331,9 +336,9 @@ public partial class PawnPlayerController : Node2D
                     if (body is CharacterBody2D)
                     {
                         PawnBaseFuncsScript PS = body as PawnBaseFuncsScript;
-                        if (PS.TeamId != PawnScript.TeamId) // nie wiem po chuj to jest bo pionek uderzający przecierz może przywalić w swojego 
+                        if (PS.TeamId != PawnScript.TeamId )
                         {
-                            PS.Call("CalculateHit",PawnScript.MeleeDamage,2.5f,PawnScript.UnitName);
+                            PS.Call("CalculateHit",PawnScript.MeleeDamage,2.5f,PawnScript.UnitName); // więcej przeciwnikom
                         }
                     }
                 }

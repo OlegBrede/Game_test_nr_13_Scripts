@@ -34,6 +34,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public float DistanceZero = 10000; // dystans który jest objętością pionka w lokalnych jednostkach raycast'u by wszystko grało spójnie
     [Export] public int WeaponDamage = 85; // może w wypadku broni białej może dałoby się mieć "rzut" zamiast strzału ? ale znowu , trzeba byłoby jakoś coś zrobić z tym tamtym mieczem shotgun
     [Export] public int WeaponAmmo = 7;
+    [Export] public int WeaponMaxAmmo = 7;
     [Export] public int MeleeDamage = 38; 
     [Export] public int MeleeWeaponDamage = 120; 
     [Export] public int MP = 2; //movement points (how many times can a pawn move in one turn)
@@ -74,6 +75,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         }
         foreach (var Bodypart in PawnParts)
         {
+            Bodypart.HP = Bodypart.MAXHP; // ustawienie hp każdej częśći na jej max
             Integrity += Bodypart.HP; // kalkulacja wyświetlanego hp 
             if (Bodypart.MeleeCapability == true)
             {
@@ -231,7 +233,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     public void CheckFightingCapability()
     {
-        if (ShootingAllowence <= 0)
+        if (ShootingAllowence <= 0 || WeaponAmmo <= 0)
         {
             gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 2,false);
         }
@@ -301,15 +303,21 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     void ResetMP()
     {
-        if (gameMNGR_Script.Turn == TeamId) // tylko gdy nadchodzi tura 
+        MP = 2;
+        if (PawnMoveStatus == PawnMoveState.Moving && PawnMoveStatus != PawnMoveState.Fainted)
         {
-            MP = 2;
-            if (PawnMoveStatus == PawnMoveState.Moving && PawnMoveStatus != PawnMoveState.Fainted)
-            {
-                PawnMoveStatus = PawnMoveState.Standing;
-                DistanceMovedByThisPawn = 0;
-                PrevDistance = 0;
-            }
+            PawnMoveStatus = PawnMoveState.Standing;
+            DistanceMovedByThisPawn = 0;
+            PrevDistance = 0;
+        }
+    }
+    void ReplenishAmmo(int ByHowMuch)
+    {
+        GD.Print("Amunicja uzupełniona");
+        WeaponAmmo += ByHowMuch;
+        if (WeaponAmmo > WeaponMaxAmmo)
+        {
+            WeaponAmmo = WeaponMaxAmmo;
         }
     }
     public void PlayAttackAnim()
