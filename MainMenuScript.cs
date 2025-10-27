@@ -115,6 +115,30 @@ public partial class MainMenuScript : Node2D
         GD.Print("Exiting");
         GetTree().Quit();
     }
+    public void TeamDeploymentZoneChangeAnnouncment(int WantedSpawnPosition,ulong InstanceID)
+    {
+        GD.Print($"kalkulacja miejsc zapoczątkowana {InstanceID} chcąc miejsce {WantedSpawnPosition}");
+        TeamQuerryConfinginfo.Clear(); // zawsze najpierw czyścimy listę, chociarz w tym przypadku to dmucham na zimno bo sobie nie ufam
+        CollectDescendants(TeamFillupBucket); // rekursywnie zbieramy wszyskie dzieci
+        TeamFillupBarScript TFBS = TeamQuerryConfinginfo.Find(t => t.GetInstanceId() == InstanceID);
+        if (TFBS == null)
+        {
+            GD.Print("Team Był null");
+            return;
+        } 
+        var conflict = TeamQuerryConfinginfo.Find(t => t.SpawnPosID == WantedSpawnPosition && t != TFBS);
+        TFBS.SpawnPosID = WantedSpawnPosition;// zmiana pozycji na tę którą chcę 
+        if (conflict != null)
+        {
+            GD.Print($"Mamy konfklikt z {conflict.Name}...");
+            List<int> used = TeamQuerryConfinginfo.Select(t => t.SpawnPosID).ToList();
+            int freeSpot = Enumerable.Range(1, 8).FirstOrDefault(i => !used.Contains(i));
+            conflict.SpawnPosID = freeSpot;
+            GD.Print($"Wolne miejsce to {freeSpot}");
+        }
+        // mam lekkie wrażenie że jest jakiś prosty sposób na rozwalenie tego kodu ale nie udało mi się tego wykryć więc jebać 
+        // będę miał problem jak ktoś natomiast tu błąd znajdzie 
+    }
     void CollectDescendants(Node node)
     {
         foreach (Node child in node.GetChildren())

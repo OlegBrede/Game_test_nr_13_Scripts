@@ -6,6 +6,7 @@ using System.Text.Json;
 
 public partial class GameMNGR_Script : Node2D
 {
+    [Export] Node2D ESCMenu;
     [Export] Camera2D FocusCam;
     [Export] Label UnitInfoGuiLabel;
     [Export] Label TotalMPLabel;
@@ -13,10 +14,10 @@ public partial class GameMNGR_Script : Node2D
     [Export] VBoxContainer LogBucket;
     [Export] ScrollContainer KontenrLogów;
     string SceneToLoad = "res://Scenes/MultiGameOverScreen.tscn";
-    public int Round = 1; // zmienić by kod wchodząc do sceny zaczynał next round i zobaczyć gdzie to nas zaniesie 
+    public int Round = 0; // zmienić by kod wchodząc do sceny zaczynał next round i zobaczyć gdzie to nas zaniesie 
     public string Turn = "";
     public bool ChosenActionFinished = true;
-    public int TeamsCollectiveMP;
+    public int TeamsCollectiveMP = 0;
     public static GameMNGR_Script Instance { get; private set; }
     public PawnBaseFuncsScript SelectedPawn { get; private set; }
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
@@ -25,6 +26,7 @@ public partial class GameMNGR_Script : Node2D
         public string name { get; set; }
         public Color team_colour { get; set; }
         public int PawnCount { get; set; }
+        public int CollectiveMPCount { get; set; }
         public bool AI_Active { get; set; }
         public int Spawn_ID { get; set; }
         public List<UnitSelection> UnitsForThisTeam { get; set; } = new List<UnitSelection>();
@@ -41,6 +43,7 @@ public partial class GameMNGR_Script : Node2D
     public List<string> TeamTurnTable = new List<string>(); // lista do tur
     public List<TeamConfig> ActiveTeams = new List<TeamConfig>(); // aktywne w danej grze
     List<PawnBaseFuncsScript> ActiveTeamPawns = new List<PawnBaseFuncsScript>();
+    private PawnBaseFuncsScript PrevSelectedPawn;
     Node2D PopUpRef;
     Node2D PawnBucketRef;
     SamplePopUpScript PopUpRefScript;
@@ -58,6 +61,7 @@ public partial class GameMNGR_Script : Node2D
 
     public void SetupGameScene()
     {
+        ESCMenu.Visible = false;
         UnitInfoGuiLabel.Text = "";
         PawnBucketRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/UnitsBucket");
         pawnSpawnerScript = GetNode<PawnSpawnerScript>("SpawnPoints");
@@ -72,6 +76,7 @@ public partial class GameMNGR_Script : Node2D
         var cfg = JsonSerializer.Deserialize<GameConfig>(json);
         InitTurnOrder(cfg);
         CalculateActiveTeamPawns(true);
+        NextRoundFunc();
         SetupDone = true;
     }
     public void SelectPawn(PawnBaseFuncsScript pawn)
@@ -85,6 +90,7 @@ public partial class GameMNGR_Script : Node2D
             }
             UnitInfoGuiLabel.Text = $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nAmmo({pawn.WeaponAmmo}/{pawn.WeaponMaxAmmo})\nMP ({pawn.MP})";
             SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
+            PrevSelectedPawn = SelectedPawn;
             GBTPS.ShowActions(); // pokaż akcje które może podjąć pionek na GUI
             GBTPS.RecivePaperdoll(pawn.PathToPaperDoll);
             pawn.CheckFightingCapability();
@@ -196,9 +202,9 @@ public partial class GameMNGR_Script : Node2D
     }
     void Button_ACT4() //current active
     {
-        if (SelectedPawn != null)
+        if (PrevSelectedPawn != null)
         {
-            // nie wiem jeszcze jak się do tego zabiuorę 
+            SelectPawn(PrevSelectedPawn);
         }
     }
     void Button_ACT5() // prev active
@@ -211,7 +217,26 @@ public partial class GameMNGR_Script : Node2D
     }
     void Button_ACT7() // Escape Menu
     {
-        
+        if (ESCMenu.Visible == false)
+        {
+            EscapeThisShithole(true);
+        }
+        else
+        {
+            EscapeThisShithole(false);
+        }
+    }
+    void Button_ACT8() // Go to main menu
+    {
+        GetTree().ChangeSceneToFile("res://Scenes/main_menu.tscn"); // TEMP powinien być tu jakiś zapisa aktualnego stanu lub pop-up z info że gra się nie zapisze 
+    }
+    void Button_ACT9() // send quit game flag
+    {
+        GetTree().Quit(); // TEMP tu powinien być prompt przy niezapisanej grze 
+    }
+    void EscapeThisShithole(bool Visibility)
+    {
+        ESCMenu.Visible = Visibility;
     }
     public override void _Process(double delta)
     {
@@ -219,9 +244,28 @@ public partial class GameMNGR_Script : Node2D
         {
             GameInfoLabelRef.Text = $" Round {Round} | Turn {Turn}"; // zamienić na odwołanie się do tablicy statycznej z nazwą drużyny
             TotalMPLabel.Text = TeamsCollectiveMP.ToString();
+            if (TeamsCollectiveMP <= 0)
+            {
+                TotalMPLabel.Modulate = new Color(255,0,0);
+            }
+            else
+            {
+                TotalMPLabel.Modulate = new Color(255,255,255);
+            }
             if (Input.IsActionJustPressed("MYSPACE"))
             {
                 AccessNextTurnPopup = true;
+            }
+            if(Input.IsActionJustPressed("MYESC"))
+            {
+                if (ESCMenu.Visible == false)
+                {
+                    EscapeThisShithole(true);
+                }
+                else
+                {
+                    EscapeThisShithole(false);
+                }
             }
             if (AccessNextTurnPopup == true && PopUpRefScript != null)
             {
@@ -266,9 +310,8 @@ public partial class GameMNGR_Script : Node2D
         }
         //GD.Print("Dodano pionki do listy odczytu dla teamu");
     }
-    void NextRoundFunc()
+    void NextRoundFunc() // Runda (To dłuższe)
     {
-        TeamsCollectiveMP = 0;
         GD.Print("New round!");
         RecalculationTeamStatus();
         foreach (var log in LogBucket.GetChildren())
@@ -285,17 +328,14 @@ public partial class GameMNGR_Script : Node2D
         }
 
         Turn = TeamTurnTable[0];
+        CalculateAllTeamMP();
         var UnitsBucket = GetNode<Node>("UnitsBucket");
         foreach (Node child in UnitsBucket.GetChildren())
         {
             if (child is PawnBaseFuncsScript pawn)
             {
-                if (Turn == pawn.TeamId) // jeśli pionek należy do drużyny która teraz zaczyna to dostaje reset MP
-                {
-                    GD.Print("reset MP dokonany");
-                    pawn.Call("ResetMP");
-                    TeamsCollectiveMP += 2; // tu ustalany jest ogólny licznik MP 
-                }
+                GD.Print("reset MP dokonany");
+                pawn.Call("ResetMP");
             }
         }
         GenerateActionLog($"## Round {Round} ##");
@@ -305,6 +345,7 @@ public partial class GameMNGR_Script : Node2D
         foreach (TeamConfig ActiveTeam in ActiveTeams)
         {
             ActiveTeam.PawnCount = 0;
+            ActiveTeam.CollectiveMPCount = 0;
         }
         var UnitsBucket = GetNode<Node>("UnitsBucket");
         foreach (Node child in UnitsBucket.GetChildren())
@@ -316,7 +357,7 @@ public partial class GameMNGR_Script : Node2D
                     if (ActiveTeam.name == pawn.TeamId)
                     {
                         ActiveTeam.PawnCount++;
-                        
+                        ActiveTeam.CollectiveMPCount += 2;
                     }
                 }
             }
@@ -364,6 +405,7 @@ public partial class GameMNGR_Script : Node2D
     }
     void NextTurnFunc()
     {
+        TeamsCollectiveMP = 0;
         RecalculationTeamStatus();
         CalculateActiveTeamPawns(true);
         GD.Print($"koniec rundy dla drużyny {TeamTurnTable[0]}");
@@ -380,7 +422,14 @@ public partial class GameMNGR_Script : Node2D
         }
         // nowa drużyna
         Turn = TeamTurnTable[0];
+        CalculateAllTeamMP();
         GenerateActionLog($"## Team {Turn} starts thier Turn ##");
+    }
+    void CalculateAllTeamMP()
+    {
+        TeamConfig TeamToAccount = ActiveTeams.Find(a => a.name.Contains(Turn)); // zakładając że drużyna jeszcze jest ale to powinno się wyprostować uprzednio 
+        TeamsCollectiveMP = TeamToAccount.CollectiveMPCount;
+        //GD.Print($"Drużyna {TeamToAccount.name} powinna mieć przypisane {TeamToAccount.CollectiveMPCount} MP");
     }
     public void SetResolution(int option)
     {

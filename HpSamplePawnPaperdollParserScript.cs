@@ -10,9 +10,10 @@ public partial class HpSamplePawnPaperdollParserScript : Node2D
             case "head":
                 if (PartHP > 0)
                 {
-                    float HP_Mod = Mathf.Clamp(PartHP / PartMaxHP,0,1);
-                    float Intencity = Mathf.Clamp(255 * HP_Mod,0,255);
-                    Parts[0].Modulate = new Color(255 - Intencity,Intencity,0);
+                    float[] PartHPButfloat = {PartHP,PartMaxHP};
+                    float HP_Mod = Mathf.Clamp(PartHPButfloat[0] / PartHPButfloat[1],0,1);
+                    float Intencity = Mathf.Clamp(255f * HP_Mod,0,255f);
+                    Parts[0].Modulate = new Color(255f - Intencity,Intencity,0);
                 }
                 else
                 {
@@ -22,9 +23,10 @@ public partial class HpSamplePawnPaperdollParserScript : Node2D
                 case "Tors":
                 if (PartHP > 0)
                 {
-                    float HP_Mod = Mathf.Clamp(PartHP / PartMaxHP,0,1);
-                    float Intencity = Mathf.Clamp(255 * HP_Mod,0,255);
-                    Parts[1].Modulate = new Color(255 - Intencity,Intencity,0);
+                    float[] PartHPButfloat = {PartHP,PartMaxHP};
+                    float HP_Mod = Mathf.Clamp(PartHPButfloat[0] / PartHPButfloat[1],0,1);
+                    float Intencity = Mathf.Clamp(255f * HP_Mod,0,255f);
+                    Parts[1].Modulate = new Color(255f - Intencity,Intencity,0);
                 }
                 else
                 {
@@ -34,9 +36,10 @@ public partial class HpSamplePawnPaperdollParserScript : Node2D
                 case "RArm":
                 if (PartHP > 0)
                 {
-                    float HP_Mod = Mathf.Clamp(PartHP / PartMaxHP,0,1);
-                    float Intencity = Mathf.Clamp(255 * HP_Mod,0,255);
-                    Parts[2].Modulate = new Color(255 - Intencity,Intencity,0);
+                    float[] PartHPButfloat = {PartHP,PartMaxHP};
+                    float HP_Mod = Mathf.Clamp(PartHPButfloat[0] / PartHPButfloat[1],0,1);
+                    float Intencity = Mathf.Clamp(255f * HP_Mod,0,255f);
+                    Parts[2].Modulate = new Color(255f - Intencity,Intencity,0);
                 }
                 else
                 {
@@ -46,9 +49,10 @@ public partial class HpSamplePawnPaperdollParserScript : Node2D
                 case "LArm":
                 if (PartHP > 0)
                 {
-                    float HP_Mod = Mathf.Clamp(PartHP / PartMaxHP,0,1);
-                    float Intencity = Mathf.Clamp(255 * HP_Mod,0,255);
-                    Parts[3].Modulate = new Color(255 - Intencity,Intencity,0);
+                    float[] PartHPButfloat = {PartHP,PartMaxHP};
+                    float HP_Mod = Mathf.Clamp(PartHPButfloat[0] / PartHPButfloat[1],0,1);
+                    float Intencity = Mathf.Clamp(255f * HP_Mod,0,255f);
+                    Parts[3].Modulate = new Color(255f - Intencity,Intencity,0);
                 }
                 else
                 {
@@ -58,9 +62,10 @@ public partial class HpSamplePawnPaperdollParserScript : Node2D
                 case "RLeg":
                 if (PartHP > 0)
                 {
-                    float HP_Mod = Mathf.Clamp(PartHP / PartMaxHP,0,1);
-                    float Intencity = Mathf.Clamp(255 * HP_Mod,0,255);
-                    Parts[4].Modulate = new Color(255 - Intencity,Intencity,0);
+                    float[] PartHPButfloat = {PartHP,PartMaxHP};
+                    float HP_Mod = Mathf.Clamp(PartHPButfloat[0] / PartHPButfloat[1],0,1);
+                    float Intencity = Mathf.Clamp(255f * HP_Mod,0,255f);
+                    Parts[4].Modulate = new Color(255f - Intencity,Intencity,0);
                 }
                 else
                 {
@@ -70,9 +75,10 @@ public partial class HpSamplePawnPaperdollParserScript : Node2D
                 case "LLeg":
                 if (PartHP > 0)
                 {
-                    float HP_Mod = Mathf.Clamp(PartHP / PartMaxHP,0,1);
-                    float Intencity = Mathf.Clamp(255 * HP_Mod,0,255);
-                    Parts[5].Modulate = new Color(255 - Intencity,Intencity,0);
+                    float[] PartHPButfloat = {PartHP,PartMaxHP};
+                    float HP_Mod = Mathf.Clamp(PartHPButfloat[0] / PartHPButfloat[1],0,1);
+                    float Intencity = Mathf.Clamp(255f * HP_Mod,0,255f);
+                    Parts[5].Modulate = new Color(255f - Intencity,Intencity,0);
                 }
                 else
                 {

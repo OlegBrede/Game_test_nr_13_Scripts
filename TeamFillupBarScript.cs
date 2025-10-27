@@ -17,14 +17,15 @@ public partial class TeamFillupBarScript : Control
     MainMenuScript MenuScript;
     public List<GameMNGR_Script.UnitSelection> USQA = new List<GameMNGR_Script.UnitSelection>(); // unit selection querry answers (czyli jakie jednostki wybrał gracz)
     [Export] Control ColorPanel;
+    [Export] Control SpawnPointPanel;
     [Export] LineEdit TeamNameEdit;
     [Export] TextureButton Colorpickerbutton;
     [Export] CheckBox TeamIsBot;
     [Export] Node2D TFBFAUC; // ThisFuckinButtonForAcceptingUserChoice
     PackedScene UnitMenuSelectionPath;
     Label SpawnPosNumLabel;
-    private int TeamToMenuID = 0;
-    public int SpawnPosID = 0;
+    private int TeamToMenuID = 0; // to jest numerator potrzebny by nie stworzyć więcej niż osiem drużyn
+    public int SpawnPosID = 0; // to jest pozycja spawn'u dla danego team 
     private bool colorpickeractive = false;
     public override void _Ready()
     {
@@ -35,6 +36,7 @@ public partial class TeamFillupBarScript : Control
         USQA.Clear();
         GD.Print("wyczyszczono starą selekcję pionków");
         ColorPanel.Visible = false;
+        SpawnPointPanel.Visible = false;
         TeamAddPrefab = GD.Load<PackedScene>("res://Prefabs/team_fillup_Bar_Prefab.tscn");
         if (GetChildCount() == 0)
         {
@@ -47,7 +49,7 @@ public partial class TeamFillupBarScript : Control
         MenuScript.TeamCallInCount++;
         TeamToMenuID = MenuScript.TeamCallInCount;
         SpawnPosNumLabel.Text = TeamToMenuID.ToString();
-        SpawnPosID = TeamToMenuID;
+        MenuScript.TeamDeploymentZoneChangeAnnouncment(TeamToMenuID,GetInstanceId()); // to już ustawia zewnętrznie porządek listy
         TeamNameEdit.PlaceholderText = "Team " + MenuScript.TeamCallInCount;
         //GD.Print("Liczba drużyn .: " + TeamToMenuID);
     }
@@ -63,6 +65,7 @@ public partial class TeamFillupBarScript : Control
         }
         TeamColorCoding = Colorpickerbutton.SelfModulate;// głupie ale jak działa to chuj
         AI_Active = TeamIsBot.ButtonPressed;
+        SpawnPosNumLabel.Text = SpawnPosID.ToString();
     }
     public void ReciveUnits(int Pcount,string PPath) // dostaje unity od UnitMenuSelectionBoxScript (trza powielić dodanie tam)
     {
@@ -205,8 +208,51 @@ public partial class TeamFillupBarScript : Control
     }
     void Button_ACT4()
     {
-        GD.Print("wybór spawnu");
+        SpawnPointPanel.Visible = true;
     }
+    // ctrl+c ctrl+v... co ja bym bez ciebie zrobił ? ... bym napisał leprzy kod zapewne
+    // wybór miejsca spawn'u
+    void Button_ACT5()
+    {
+        MenuScript.TeamDeploymentZoneChangeAnnouncment(1, GetInstanceId());
+        SpawnPointPanel.Visible = false;
+    }
+    void Button_ACT6()
+    {
+        MenuScript.TeamDeploymentZoneChangeAnnouncment(2, GetInstanceId());
+        SpawnPointPanel.Visible = false;
+    }
+    void Button_ACT7()
+    {
+        MenuScript.TeamDeploymentZoneChangeAnnouncment(3, GetInstanceId());
+        SpawnPointPanel.Visible = false;
+    }
+    void Button_ACT8()
+    {
+        MenuScript.TeamDeploymentZoneChangeAnnouncment(4, GetInstanceId());
+        SpawnPointPanel.Visible = false;
+    }
+    void Button_ACT9()
+    {
+        MenuScript.TeamDeploymentZoneChangeAnnouncment(5, GetInstanceId());
+        SpawnPointPanel.Visible = false;
+    }
+    void Button_ACT10()
+    {
+        MenuScript.TeamDeploymentZoneChangeAnnouncment(6, GetInstanceId());
+        SpawnPointPanel.Visible = false;
+    }
+    void Button_ACT11()
+    {
+        MenuScript.TeamDeploymentZoneChangeAnnouncment(7, GetInstanceId());
+        SpawnPointPanel.Visible = false;
+    }
+    void Button_ACT12()
+    {
+        MenuScript.TeamDeploymentZoneChangeAnnouncment(8, GetInstanceId());
+        SpawnPointPanel.Visible = false;
+    }
+    // Kolor Drużyny
     void TextButton_ACT1()
     {
         ColorPanel.Visible = true;
@@ -263,10 +309,11 @@ public partial class TeamFillupBarScript : Control
     void TextButton_ACT9()
     {
         //GD.Print("kolor różowy");
-        TeamColorCoding = new Color(255f,0f,255f); // no i teraz to jest róż 
+        TeamColorCoding = new Color(255f, 0f, 255f); // no i teraz to jest róż 
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
     }
+    // zakaz dodania większej ilości drużyn
     void DisableAddTeamButton()
     {
         Button.Call("OnDisablebutton");
