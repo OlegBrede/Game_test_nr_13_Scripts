@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 
 public partial class GameMNGR_Script : Node2D
@@ -88,7 +89,6 @@ public partial class GameMNGR_Script : Node2D
                 SelectedPawn.Call("ShowSelection", false);
                 SelectedPawn.Call("RSSP");
             }
-            UnitInfoGuiLabel.Text = $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nAmmo({pawn.WeaponAmmo}/{pawn.WeaponMaxAmmo})\nMP ({pawn.MP})";
             SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
             PrevSelectedPawn = SelectedPawn;
             GBTPS.ShowActions(); // pokaż akcje które może podjąć pionek na GUI
@@ -117,9 +117,20 @@ public partial class GameMNGR_Script : Node2D
         SelectedPawn = null;
         UnitInfoGuiLabel.Text = "";
     }
-    public void PlayerPhoneCallbackFlag(string CalledFuncName, bool Flag)
+    string PawnInfoToGUITransmision(PawnBaseFuncsScript pawn)
     {
-        GBTPS.Call(CalledFuncName, Flag);
+        if (pawn != null)
+        {
+            return $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nAmmo({pawn.WeaponAmmo}/{pawn.WeaponMaxAmmo})\nMP ({pawn.MP})";;
+        }
+        else
+        {
+            return "";
+        }
+    }
+    public void PlayerPhoneCallback2Flag(string CalledFuncName, bool Flag1,bool Flag2)
+    {
+        GBTPS.Call(CalledFuncName, Flag1,Flag2);
     }
     public void PlayerPhoneCallbackInt(string CalledFuncName, int NumVal)
     {
@@ -140,65 +151,11 @@ public partial class GameMNGR_Script : Node2D
     }
     void Button_ACT2() // next unit
     {
-        CalculateActiveTeamPawns(false);
-        //ActiveTeamPawns.RemoveAll(p => p == null || !p.IsInsideTree());
-        if (ActiveTeamPawns.Count == 0)
-        {
-            GD.Print("Nie ma pionka do którego możnaby przejść");
-            return;
-        }
-
-        if (IntForUnitSelection >= ActiveTeamPawns.Count)
-        {
-            IntForUnitSelection = 0;
-        }
-        // Znajdź najbliższą nie-null jednostkę
-        int startIndex = IntForUnitSelection;
-        do
-        {
-            var NextPawn = ActiveTeamPawns[IntForUnitSelection];
-            if (NextPawn != null && NextPawn.IsInsideTree())
-            {
-                SelectPawn(NextPawn);
-
-                IntForUnitSelection = (IntForUnitSelection + 1) % ActiveTeamPawns.Count;
-                //GD.Print($"Wybrano jednostkę o indeksie {IntForUnitSelection}");
-                return;
-            }
-            IntForUnitSelection = (IntForUnitSelection + 1) % ActiveTeamPawns.Count;
-        }
-        while (IntForUnitSelection != startIndex);       
+        UltimatePawnSwitchingFunc(true, false);
     }
     void Button_ACT3() // prev unit 
     {
-        CalculateActiveTeamPawns(false);
-        //ActiveTeamPawns.RemoveAll(p => p == null || !p.IsInsideTree());
-        if (ActiveTeamPawns.Count == 0)
-        {
-            GD.Print("Nie ma pionka do którego możnaby przejść");
-            return;
-        }
-
-        if (IntForUnitSelection <= 0)
-        {
-            IntForUnitSelection = (IntForUnitSelection - 1 + ActiveTeamPawns.Count) % ActiveTeamPawns.Count; // tym bardziej pierdole, liczba razy ile mi się nie udało tego kodu naprawić .: 2
-        }
-        // Znajdź najbliższą nie-null jednostkę
-        int startIndex = IntForUnitSelection;
-        do
-        {
-            var NextPawn = ActiveTeamPawns[IntForUnitSelection];
-            if (NextPawn != null && NextPawn.IsInsideTree())
-            {
-                SelectPawn(NextPawn);
-
-                IntForUnitSelection = (IntForUnitSelection - 1) % ActiveTeamPawns.Count;
-                //GD.Print($"Wybrano jednostkę o indeksie {IntForUnitSelection}");
-                return;
-            }
-            IntForUnitSelection = (IntForUnitSelection - 1) % ActiveTeamPawns.Count;
-        }
-        while (IntForUnitSelection != startIndex);
+        UltimatePawnSwitchingFunc(false, false);
     }
     void Button_ACT4() //current active
     {
@@ -209,11 +166,11 @@ public partial class GameMNGR_Script : Node2D
     }
     void Button_ACT5() // prev active
     {
-
+        UltimatePawnSwitchingFunc(true, true);
     }
     void Button_ACT6() // next active
     {
-
+        UltimatePawnSwitchingFunc(false, true);
     }
     void Button_ACT7() // Escape Menu
     {
@@ -243,6 +200,7 @@ public partial class GameMNGR_Script : Node2D
         if (SetupDone)
         {
             GameInfoLabelRef.Text = $" Round {Round} | Turn {Turn}"; // zamienić na odwołanie się do tablicy statycznej z nazwą drużyny
+            UnitInfoGuiLabel.Text = PawnInfoToGUITransmision(SelectedPawn);
             TotalMPLabel.Text = TeamsCollectiveMP.ToString();
             if (TeamsCollectiveMP <= 0)
             {
@@ -267,7 +225,7 @@ public partial class GameMNGR_Script : Node2D
                     EscapeThisShithole(false);
                 }
             }
-            if (AccessNextTurnPopup == true && PopUpRefScript != null)
+            if (AccessNextTurnPopup == true && PopUpRefScript != null && ChosenActionFinished == true)
             {
                 if (TeamTurnTable.Count <= 1)
                 {
@@ -281,9 +239,58 @@ public partial class GameMNGR_Script : Node2D
             }
         }
     }
-    void UltimatePawnSwitchingFunc(bool TrueisFront,bool TrueisMPActive)
+    void UltimatePawnSwitchingFunc(bool TrueisNext,bool TrueisMPActive)// tym bardziej pierdole, liczba razy ile mi się nie udało tego kodu naprawić .: 3
     {
+        if (ChosenActionFinished == false)
+        {
+            GD.Print("Nie można zaznaczyć pionka bo gracz nie zfinalizował akcji");
+            return;
+        }
+        CalculateActiveTeamPawns(false);
+        if (TrueisNext)
+        {
+            GD.Print("Kliknięty został przycisk (Następny pionek)");
+        }
+        else
+        {
+            GD.Print("Kliknięty został przycisk (Poprzedni pionek)");
+        }
+        if (ActiveTeamPawns.Count == 0)
+        {
+            GD.Print("Nie ma pionka do którego możnaby przejść");
+            return;
+        }
+
+        if (IntForUnitSelection >= ActiveTeamPawns.Count)
+        {
+            IntForUnitSelection = 0;
+        }
+        else if (IntForUnitSelection <= 0)
+        {
+            IntForUnitSelection = (IntForUnitSelection + ActiveTeamPawns.Count) % ActiveTeamPawns.Count; 
+        }
         
+        // Znajdź najbliższą nie-null jednostkę
+        int startIndex = IntForUnitSelection;
+        do
+        {
+            var NextPawn = ActiveTeamPawns[IntForUnitSelection];
+            if (NextPawn != null && NextPawn.IsInsideTree())
+            {
+                SelectPawn(NextPawn);
+                GD.Print($"int indeksowy to {IntForUnitSelection} dla {NextPawn.Name}");
+                if (TrueisNext) // jeśli następny pionek 
+                {
+                    IntForUnitSelection = (IntForUnitSelection + 1) % ActiveTeamPawns.Count;
+                }
+                else // jeśli poprzedni pionek 
+                {
+                    IntForUnitSelection = (IntForUnitSelection - 1) % ActiveTeamPawns.Count;
+                }
+                return;
+            }
+        }
+        while (IntForUnitSelection != startIndex);    
     }
     public void GenerateActionLog(string Message)
     {
@@ -338,6 +345,7 @@ public partial class GameMNGR_Script : Node2D
                 pawn.Call("ResetMP");
             }
         }
+        UltimatePawnSwitchingFunc(true, false);
         GenerateActionLog($"## Round {Round} ##");
     }
     void RecalculationTeamStatus() // podlicza żywe drużyny, wyznacza wygraną
@@ -423,6 +431,7 @@ public partial class GameMNGR_Script : Node2D
         // nowa drużyna
         Turn = TeamTurnTable[0];
         CalculateAllTeamMP();
+        UltimatePawnSwitchingFunc(true, false);
         GenerateActionLog($"## Team {Turn} starts thier Turn ##");
     }
     void CalculateAllTeamMP()

@@ -24,9 +24,10 @@ public partial class GUIButtonsToPawnScript : Node2D
         Actions.Visible = true;
         Confirmations.Visible = false;
     }
-    public void PALO(bool Vis) // Player Action LOader
+    public void PALO(bool VisC,bool VisA) // Player Action LOader
     {
-        Confirmations.Visible = Vis;
+        Confirmations.Visible = VisC;
+        Actions.Visible = VisA;
     }
     public void DisableNEnableAction(int Whom,bool what)
     {
@@ -104,7 +105,7 @@ public partial class GUIButtonsToPawnScript : Node2D
             {
                 gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Punch", 0);
                 Parameter = 3;
-                Actions.Visible = false;
+                PALO(false, false);
             }
         }
     }
@@ -116,7 +117,7 @@ public partial class GUIButtonsToPawnScript : Node2D
             {
                 gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Use", 0);
                 Parameter = 4;
-                Actions.Visible = false;
+                PALO(false, false);
             }
         }
     }
@@ -128,7 +129,7 @@ public partial class GUIButtonsToPawnScript : Node2D
             {
                 gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Shoot", 0);
                 Parameter = 2;
-                Actions.Visible = false;
+                PALO(false, false);
             }
         }
     }
@@ -140,7 +141,7 @@ public partial class GUIButtonsToPawnScript : Node2D
             {
                 gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Move", 0);
                 Parameter = 1;
-                Actions.Visible = false;
+                PALO(false, false);
             }
         }
     }
@@ -151,7 +152,6 @@ public partial class GUIButtonsToPawnScript : Node2D
             if (gameMNGR_Script.SelectedPawn.MP > 0)
             {
                 gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Decline", Parameter);
-                Confirmations.Visible = false;
             }
         }
     }
@@ -162,7 +162,6 @@ public partial class GUIButtonsToPawnScript : Node2D
             if (gameMNGR_Script.SelectedPawn.MP > 0)
             {
                 gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Confirm", Parameter); // by tu modyfikować ilość punktów ruchu co do akcji jest głupie, bo nie uwzględnia to potwierdzeń z fizycznego markera, nie rób tego więcej 
-                Confirmations.Visible = false;
             }
         }
     }

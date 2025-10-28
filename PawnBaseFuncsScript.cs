@@ -262,6 +262,10 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         PawnMoveStatus = PawnMoveState.Dead;
         PawnsActiveStates = PawnStatusEffect.None;
+        if (gameMNGR_Script.Turn == TeamId)
+        {
+            gameMNGR_Script.TeamsCollectiveMP -= MP; // odjęte punkty MP od ogólnej puli
+        }
         gameMNGR_Script.GenerateActionLog($"{UnitName} is dead.");
         if (SpecificAnimPlayer != null)
         {

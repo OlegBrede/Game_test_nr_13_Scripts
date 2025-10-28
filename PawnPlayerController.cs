@@ -13,10 +13,10 @@ public partial class PawnPlayerController : Node2D
     [Export] public Node2D TargetMarker; // target marker na strzał
     [Export] public Node2D MeleeMarker; // target marker na wpierdol
     [Export] public Node2D MeleeSlcieNode;
+    [Export] public Node2D PointerNode;
     [Export] public NavigationAgent2D NavAgent;
     [Export] Sprite2D movementsprite;
     [Export] UNI_LOSRayCalcScript ShootingRayScript;
-    [Export] Node2D IBBN; // interact buttons bucket node
     [Export] Area2D MeleeAttackArea;
     Node2D MovementAllowenceInyk_ator;
     GameMNGR_Script gameMNGR_Script;
@@ -40,6 +40,7 @@ public partial class PawnPlayerController : Node2D
         ChanceToHitLabel1 = TargetMarker.GetNode<Label>("Label");
         GD.Print("PAMIĘTAJ by zawsze sprawdzić na którym pionku testujesz swe dodatki");
         MeleeSlcieNode.Visible = false;
+        PointerNode.Visible = false;
         MovementAllowenceInyk_ator = GetNode<Node2D>("MoveIndicator");
         MovementAllowenceInyk_ator.Visible = false;
         gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
@@ -55,7 +56,6 @@ public partial class PawnPlayerController : Node2D
         OverlapingBodiesArea = MoveMarker.GetNode<Area2D>("Area2D");
         var circle = PawnScript.GetNode<CollisionShape2D>("CollisionShape2D").Shape as CircleShape2D;
         NavAgent.Radius = circle.Radius;
-        IBBN.Visible = false;
     }
 
     public override void _Process(double delta)
@@ -91,7 +91,7 @@ public partial class PawnPlayerController : Node2D
                 MoveMarker.GlobalPosition = GetGlobalMousePosition();
                 OverlapingBodiesArea.GlobalPosition = MoveMarker.GlobalPosition;
                 MoveMarker.Visible = true;
-                gameMNGR_Script.PlayerPhoneCallbackFlag("PALO",true);
+                gameMNGR_Script.PlayerPhoneCallback2Flag("PALO",true,false);
             }
         }
         if (ChosenAction == PlayersChosenAction.RangeAttackAction)
@@ -169,6 +169,7 @@ public partial class PawnPlayerController : Node2D
             }
             if (TargetMarker.Visible == false)
             {
+                PointerNode.LookAt(GetGlobalMousePosition());
                 //GD.Print($"Range {ModiRayLenghCorrector} so chance is {Precent}% (or {ShootingFinalDiceVal})with mod1 = {TargetOwnMoveModifier} & mod2 = {TargetEnemyMoveModifier}");
             }
             // #################################### KLIKNIĘCIE ###################################
@@ -176,8 +177,9 @@ public partial class PawnPlayerController : Node2D
             {
                 TargetMarker.Visible = true;
                 TargetMarker.GlobalPosition = GetGlobalMousePosition();
+                PointerNode.LookAt(TargetMarker.GlobalPosition);
                 ShootingRayScript.OverrideTarget = TargetMarker;
-                gameMNGR_Script.PlayerPhoneCallbackFlag("PALO",true);
+                gameMNGR_Script.PlayerPhoneCallback2Flag("PALO",true,false);
             }
         }
         if (ChosenAction == PlayersChosenAction.MeleeAttackAction)
@@ -194,7 +196,7 @@ public partial class PawnPlayerController : Node2D
             {
                 MeleeMarker.Visible = true;
                 MeleeMarker.GlobalPosition = GetGlobalMousePosition();
-                gameMNGR_Script.PlayerPhoneCallbackFlag("PALO",true);
+                gameMNGR_Script.PlayerPhoneCallback2Flag("PALO",true,false);
             }
 
         }
@@ -220,37 +222,30 @@ public partial class PawnPlayerController : Node2D
     void Button_ACT1() // accept move order 
     {
         Player_ACT_Confirm(1);
-        gameMNGR_Script.PlayerPhoneCallbackFlag("PALO",false);
     }
     void Button_ACT6() // decline move order
     {
         Player_ACT_Decline(1);
-        gameMNGR_Script.PlayerPhoneCallbackFlag("PALO",false);
     }
     void Button_ACT4() // accept atack order
     {
         Player_ACT_Confirm(2);
-        gameMNGR_Script.PlayerPhoneCallbackFlag("PALO",false);
     }
     void Button_ACT5() // decline atack order
     {
         Player_ACT_Decline(2);
-        gameMNGR_Script.PlayerPhoneCallbackFlag("PALO",false);
     }
     void Button_ACT9() // accept melee atack order
     {
         Player_ACT_Confirm(3);
-        gameMNGR_Script.PlayerPhoneCallbackFlag("PALO",false);
     }
     void Button_ACT10() // decline melee atack order
     {
         Player_ACT_Decline(3);
-        gameMNGR_Script.PlayerPhoneCallbackFlag("PALO",false);
     }
     void Player_ACT_Move(int Dump)
     {
         gameMNGR_Script.ChosenActionFinished = false;
-        IBBN.Visible = false;
         ChosenAction = PlayersChosenAction.MoveAction;
         MovementAllowenceInyk_ator.Visible = true;
         NavAgent.DebugEnabled = true;
@@ -259,9 +254,9 @@ public partial class PawnPlayerController : Node2D
     void Player_ACT_Shoot(int Dump)
     {
         gameMNGR_Script.ChosenActionFinished = false;
-        IBBN.Visible = false;
         ChosenAction = PlayersChosenAction.RangeAttackAction;
         ShootingRayScript.Rayactive = true;
+        PointerNode.Visible = true;
         //GD.Print("teraz gracz wybiera cel...");
     }
     void Player_ACT_Punch(int Dump)
@@ -269,7 +264,6 @@ public partial class PawnPlayerController : Node2D
         ChosenAction = PlayersChosenAction.MeleeAttackAction;
         MeleeSlcieNode.Visible = true;
         gameMNGR_Script.ChosenActionFinished = false;
-        IBBN.Visible = false;
     }
     void Player_ACT_Use(int Dump)
     {
@@ -277,7 +271,9 @@ public partial class PawnPlayerController : Node2D
     }
     void Player_ACT_Confirm(int Index)
     {
-        switch(Index){
+        gameMNGR_Script.PlayerPhoneCallback2Flag("PALO",true,false);
+        switch (Index)
+        {
             case 1:
                 PawnScript.MP--;
                 gameMNGR_Script.TeamsCollectiveMP--;
@@ -298,17 +294,17 @@ public partial class PawnPlayerController : Node2D
                     }
                     PawnScript.PawnMoveStatus = PawnMoveState.Moving;
                 }
-                ResetSelectedStatus(); // ten reset statusu będzie musiał zostać usunięty z tąd gdyż to że dany pionek zakończył TEN ruch nie oznacza że nie może zrobić kolejnego, więc pomyśl nad sprawdzeniem selekcji i deselekcji by działała poprawnie
+                ResetActionCommitment(false); // ten reset statusu będzie musiał zostać usunięty z tąd gdyż to że dany pionek zakończył TEN ruch nie oznacza że nie może zrobić kolejnego, więc pomyśl nad sprawdzeniem selekcji i deselekcji by działała poprawnie
                 break;
             case 2:
-                PawnScript.MP--;
-                gameMNGR_Script.TeamsCollectiveMP--;
                 if (PawnScript.ShootingAllowence <= 0 || PawnScript.WeaponAmmo <= 0)
                 {
                     GD.Print("You cant shoot fucko' ");
-                    ResetSelectedStatus();
+                    ResetActionCommitment(false);
                     break;
                 }
+                PawnScript.MP--;
+                gameMNGR_Script.TeamsCollectiveMP--;
                 PawnScript.WeaponAmmo--;
                 PawnScript.PlayAttackAnim();
                 if (ShootingRayScript.RayHittenTarget != null)
@@ -317,7 +313,7 @@ public partial class PawnPlayerController : Node2D
                     GD.Print($"Kość floatDice10 musi przebić nad {ShootingFinalDiceVal}");
                     gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, ShootingRayScript.RayHittenTarget.GlobalPosition);
                 }
-                ResetSelectedStatus();
+                ResetActionCommitment(false);
                 break;
             case 3:
                 PawnScript.MP--;
@@ -325,7 +321,7 @@ public partial class PawnPlayerController : Node2D
                 if (PawnScript.MeleeAllowence <= 0)
                 {
                     GD.Print("You cant melee fucko' ");
-                    ResetSelectedStatus();
+                    ResetActionCommitment(false);
                     break;
                 }
                 PawnScript.PlayAttackAnim();
@@ -336,56 +332,62 @@ public partial class PawnPlayerController : Node2D
                     if (body is CharacterBody2D)
                     {
                         PawnBaseFuncsScript PS = body as PawnBaseFuncsScript;
-                        if (PS.TeamId != PawnScript.TeamId )
+                        if (PS.TeamId != PawnScript.TeamId)
                         {
-                            PS.Call("CalculateHit",PawnScript.MeleeDamage,2.5f,PawnScript.UnitName); // więcej przeciwnikom
+                            PS.Call("CalculateHit", PawnScript.MeleeDamage, 2.5f, PawnScript.UnitName); // więcej przeciwnikom
                         }
                     }
                 }
-                ResetSelectedStatus();
+                ResetActionCommitment(false);
                 break;
             default:
                 GD.Print("Nie ma takiej akcji");
-                ResetSelectedStatus();
+                ResetActionCommitment(true);
                 break;
         }
+        PawnScript.CheckFightingCapability();
     }
     void Player_ACT_Decline(int Index)
     {
-        switch(Index){
+        gameMNGR_Script.PlayerPhoneCallback2Flag("PALO",true,false);
+        switch (Index)
+        {
             case 1:
                 PawnScript.DistanceMovedByThisPawn = PawnScript.PrevDistance;
                 MoveMarker.Visible = false;
                 MovementAllowenceInyk_ator.Visible = false;
                 NavAgent.DebugEnabled = false;
-                ResetSelectedStatus();
+                ResetActionCommitment(false);
                 break;
             case 2:
                 ShootingRayScript.OverrideTarget = null;
                 ShootingRayScript.Rayactive = false;
                 TargetMarker.Visible = false;
-                ResetSelectedStatus();
+                ResetActionCommitment(false);
                 break;
             case 3:
                 MeleeSlcieNode.Visible = false;
                 MeleeMarker.Visible = false;
-                ResetSelectedStatus();
+                ResetActionCommitment(false);
                 break;
             default:
                 GD.Print("Nie ma takiej akcji");
-                ResetSelectedStatus();
+                ResetActionCommitment(true);
                 break;
         }
+        PawnScript.CheckFightingCapability();
     }
-    public void ResetSelectedStatus() // TO DO .: POSORTUJ BOOLE 
+    void ResetActionCommitment(bool forceDeselect)
     {
         ChosenAction = PlayersChosenAction.None;
-        gameMNGR_Script.Call("DeselectPawn");
-        ShootingRayScript.OverrideTarget = null;
         gameMNGR_Script.ChosenActionFinished = true;
-        isSelected = false;
+        gameMNGR_Script.PlayerPhoneCallback2Flag("PALO",false,true);
+        if (PawnScript.MP <= 0 || forceDeselect == true)
+        {
+            ResetSelectedStatus();
+        }
+        ShootingRayScript.OverrideTarget = null;
         StatsUI.Visible = false;
-        IBBN.Visible = false;
         MeleeSlcieNode.Visible = false;
         MeleeSlcieNode.Visible = false;
         MeleeMarker.Visible = false;
@@ -394,6 +396,13 @@ public partial class PawnPlayerController : Node2D
         MoveMarker.Visible = false;
         MovementAllowenceInyk_ator.Visible = false;
         NavAgent.DebugEnabled = false;
+        PointerNode.Visible = false;
+    }
+    public void ResetSelectedStatus()
+    {
+        gameMNGR_Script.PlayerPhoneCallback2Flag("PALO",false,false);
+        gameMNGR_Script.Call("DeselectPawn");
+        isSelected = false;
     }
 
     private void OnAreaInputEvent(Node viewport, InputEvent inputEvent, long shapeIdx) // selekcja Danego pionka 
@@ -411,13 +420,11 @@ public partial class PawnPlayerController : Node2D
                 else // to już chyba nie potrzebne ale
                 {
                     isSelected = false;
-                    IBBN.Visible = false;
                 }
             }
             else
             {
                 isSelected = false;
-                IBBN.Visible = false;
             }
         }
     }
