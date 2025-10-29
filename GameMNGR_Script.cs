@@ -47,11 +47,13 @@ public partial class GameMNGR_Script : Node2D
     private PawnBaseFuncsScript PrevSelectedPawn;
     Node2D PopUpRef;
     Node2D PawnBucketRef;
+    Node UnitsBucket;
     SamplePopUpScript PopUpRefScript;
     Label GameInfoLabelRef;
     CanvasLayer CamUICanvasRef;
     PawnSpawnerScript pawnSpawnerScript;
     public bool SetupDone = false;
+    private bool FirstRoundDone = false;
     private bool AccessNextTurnPopup;
     private int IntForUnitSelection = 0;
     public string Winner;
@@ -62,6 +64,7 @@ public partial class GameMNGR_Script : Node2D
 
     public void SetupGameScene()
     {
+        UnitsBucket = GetNode<Node>("UnitsBucket");
         ESCMenu.Visible = false;
         UnitInfoGuiLabel.Text = "";
         PawnBucketRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/UnitsBucket");
@@ -327,7 +330,11 @@ public partial class GameMNGR_Script : Node2D
         }
         Round++;
         // przetasuj kolejność wg pionków
-        ActiveTeams.Sort((a, b) => b.PawnCount.CompareTo(a.PawnCount));
+        if (FirstRoundDone == false)
+        {
+            ActiveTeams.Sort((a, b) => b.PawnCount.CompareTo(a.PawnCount));
+            FirstRoundDone = true;
+        }
         TeamTurnTable.Clear();
         foreach (var team in ActiveTeams)
         {
@@ -336,13 +343,16 @@ public partial class GameMNGR_Script : Node2D
 
         Turn = TeamTurnTable[0];
         CalculateAllTeamMP();
-        var UnitsBucket = GetNode<Node>("UnitsBucket");
         foreach (Node child in UnitsBucket.GetChildren())
         {
             if (child is PawnBaseFuncsScript pawn)
             {
                 GD.Print("reset MP dokonany");
                 pawn.Call("ResetMP");
+                if (pawn.TeamId == Turn)
+                {
+                    pawn.Call("ResetMoveStatus");
+                }
             }
         }
         UltimatePawnSwitchingFunc(true, false);
@@ -355,7 +365,6 @@ public partial class GameMNGR_Script : Node2D
             ActiveTeam.PawnCount = 0;
             ActiveTeam.CollectiveMPCount = 0;
         }
-        var UnitsBucket = GetNode<Node>("UnitsBucket");
         foreach (Node child in UnitsBucket.GetChildren())
         {
             if (child is PawnBaseFuncsScript pawn)
@@ -420,7 +429,7 @@ public partial class GameMNGR_Script : Node2D
         TeamTurnTable.RemoveAt(0);
         while (TeamTurnTable.Count > 0 && !ActiveTeams.Exists(t => t.name == TeamTurnTable[0]))
         {
-            GD.Print($"drużyna {TeamTurnTable[0]} usunięta z racji na brak pionków ");
+            GD.Print($"drużyna {TeamTurnTable[0]} usunięta z racji na brak pionków");
             TeamTurnTable.RemoveAt(0);
         }
         if (TeamTurnTable.Count == 0)
@@ -432,6 +441,16 @@ public partial class GameMNGR_Script : Node2D
         Turn = TeamTurnTable[0];
         CalculateAllTeamMP();
         UltimatePawnSwitchingFunc(true, false);
+        foreach (Node child in UnitsBucket.GetChildren())
+        {
+            if (child is PawnBaseFuncsScript pawn)
+            {
+                if (pawn.TeamId == Turn)
+                {
+                    pawn.Call("ResetMoveStatus");
+                }
+            }
+        }
         GenerateActionLog($"## Team {Turn} starts thier Turn ##");
     }
     void CalculateAllTeamMP()

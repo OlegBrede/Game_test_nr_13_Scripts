@@ -308,6 +308,9 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     void ResetMP()
     {
         MP = 2;
+    }
+    void ResetMoveStatus()
+    {
         if (PawnMoveStatus == PawnMoveState.Moving && PawnMoveStatus != PawnMoveState.Fainted)
         {
             PawnMoveStatus = PawnMoveState.Standing;
