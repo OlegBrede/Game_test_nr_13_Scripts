@@ -25,8 +25,12 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public float MAD = 3750; // movement allowence distance
     public float DistanceMovedByThisPawn = 0;
     public int MeleeAllowence = 0;
+    public int MeleeWeaponAllowence = 0;
     public int ShootingAllowence = 0;
     public int MovinCapability = 0;
+    public bool CanAimshoot = true;
+    [Export] bool CanOverwatch = true;
+    public bool OverwatchStatus = false;
     [Export]public float Penalty_range = 1.15f;
     [Export]public float Penalty_shooter = 0.64f;
     [Export]public float Penalty_target = 0.42f;
@@ -35,8 +39,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public int WeaponDamage = 85; // może w wypadku broni białej może dałoby się mieć "rzut" zamiast strzału ? ale znowu , trzeba byłoby jakoś coś zrobić z tym tamtym mieczem shotgun
     [Export] public int WeaponAmmo = 7;
     [Export] public int WeaponMaxAmmo = 7;
-    [Export] public int MeleeDamage = 38; 
-    [Export] public int MeleeWeaponDamage = 120; 
+    [Export] public int MeleeDamage = 38;
+    [Export] public int MeleeWeaponDamage = 120;
     [Export] public int MP = 2; //movement points (how many times can a pawn move in one turn)
     public string TeamId = "";
     [Export] Node2D ColoredPartsNode;
@@ -49,7 +53,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public PawnPart[] PawnParts { get; set; } // części ciała pionka
     public float PrevDistance = 0;
     public float ObjętośćPionka = 0;
-    public int kills; // TEMP
+    public int kills = 0; // TEMP
     public Node2D TargetMarkerRef;
     public PawnMoveState PawnMoveStatus { get; set; } = PawnMoveState.Standing;
     public PawnStatusEffect PawnsActiveStates = PawnStatusEffect.None;
@@ -89,6 +93,14 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             {
                 MovinCapability++;
             }
+            if (Bodypart.MeleeWeaponCapability == true)
+            {
+                MeleeWeaponAllowence++;
+            }
+            if (MP >= 2)// To chyba będzie później trzeba zmienić 
+            {
+                CanAimshoot = true;
+            }
         }
         GD.Print($"ShootingAllowence is {ShootingAllowence}, MeleeAllowence is {MeleeAllowence}");
         BaseIntegrity = Integrity;
@@ -108,14 +120,14 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         AC = true;
     }
-    public void CalculateHit(int dmg, float probability, string Bname)
+    public void CalculateHit(int dmg, float probability,int Where, string Bname)
     {
         float FloatDice = RNGGEN.RandfRange(0, 10);
         if (FloatDice >= probability) // rzucarz na liczbę powyżej kostki
         {
             //GD.Print($"hit on {FloatDice}");
             gameMNGR_Script.GenerateActionLog($"{Bname} Hit {UnitName}");
-            TakeDamage(dmg);
+            TakeDamage(dmg,Where);
         }
         else
         {
@@ -140,18 +152,28 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         LocationHitProbabilitytable.Clear(); // na wszelki wypadek
         return indeks;
     }
-    void TakeDamage(int dmg)
+    void TakeDamage(int dmg,int Where)
     {
         // chwilowo wszystkie części ciała mają tę samą szansę na bycie wylosowanym
         int finalBodyPart;
-        int PlacementRoll_INDEX = LocationRollCalc();
-        string W_co = PawnParts[PlacementRoll_INDEX].Name;
-        GD.Print($"Pionek dostał w {W_co}");
+        int PlacementRoll_INDEX;
+        string W_co;
+        if (Where <= PawnParts.Count())
+        {
+            PlacementRoll_INDEX = Where;
+            W_co = PawnParts[Where].Name;
+            GD.Print($"Nielosowy strzał w {W_co}");
+        }
+        else
+        {
+            PlacementRoll_INDEX = LocationRollCalc();
+            W_co = PawnParts[PlacementRoll_INDEX].Name;
+            GD.Print($"Losowy strzał w {W_co}");
+        }
         if (PawnParts[PlacementRoll_INDEX].HP > 0)
         {
             PawnParts[PlacementRoll_INDEX].HP -= dmg;
             finalBodyPart = PlacementRoll_INDEX;
-            
         }
         else
         {
@@ -251,11 +273,19 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         }
         if (MovinCapability <= 0)
         {
-            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 1,false);
+            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 1, false);
         }
         else
         {
-            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 1,true);
+            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 1, true);
+        }
+        if (CanAimshoot == false)
+        {
+            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 5,false);
+        }
+        else
+        {
+            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 5,true);
         }
     }
     public void Die()

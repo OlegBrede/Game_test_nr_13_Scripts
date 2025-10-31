@@ -11,6 +11,7 @@ public partial class GameMNGR_Script : Node2D
     [Export] Camera2D FocusCam;
     [Export] Label UnitInfoGuiLabel;
     [Export] Label TotalMPLabel;
+    [Export] Label SNTWN; // Show no target warning node
     [Export] GUIButtonsToPawnScript GBTPS;
     [Export] VBoxContainer LogBucket;
     [Export] ScrollContainer KontenrLogów;
@@ -46,6 +47,7 @@ public partial class GameMNGR_Script : Node2D
     List<PawnBaseFuncsScript> ActiveTeamPawns = new List<PawnBaseFuncsScript>();
     private PawnBaseFuncsScript PrevSelectedPawn;
     Node2D PopUpRef;
+    Node2D ScrollPopUpRef;
     Node2D PawnBucketRef;
     Node UnitsBucket;
     SamplePopUpScript PopUpRefScript;
@@ -64,6 +66,7 @@ public partial class GameMNGR_Script : Node2D
 
     public void SetupGameScene()
     {
+        SNTWN.Visible = false;
         UnitsBucket = GetNode<Node>("UnitsBucket");
         ESCMenu.Visible = false;
         UnitInfoGuiLabel.Text = "";
@@ -75,6 +78,8 @@ public partial class GameMNGR_Script : Node2D
         PopUpRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/Camera2D/CanvasLayer/SamplePopUp");
         GameInfoLabelRef = GetTree().Root.GetNode<Label>("BaseTestScene/Camera2D/CanvasLayer/GameInfoLabel");
         PopUpRefScript = PopUpRef as SamplePopUpScript;
+        ScrollPopUpRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/Camera2D/CanvasLayer/ScrollPopUp");
+        ScrollPopUpRef.Visible = false;
         pawnSpawnerScript.Call("SpawnSelectedPawns");
         string json = File.ReadAllText(SaveFilePath);
         var cfg = JsonSerializer.Deserialize<GameConfig>(json);
@@ -147,6 +152,20 @@ public partial class GameMNGR_Script : Node2D
     {
         FocusCam.GlobalPosition = Recypiant; // to jest leprzy placeholder, bo upiększanie tego byłoby trochę teraz nieistotne
         //FocusCam.GlobalPosition = (Giver + Recypiant) / 2; // zmęczony jestem i mam wydupione 
+    }
+    public void PlayerPhoneCallWarning()
+    {
+        SNTWN.Call("ShowFadeWarning", "NO TARGET");
+    }
+    public void ShowListPopUp(List<PawnPart> PartsToShow, PawnPlayerController TwatCallin)
+    {
+        ScrollPopUpRef.Visible = true;
+        ScrollPopUpScript SPS = ScrollPopUpRef as ScrollPopUpScript;
+        SPS.GeneratePartButtons(PartsToShow, TwatCallin);
+    }
+    public void HideListPupUp()
+    {
+        ScrollPopUpRef.Visible = false;
     }
     void Button_ACT1() // to samo co spacja robi
     {
