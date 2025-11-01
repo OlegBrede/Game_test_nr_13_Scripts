@@ -199,6 +199,10 @@ public partial class GUIButtonsToPawnScript : Node2D
                 Parameter = 4;
                 PALO(false, false);
             }
+            else
+            {
+                gameMNGR_Script.PlayerPhoneCallWarning("ACTION NEEDS 2 MP");
+            }
         }
     }
     void Button_ACT3()
@@ -243,6 +247,10 @@ public partial class GUIButtonsToPawnScript : Node2D
                 gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Move", 0);
                 Parameter = 1;
                 PALO(false, false);
+            }
+            else
+            {
+                gameMNGR_Script.PlayerPhoneCallWarning("ACTION NEEDS 2 MP");
             }
         }
     }

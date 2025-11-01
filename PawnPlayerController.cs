@@ -35,6 +35,7 @@ public partial class PawnPlayerController : Node2D
     private float baseRadius;
     private float ShootingFinalDiceVal = 0;
     private int ShootingTargetLockIndex = 999;
+    private float PartProbability = 0;
     private float MeleeFinalDiceVal = 0;
     bool Actionconfimrm = false;
     
@@ -149,7 +150,6 @@ public partial class PawnPlayerController : Node2D
                 TargetEnemyMoveModifier = 0;
             }
             // ############################# KULMINACJA WARTOŚCI KOŃCOWEJ #######################
-            float Penalty_other = 0; // Tu dloiczamy debuffy za wszysko co nie mieści się do tych powyższych trzech kategorii 
             if (ChosenAction == PlayersChosenAction.AimedRangeAttackAction) // bo teraz szansa trafienia w konkretną cześć ciała może być znacznie trudniejsza niżeli taki se strzał losowy
             {
                 EnemyPartsToHit.Clear();
@@ -162,15 +162,12 @@ public partial class PawnPlayerController : Node2D
                     }
                     // tu kod dodający części ciała do listy 
                 }
-                else
-                {
-                    Penalty_other = 1;
-                }
             }
+            // ############### PODLICZENIE DEBUFFÓW ##################
             float penaltyTotal;
             if (ShotPosibility == true)
             {
-                penaltyTotal = Mathf.Clamp(TargetRangeModifier + TargetOwnMoveModifier + TargetEnemyMoveModifier + Penalty_other, 0f, 1f);
+                penaltyTotal = Mathf.Clamp(TargetRangeModifier + TargetOwnMoveModifier + TargetEnemyMoveModifier, 0f, 1f);
                 ShootingFinalDiceVal = penaltyTotal * 10;
             }
             else
@@ -178,7 +175,7 @@ public partial class PawnPlayerController : Node2D
                 penaltyTotal = 0;
                 ShootingFinalDiceVal = 11;
             }
-
+            // ############### PODLICZENIE WYŚWIETLONEGO PROCENTU ##################
             int Precent;
             if (ShootingFinalDiceVal < 10)
             {
@@ -190,7 +187,8 @@ public partial class PawnPlayerController : Node2D
                 Precent = 0;
                 ChanceToHitLabel1.Text = $"{Precent}%";
             }
-            if (TargetMarker.Visible == false)
+            // ############### WIZUALNA REPREZENTACJA LOS DLA PIONKA  ##################
+            if ((TargetMarker.Visible == false && ChosenAction == PlayersChosenAction.RangeAttackAction)||(AimedTargetMarker.Visible == false && ChosenAction == PlayersChosenAction.AimedRangeAttackAction))
             {
                 PointerNode.LookAt(GetGlobalMousePosition());
                 //GD.Print($"Range {ModiRayLenghCorrector} so chance is {Precent}% (or {ShootingFinalDiceVal})with mod1 = {TargetOwnMoveModifier} & mod2 = {TargetEnemyMoveModifier}");
@@ -200,6 +198,13 @@ public partial class PawnPlayerController : Node2D
             {
                 if (Input.IsActionJustPressed("MYMOUSELEFT") && AimedTargetMarker.Visible == false)
                 {
+                    if (ShotPosibility == false)
+                    {
+                        gameMNGR_Script.PlayerPhoneCallWarning("0% TO HIT TARGET");
+                        gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", false, false);
+                        ResetActionCommitment(true);
+                        return;
+                    }
                     if (ShootingRayScript.RayHittenTarget != null)
                     {
                         AimedTargetMarker.Visible = true;
@@ -208,7 +213,7 @@ public partial class PawnPlayerController : Node2D
                         ShootingRayScript.OverrideTarget = AimedTargetMarker;
                         if (EnemyPartsToHit.Count > 0)
                         {
-                            gameMNGR_Script.ShowListPopUp(EnemyPartsToHit,this);
+                            gameMNGR_Script.ShowListPopUp(EnemyPartsToHit, this);
                         }
                         else
                         {
@@ -218,10 +223,12 @@ public partial class PawnPlayerController : Node2D
                     }
                     else
                     {
-                        gameMNGR_Script.PlayerPhoneCallWarning();
+                        gameMNGR_Script.PlayerPhoneCallWarning("NO TARGET");
                         gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", false, false);
                         ResetActionCommitment(true);
+                        return;
                     }
+                    
                 }
             }
             else
@@ -265,9 +272,11 @@ public partial class PawnPlayerController : Node2D
             // proste, kalkulacja dotarcia do typa przy X2 movement (o ile ma nogi) na sam koniec ktoś jest w zasięgu przyjebu dostaje po trzykroć, daj anulowanie pod osobny target marker natomiast// może daj też procent tego czy się udało ?
         }
     }
-    void AimedShotChosenTargetListTrigger(int inx)
+    void AimedShotChosenTargetListTrigger(int inx,float probabitity)
     {
         ShootingTargetLockIndex = inx;
+        PartProbability = 3f - Mathf.Clamp(probabitity,0,2.5f)*18; // te 3 kontroluje że strzał w głowe nie jest zbyt OP
+        //Mathf.Clamp(probabitity,0,2.5f)*18
         Player_ACT_Confirm(2);
     }
     private bool IsTargetPositionFreeAsync()
@@ -395,8 +404,8 @@ public partial class PawnPlayerController : Node2D
                 PawnScript.PlayAttackAnim();
                 if (ShootingRayScript.RayHittenTarget != null)
                 {
-                    ShootingRayScript.RayHittenTarget.Call("CalculateHit", PawnScript.WeaponDamage, ShootingFinalDiceVal,ShootingTargetLockIndex, PawnScript.UnitName);
-                    GD.Print($"Kość floatDice10 musi przebić nad {ShootingFinalDiceVal}");
+                    ShootingRayScript.RayHittenTarget.Call("CalculateHit", PawnScript.WeaponDamage, ShootingFinalDiceVal + PartProbability,ShootingTargetLockIndex, PawnScript.UnitName);
+                    GD.Print($"Kość floatDice10 musi przebić nad {ShootingFinalDiceVal} dodatkowe Part probability było {PartProbability} więc razem {ShootingFinalDiceVal + PartProbability}");
                     gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, ShootingRayScript.RayHittenTarget.GlobalPosition);
                 }
                 ResetActionCommitment(false);
@@ -467,6 +476,7 @@ public partial class PawnPlayerController : Node2D
     {
         ChosenAction = PlayersChosenAction.None;
         ShootingTargetLockIndex = 999; // na wszelki wypadek
+        PartProbability = 0;
         AimedTargetMarker.Visible = false;
         gameMNGR_Script.ChosenActionFinished = true;
         gameMNGR_Script.PlayerPhoneCallback2Flag("PALO",false,true);

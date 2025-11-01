@@ -153,9 +153,9 @@ public partial class GameMNGR_Script : Node2D
         FocusCam.GlobalPosition = Recypiant; // to jest leprzy placeholder, bo upiększanie tego byłoby trochę teraz nieistotne
         //FocusCam.GlobalPosition = (Giver + Recypiant) / 2; // zmęczony jestem i mam wydupione 
     }
-    public void PlayerPhoneCallWarning()
+    public void PlayerPhoneCallWarning(string messig)
     {
-        SNTWN.Call("ShowFadeWarning", "NO TARGET");
+        SNTWN.Call("ShowFadeWarning", messig);
     }
     public void ShowListPopUp(List<PawnPart> PartsToShow, PawnPlayerController TwatCallin)
     {

@@ -28,11 +28,40 @@ public partial class ScrollPopUpScript : Node2D
 
         foreach (PawnPart Part in PartsToShow)
         {
+
             PackedScene PartButtonScene = GD.Load<PackedScene>("res://Prefabs/body_part_instance_button.tscn");
             Button Button = PartButtonScene.Instantiate<Button>();
             PartExtractor.AddChild(Button);
-            Button.Call("PrimeButton", PartsToShow.IndexOf(Part), Part.Name, Twat);// WE NEED INDEX HERE, zamiast tej jedynki. Pamiętaj by ten call zsynchronizować z Gamescript na wejściu, potem rozpisz se guziki, pierdol jeśli idiokratycznie, mam to dokończyć do 11-go zanim egzaminy się poważniejsze zaczną
+            Button.Call("PrimeButton", PartsToShow.IndexOf(Part), Part.Name,LocationRollCalc(PartsToShow,Part.Name), Twat);
         }
+    }
+    float LocationRollCalc(List<PawnPart> PartsToShow,string WANTED_P_NAME)
+    {
+        //GD.Print($"Szukanie prawdopodobieństwa dla {WANTED_P_NAME}");
+        List<string> LocationHitProbabilitytable = new List<string>();
+        foreach (var Part in PartsToShow)
+        {
+            for (int i = 0; i < Part.ChanceToHit; i++) // im więcej razy dany element pojawi się na liście tym łatwiej go wylosować 
+            {
+                LocationHitProbabilitytable.Add(Part.Name);
+                //GD.Print($"dodano do listy {Part.Name}");
+            }
+        }
+        int prob = 0;
+        foreach (string NAME in LocationHitProbabilitytable)
+        {
+            if (NAME == WANTED_P_NAME)
+            {
+                prob++;
+            }
+        }
+        float probf = prob;
+        float LHPTF = LocationHitProbabilitytable.Count;
+        //GD.Print($"prawdopodobieństwo dla {WANTED_P_NAME} to {prob}");
+        float HitChance = probf / LHPTF;
+        //GD.Print($"HitChance wynosi {HitChance}");
+        LocationHitProbabilitytable.Clear(); // na wszelki wypadek
+        return HitChance;
     }
     void Button_ACT1()
     {
