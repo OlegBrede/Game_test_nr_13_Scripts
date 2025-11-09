@@ -57,19 +57,13 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public Node2D TargetMarkerRef;
     public PawnMoveState PawnMoveStatus { get; set; } = PawnMoveState.Standing;
     public PawnStatusEffect PawnsActiveStates = PawnStatusEffect.None;
-    GameMNGR_Script gameMNGR_Script;
+    GameMNGR_Script gameMNGR_Script = null;
     private bool AC = false;
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     public override void _Ready()
     {
-        gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
-        RNGGEN.Randomize();
-        UNIAnimPlayerRef.Play("StandStill");
-        if (SpecificAnimPlayer != null)
-        {
-            SpecificAnimPlayer.AnimationFinished += OnAnimDone;
-            SpecificAnimPlayer.Play("None");
-        }
+        //GD.Print("PawnReadyTriggered");
+        // radius check in 
         CollisionShape2D KształtPionka = GetNode<CollisionShape2D>("CollisionShape2D");
         var circle = (CircleShape2D)KształtPionka.Shape;
         float radius = circle.Radius;
@@ -77,6 +71,26 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         {
             ObjętośćPionka = radius;
         }
+        // ustalenie gamemenagera
+        gameMNGR_Script = GetTree().Root.GetNodeOrNull<GameMNGR_Script>("BaseTestScene");
+        if (gameMNGR_Script != null)
+        {
+            //GD.Print("gameMNGR_Script został poprawnie znaleziony.");
+        }
+        else
+        {
+            GD.Print($"Nie udało się znaleźć GameMNGR_Script w BaseTestScene");
+            return;
+        }
+        //GD.Print("skrypt przechodzi dalej ... ");
+        RNGGEN.Randomize();
+        UNIAnimPlayerRef.Play("StandStill");
+        if (SpecificAnimPlayer != null)
+        {
+            SpecificAnimPlayer.AnimationFinished += OnAnimDone;
+            SpecificAnimPlayer.Play("None");
+        }
+        
         foreach (var Bodypart in PawnParts)
         {
             Bodypart.HP = Bodypart.MAXHP; // ustawienie hp każdej częśći na jej max
@@ -102,7 +116,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                 CanAimshoot = true;
             }
         }
-        GD.Print($"ShootingAllowence is {ShootingAllowence}, MeleeAllowence is {MeleeAllowence}");
+        //GD.Print($"ShootingAllowence is {ShootingAllowence}, MeleeAllowence is {MeleeAllowence} MeleeWeaponAllowence is {MeleeWeaponAllowence}");
         BaseIntegrity = Integrity;
     }
     public override void _Process(double delta)

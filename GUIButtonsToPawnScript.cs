@@ -85,11 +85,11 @@ public partial class GUIButtonsToPawnScript : Node2D
                 case 5:  // disable overwatch
                 if (what == false)
                 {
-                    AimShootButton.Call("OnDisablebutton");
+                    OverwatchButton.Call("OnDisablebutton");
                 }
                 else
                 {
-                    AimShootButton.Call("OnEnablebutton");
+                    OverwatchButton.Call("OnEnablebutton");
                 }
                 break;
             default:
@@ -233,8 +233,8 @@ public partial class GUIButtonsToPawnScript : Node2D
     {
         if (gameMNGR_Script.SelectedPawn.MP > 0)
         {
-            gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Move", 0);
-            Parameter = 1;
+            gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Overwatch", 0);
+            Parameter = 4;
             PALO(false, false);
         }
     }

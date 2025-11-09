@@ -22,6 +22,7 @@ public partial class TeamFillupBarScript : Control
     [Export] TextureButton Colorpickerbutton;
     [Export] CheckBox TeamIsBot;
     [Export] Node2D TFBFAUC; // ThisFuckinButtonForAcceptingUserChoice
+    [Export] Node2D TempPawnHolder;
     PackedScene UnitMenuSelectionPath;
     Label SpawnPosNumLabel;
     private int TeamToMenuID = 0; // to jest numerator potrzebny by nie stworzyć więcej niż osiem drużyn
@@ -67,11 +68,12 @@ public partial class TeamFillupBarScript : Control
         AI_Active = TeamIsBot.ButtonPressed;
         SpawnPosNumLabel.Text = SpawnPosID.ToString();
     }
-    public void ReciveUnits(int Pcount,string PPath) // dostaje unity od UnitMenuSelectionBoxScript (trza powielić dodanie tam)
+    public void ReciveUnits(int Pcount,float PRad,string PPath) // dostaje unity od UnitMenuSelectionBoxScript (trza powielić dodanie tam)
     {
         GameMNGR_Script.UnitSelection unit = new GameMNGR_Script.UnitSelection();
         unit.ScenePath = PPath;
         unit.Count = Pcount;
+        unit.ThisSpecificPawnsRadius = PRad;
         var existingUnit = USQA.Find(u => u.ScenePath == PPath);
         if (existingUnit != null)
         {
@@ -171,11 +173,13 @@ public partial class TeamFillupBarScript : Control
         {
             Control PawnSelect = UnitMenuSelectionPath.Instantiate<Control>();
             Node unitsINFO = prefab.Instantiate(); // instancja pionka na chwile
+            TempPawnHolder.AddChild(unitsINFO);
             PawnBaseFuncsScript unitScript = unitsINFO as PawnBaseFuncsScript;
             PawnSelect.Call("RecivePawnInfo", unitScript.UnitType, unitScript.ProfilePick, unitScript.PV, unitScript.Descriptor,unitScript.WeaponDamage); // ze skryptu bieremy info
-            //GD.Print($"Prefab path: {prefab.ResourcePath}");
+            GD.Print($"Objętość pionka to {unitScript.ObjętośćPionka}");
             MenuScript.UnitList.AddChild(PawnSelect); // dodajemy box
-            PawnSelect.Call("WhosBitchin", this, prefab.ResourcePath); // wysyłamy zarówno godność gracza jak i ścierzkę do pionka
+
+            PawnSelect.Call("WhosBitchin", this, unitScript.ObjętośćPionka, prefab.ResourcePath); // wysyłamy zarówno godność gracza jak i ścierzkę do pionka
             unitsINFO.QueueFree(); // z pamięci precz
             unitBoxes[prefab.ResourcePath] = PawnSelect;
         }
@@ -206,6 +210,7 @@ public partial class TeamFillupBarScript : Control
         //GD.Print("zwalnianie tej głupiej listy");
         TFBFAUC.Visible = false;
     }
+    // Widok miejsca spawnu
     void Button_ACT4()
     {
         SpawnPointPanel.Visible = true;

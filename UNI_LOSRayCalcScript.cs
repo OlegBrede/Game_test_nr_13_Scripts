@@ -41,8 +41,9 @@ public partial class UNI_LOSRayCalcScript : RayCast2D
             }
             if (collider is CharacterBody2D Charachter)
             {
-                endPoint = ToLocal(GetCollisionPoint()); 
+                endPoint = ToLocal(GetCollisionPoint());
                 RayHittenTarget = Charachter;
+                //GD.Print("RayHasHitTarget");
             }
             else
             {

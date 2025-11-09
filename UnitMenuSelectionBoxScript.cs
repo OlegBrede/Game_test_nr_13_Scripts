@@ -8,8 +8,9 @@ public partial class UnitMenuSelectionBoxScript : Label
     public string PathToThisPawn = "";
     public int DMGOnLabel = 0;
     public int InternalTeamDesignation;
-    public int PVOnLabel = 1; 
+    public int PVOnLabel = 1;
     public string DescriptorOnLabel;
+    float UnitRadius = 0;
     Label UnitInfoLabel;
     Label UnitCountLabel;
     [Export]Node2D ViewerAttachmentRootNode;
@@ -40,7 +41,7 @@ public partial class UnitMenuSelectionBoxScript : Label
     }
     public void ParseTeamCompInfo()// do przesyłania z powrotem info o dokonanych wyborach
     {
-        Bitch.Call("ReciveUnits", ThisUnitsCount, PathToThisPawn);
+        Bitch.Call("ReciveUnits", ThisUnitsCount,UnitRadius, PathToThisPawn);
         GD.Print($"Drużyna dostała {ThisUnitsCount} pionków typu {PathToThisPawn}");
     }
     void RecivePawnInfo(string Name,Sprite2D Picture,int PV, string Description, int DMG)// do otrzymywania informacji o dokonanych wyborach 
@@ -64,10 +65,11 @@ public partial class UnitMenuSelectionBoxScript : Label
     {
         ThisUnitsCount = ILE;
     }
-    public void WhosBitchin(TeamFillupBarScript TheBitch, string PawnPath)
+    public void WhosBitchin(TeamFillupBarScript TheBitch,float UR, string PawnPath)
     {
         GD.Print($"{TheBitch} this Bitch callin");
         Bitch = TheBitch;
+        UnitRadius = UR;
         PathToThisPawn = PawnPath;
     }
 }

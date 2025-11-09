@@ -37,6 +37,7 @@ public partial class GameMNGR_Script : Node2D
     {
         public string ScenePath { get; set; } // ścierzka do prefabu pionka
         public int Count { get; set; } // iloćś pionków dla danego teamu (liczba na typ) TO DO .: (chwilowo nie uwzględnia wyposarzenia) poprawić na system uwzględniający wyposarzenie jednostki
+        public float ThisSpecificPawnsRadius { get; set; }
     }
     public class GameConfig
     {

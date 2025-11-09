@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 
 public partial class PawnPlayerController : Node2D
@@ -14,6 +15,7 @@ public partial class PawnPlayerController : Node2D
     [Export] public Node2D TargetMarker; // target marker na strzał
     [Export] public Node2D AimedTargetMarker; //trudno, wiem że powielam kod, dziś mi się nie chce nad tym myśleć 
     [Export] public Node2D MeleeMarker; // target marker na wpierdol
+    [Export] public Node2D OverwatchMarkerNode;
     [Export] public Node2D MeleeSlcieNode;
     [Export] public Node2D PointerNode;
     [Export] public NavigationAgent2D NavAgent;
@@ -22,8 +24,15 @@ public partial class PawnPlayerController : Node2D
     [Export] Area2D MeleeAttackArea;
     List<PawnPart> EnemyPartsToHit = new List<PawnPart>();
     Node2D MovementAllowenceInyk_ator;
+    Node2D OverwatchpointRefNode;
+    Node2D OVButtons;
+    Node2D OVPoint1Ref;
+    Node2D OVPoint2Ref;
+    Polygon2D OVDebugPoly;
     GameMNGR_Script gameMNGR_Script;
     Area2D OverlapingBodiesArea;
+    Area2D OverwatchArea;
+    CollisionPolygon2D OverwatchTriangleHitbox;
     Label ChanceToHitLabel1;
     enum PlayersChosenAction
     {
@@ -44,7 +53,7 @@ public partial class PawnPlayerController : Node2D
         TargetMarker.Visible = false;
         AimedTargetMarker.Visible = false;
         ChanceToHitLabel1 = TargetMarker.GetNode<Label>("Label");
-        GD.Print("PAMIĘTAJ by zawsze sprawdzić na którym pionku testujesz swe dodatki");
+        //GD.Print("PAMIĘTAJ by zawsze sprawdzić na którym pionku testujesz swe dodatki");
         MeleeSlcieNode.Visible = false;
         PointerNode.Visible = false;
         MovementAllowenceInyk_ator = GetNode<Node2D>("MoveIndicator");
@@ -62,6 +71,16 @@ public partial class PawnPlayerController : Node2D
         OverlapingBodiesArea = MoveMarker.GetNode<Area2D>("Area2D");
         var circle = PawnScript.GetNode<CollisionShape2D>("CollisionShape2D").Shape as CircleShape2D;
         NavAgent.Radius = circle.Radius;
+
+        OverwatchMarkerNode.Visible = false;
+        OVDebugPoly = OverwatchMarkerNode.GetNode<Polygon2D>("Polygon2D");
+        OverwatchArea = OverwatchMarkerNode.GetNode<Area2D>("Area2D");
+        //OverwatchArea.BodyEntered += OverwachedAreaEntered;
+        OverwatchTriangleHitbox = OverwatchArea.GetNode<CollisionPolygon2D>("CollisionPolygon2D");
+        OverwatchpointRefNode = OverwatchMarkerNode.GetNode<Node2D>("NodeForAreaTriangulation");
+        OVPoint1Ref = OverwatchpointRefNode.GetNode<Node2D>("Point1");
+        OVPoint2Ref = OverwatchpointRefNode.GetNode<Node2D>("Point2");
+        OVButtons = OverwatchMarkerNode.GetNode<Node2D>("ConfirmationButtonsBucket");
     }
 
     public override void _Process(double delta)
@@ -102,148 +121,7 @@ public partial class PawnPlayerController : Node2D
         }
         if (ChosenAction == PlayersChosenAction.RangeAttackAction || ChosenAction == PlayersChosenAction.AimedRangeAttackAction)
         {
-            // ################# KALKULACJA NA PODSTAWIE ZASIĘGU ######################
-            bool ShotPosibility;
-            float TargetRangeModifier;
-            float TargetOwnMoveModifier;
-            float TargetEnemyMoveModifier;
-            float ModiRayLenghCorrector = ShootingRayScript.Raylengh - PawnScript.DistanceZero;
-            if (ModiRayLenghCorrector < PawnScript.WeaponRange)
-            {
-                ShotPosibility = true;
-                //TargetRangeModifier = Mathf.Clamp(ShootingRayScript.Raylengh / PawnScript.WeaponRange, 0, 1f);
-                TargetRangeModifier = Mathf.Clamp(ModiRayLenghCorrector / PawnScript.WeaponRange, 0, 1f) * PawnScript.Penalty_range;
-                //GD.Print($"TargetRangeModifier {TargetRangeModifier}");
-            }
-            else
-            {
-                ShotPosibility = false;
-                TargetRangeModifier = 11;
-                //GD.Print("Pionek nie trafi");
-            }
-            // ################# KALKULACJA NA PODSTAWIE WŁASNEGO RUCHU ######################
-            if (PawnScript.PawnMoveStatus == PawnMoveState.Moving)
-            {
-                TargetOwnMoveModifier = Mathf.Clamp(PawnScript.DistanceMovedByThisPawn / PawnScript.MAD, 0, 1f) * PawnScript.Penalty_shooter;
-                //GD.Print($"Na cel wpływa modyfikator bo strzelec się rusza {TargetOwnMoveModifier}");
-            }
-            else
-            {
-                TargetOwnMoveModifier = 0;
-            }
-            // ################# KALKULACJA NA PODSTAWIE RUCHU PRZECIWNIKA ######################
-            if (ShootingRayScript.RayHittenTarget != null)
-            {
-                PawnBaseFuncsScript PBFS = ShootingRayScript.RayHittenTarget as PawnBaseFuncsScript; //TO DO .: ten skrypt zakłada że każdy characterbody ma ten skrypt, sprawdź najpierw czy ma ten skrypt  
-                if (PBFS.PawnMoveStatus == PawnMoveState.Moving)
-                {
-                    TargetEnemyMoveModifier = Mathf.Clamp(PBFS.DistanceMovedByThisPawn / PBFS.MAD, 0, 1f) * PawnScript.Penalty_target;
-                    //GD.Print($"Na cel wpływa modyfikator bo cel się rusza {TargetEnemyMoveModifier}");
-                }
-                else
-                {
-                    TargetEnemyMoveModifier = 0;
-                }
-            }
-            else
-            {
-                TargetEnemyMoveModifier = 0;
-            }
-            // ############################# KULMINACJA WARTOŚCI KOŃCOWEJ #######################
-            if (ChosenAction == PlayersChosenAction.AimedRangeAttackAction) // bo teraz szansa trafienia w konkretną cześć ciała może być znacznie trudniejsza niżeli taki se strzał losowy
-            {
-                EnemyPartsToHit.Clear();
-                if (ShootingRayScript.RayHittenTarget != null)
-                {
-                    PawnBaseFuncsScript PBFS = ShootingRayScript.RayHittenTarget as PawnBaseFuncsScript;
-                    foreach (PawnPart Part in PBFS.PawnParts)
-                    {
-                        EnemyPartsToHit.Add(Part);
-                    }
-                    // tu kod dodający części ciała do listy 
-                }
-            }
-            // ############### PODLICZENIE DEBUFFÓW ##################
-            float penaltyTotal;
-            if (ShotPosibility == true)
-            {
-                penaltyTotal = Mathf.Clamp(TargetRangeModifier + TargetOwnMoveModifier + TargetEnemyMoveModifier, 0f, 1f);
-                ShootingFinalDiceVal = penaltyTotal * 10;
-            }
-            else
-            {
-                penaltyTotal = 0;
-                ShootingFinalDiceVal = 11;
-            }
-            // ############### PODLICZENIE WYŚWIETLONEGO PROCENTU ##################
-            int Precent;
-            if (ShootingFinalDiceVal < 10)
-            {
-                Precent = Mathf.RoundToInt(100f - (ShootingFinalDiceVal * 10f));
-                ChanceToHitLabel1.Text = $"{Precent}%";
-            }
-            else
-            {
-                Precent = 0;
-                ChanceToHitLabel1.Text = $"{Precent}%";
-            }
-            // ############### WIZUALNA REPREZENTACJA LOS DLA PIONKA  ##################
-            if ((TargetMarker.Visible == false && ChosenAction == PlayersChosenAction.RangeAttackAction)||(AimedTargetMarker.Visible == false && ChosenAction == PlayersChosenAction.AimedRangeAttackAction))
-            {
-                PointerNode.LookAt(GetGlobalMousePosition());
-                //GD.Print($"Range {ModiRayLenghCorrector} so chance is {Precent}% (or {ShootingFinalDiceVal})with mod1 = {TargetOwnMoveModifier} & mod2 = {TargetEnemyMoveModifier}");
-            }
-            // #################################### KLIKNIĘCIE ###################################
-            if (ChosenAction == PlayersChosenAction.AimedRangeAttackAction)
-            {
-                if (Input.IsActionJustPressed("MYMOUSELEFT") && AimedTargetMarker.Visible == false)
-                {
-                    if (ShotPosibility == false)
-                    {
-                        gameMNGR_Script.PlayerPhoneCallWarning("0% TO HIT TARGET");
-                        gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", false, false);
-                        ResetActionCommitment(true);
-                        return;
-                    }
-                    if (ShootingRayScript.RayHittenTarget != null)
-                    {
-                        AimedTargetMarker.Visible = true;
-                        AimedTargetMarker.GlobalPosition = GetGlobalMousePosition();
-                        PointerNode.LookAt(AimedTargetMarker.GlobalPosition);
-                        ShootingRayScript.OverrideTarget = AimedTargetMarker;
-                        if (EnemyPartsToHit.Count > 0)
-                        {
-                            gameMNGR_Script.ShowListPopUp(EnemyPartsToHit, this);
-                        }
-                        else
-                        {
-                            GD.Print("Nie było wystarczająco cześci ciała na liście EnemyPartsToHit");
-                            ResetActionCommitment(true);
-                        }
-                    }
-                    else
-                    {
-                        gameMNGR_Script.PlayerPhoneCallWarning("NO TARGET");
-                        gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", false, false);
-                        ResetActionCommitment(true);
-                        return;
-                    }
-                    
-                }
-            }
-            else
-            {
-                if (Input.IsActionJustPressed("MYMOUSELEFT") && TargetMarker.Visible == false)
-                {
-                    TargetMarker.Visible = true;
-                    TargetMarker.GlobalPosition = GetGlobalMousePosition();
-                    PointerNode.LookAt(TargetMarker.GlobalPosition);
-                    ShootingRayScript.OverrideTarget = TargetMarker;
-                    gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", true, false);
-                }
-
-            }
-
+            ShootFunc(false); // musiało zostać przesunięte zaśmiecało tu funkcje 
         }
         if (ChosenAction == PlayersChosenAction.MeleeAttackAction)
         {
@@ -266,10 +144,216 @@ public partial class PawnPlayerController : Node2D
         if (ChosenAction == PlayersChosenAction.OverwatchAction)
         {
             // proponuję zrobić to tak jak w quar-ach area fire, to wtedy nie będzie trzeba się certolić z kierunkiem wzroku
+            if (OverwatchMarkerNode.Visible == false)
+            {
+                OverwatchMarkerNode.GlobalPosition = GetGlobalMousePosition();
+                OverwatchpointRefNode.LookAt(PawnScript.GlobalPosition);
+            }
+            if (Input.IsActionJustPressed("MYMOUSELEFT") && OverwatchMarkerNode.Visible == false)
+            {
+                OverwatchMarkerNode.Visible = true;
+                var points = OverwatchTriangleHitbox.Polygon;
+                points[0] = OverwatchTriangleHitbox.ToLocal(OVPoint1Ref.GlobalPosition);
+                points[1] = OverwatchTriangleHitbox.ToLocal(PawnScript.GlobalPosition);
+                points[2] = OverwatchTriangleHitbox.ToLocal(OVPoint2Ref.GlobalPosition);
+                //GD.Print($"Pozycja zmieniona dla punktów .: {points[0]},{points[1]},{points[2]}, Pozycja pionka to {PawnScript.GlobalPosition}");
+                OverwatchTriangleHitbox.Polygon = points;
+                OVDebugPoly.Polygon = points;
+                gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", true, false);
+            }
         }
         if (ChosenAction == PlayersChosenAction.ChargeAction)
         {
             // proste, kalkulacja dotarcia do typa przy X2 movement (o ile ma nogi) na sam koniec ktoś jest w zasięgu przyjebu dostaje po trzykroć, daj anulowanie pod osobny target marker natomiast// może daj też procent tego czy się udało ?
+        }
+    }
+    void ShootFunc(bool OV_Active)
+    {
+        // ################# KALKULACJA NA PODSTAWIE ZASIĘGU ######################
+        bool ShotPosibility;
+        float TargetRangeModifier;
+        float TargetOwnMoveModifier;
+        float TargetEnemyMoveModifier;
+        float ModiRayLenghCorrector = ShootingRayScript.Raylengh - PawnScript.DistanceZero;
+        if (ModiRayLenghCorrector < PawnScript.WeaponRange)
+        {
+            ShotPosibility = true;
+            //TargetRangeModifier = Mathf.Clamp(ShootingRayScript.Raylengh / PawnScript.WeaponRange, 0, 1f);
+            TargetRangeModifier = Mathf.Clamp(ModiRayLenghCorrector / PawnScript.WeaponRange, 0, 1f) * PawnScript.Penalty_range;
+            //GD.Print($"TargetRangeModifier {TargetRangeModifier}");
+        }
+        else
+        {
+            ShotPosibility = false;
+            TargetRangeModifier = 11;
+            //GD.Print("Pionek nie trafi");
+        }
+        // ################# KALKULACJA NA PODSTAWIE WŁASNEGO RUCHU ######################
+        if (PawnScript.PawnMoveStatus == PawnMoveState.Moving)
+        {
+            TargetOwnMoveModifier = Mathf.Clamp(PawnScript.DistanceMovedByThisPawn / PawnScript.MAD, 0, 1f) * PawnScript.Penalty_shooter;
+            //GD.Print($"Na cel wpływa modyfikator bo strzelec się rusza {TargetOwnMoveModifier}");
+        }
+        else
+        {
+            TargetOwnMoveModifier = 0;
+        }
+        // ################# KALKULACJA NA PODSTAWIE RUCHU PRZECIWNIKA ######################
+        if (ShootingRayScript.RayHittenTarget != null)
+        {
+            PawnBaseFuncsScript PBFS = ShootingRayScript.RayHittenTarget as PawnBaseFuncsScript; //TO DO .: ten skrypt zakłada że każdy characterbody ma ten skrypt, sprawdź najpierw czy ma ten skrypt  
+            if (PBFS.PawnMoveStatus == PawnMoveState.Moving)
+            {
+                TargetEnemyMoveModifier = Mathf.Clamp(PBFS.DistanceMovedByThisPawn / PBFS.MAD, 0, 1f) * PawnScript.Penalty_target;
+                //GD.Print($"Na cel wpływa modyfikator bo cel się rusza {TargetEnemyMoveModifier}");
+            }
+            else
+            {
+                TargetEnemyMoveModifier = 0;
+            }
+        }
+        else
+        {
+            TargetEnemyMoveModifier = 0;
+        }
+        // ############################# KULMINACJA WARTOŚCI KOŃCOWEJ #######################
+        if (ChosenAction == PlayersChosenAction.AimedRangeAttackAction) // bo teraz szansa trafienia w konkretną cześć ciała może być znacznie trudniejsza niżeli taki se strzał losowy
+        {
+            EnemyPartsToHit.Clear();
+            if (ShootingRayScript.RayHittenTarget != null)
+            {
+                PawnBaseFuncsScript PBFS = ShootingRayScript.RayHittenTarget as PawnBaseFuncsScript;
+                foreach (PawnPart Part in PBFS.PawnParts)
+                {
+                    EnemyPartsToHit.Add(Part);
+                }
+                // tu kod dodający części ciała do listy 
+            }
+        }
+        // ############### PODLICZENIE DEBUFFÓW ##################
+        float penaltyTotal;
+        if (ShotPosibility == true)
+        {
+            penaltyTotal = Mathf.Clamp(TargetRangeModifier + TargetOwnMoveModifier + TargetEnemyMoveModifier, 0f, 1f);
+            ShootingFinalDiceVal = penaltyTotal * 10;
+        }
+        else
+        {
+            penaltyTotal = 0;
+            ShootingFinalDiceVal = 11;
+        }
+        // ############### PODLICZENIE WYŚWIETLONEGO PROCENTU ##################
+        int Precent;
+        if (ShootingFinalDiceVal < 10)
+        {
+            Precent = Mathf.RoundToInt(100f - (ShootingFinalDiceVal * 10f));
+            ChanceToHitLabel1.Text = $"{Precent}%";
+        }
+        else
+        {
+            Precent = 0;
+            ChanceToHitLabel1.Text = $"{Precent}%";
+        }
+        // ############### WIZUALNA REPREZENTACJA LOS DLA PIONKA  ##################
+        if ((TargetMarker.Visible == false && ChosenAction == PlayersChosenAction.RangeAttackAction) || (AimedTargetMarker.Visible == false && ChosenAction == PlayersChosenAction.AimedRangeAttackAction))
+        {
+            PointerNode.LookAt(GetGlobalMousePosition());
+            //GD.Print($"Range {ModiRayLenghCorrector} so chance is {Precent}% (or {ShootingFinalDiceVal})with mod1 = {TargetOwnMoveModifier} & mod2 = {TargetEnemyMoveModifier}");
+        }
+        // #################################### KLIKNIĘCIE ###################################
+        if (ChosenAction == PlayersChosenAction.AimedRangeAttackAction)
+        {
+            if (Input.IsActionJustPressed("MYMOUSELEFT") && AimedTargetMarker.Visible == false)
+            {
+                if (ShotPosibility == false)
+                {
+                    gameMNGR_Script.PlayerPhoneCallWarning("0% TO HIT TARGET");
+                    gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", false, false);
+                    ResetActionCommitment(true);
+                    return;
+                }
+                if (ShootingRayScript.RayHittenTarget != null)
+                {
+                    AimedTargetMarker.Visible = true;
+                    AimedTargetMarker.GlobalPosition = GetGlobalMousePosition();
+                    PointerNode.LookAt(AimedTargetMarker.GlobalPosition);
+                    ShootingRayScript.OverrideTarget = AimedTargetMarker;
+                    if (EnemyPartsToHit.Count > 0)
+                    {
+                        gameMNGR_Script.ShowListPopUp(EnemyPartsToHit, this);
+                    }
+                    else
+                    {
+                        GD.Print("Nie było wystarczająco cześci ciała na liście EnemyPartsToHit");
+                        ResetActionCommitment(true);
+                    }
+                }
+                else
+                {
+                    gameMNGR_Script.PlayerPhoneCallWarning("NO TARGET");
+                    gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", false, false);
+                    ResetActionCommitment(true);
+                    return;
+                }
+
+            }
+        }
+        else if(ChosenAction == PlayersChosenAction.RangeAttackAction || OV_Active == true )
+        {
+            if (Input.IsActionJustPressed("MYMOUSELEFT") && TargetMarker.Visible == false && OV_Active == false)
+            {
+                TargetMarker.Visible = true;
+                TargetMarker.GlobalPosition = GetGlobalMousePosition();
+                PointerNode.LookAt(TargetMarker.GlobalPosition);
+                ShootingRayScript.OverrideTarget = TargetMarker;
+                gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", true, false);
+            }
+            if (OV_Active == true)
+            {
+                Player_ACT_Confirm(2);
+            }
+            if (OverwatchArea.GetOverlappingBodies().Count > 0)
+            {
+                Node2D FirstEnemy = OverwatchArea.GetOverlappingBodies().First();
+                OverwachedAreaEntered(FirstEnemy); 
+            }
+        }
+    }
+    void OverwachedAreaEntered(Node2D Enemy)
+    {
+        if (Enemy == null)
+        {
+            return;
+        }
+        if (Enemy is CharacterBody2D && gameMNGR_Script.Turn != PawnScript.TeamId && PawnScript.OverwatchStatus == true) // jeśli to w co strzelamy jest char2d i nie jest nasza tura, oraz overwatch jest włączony 
+        {
+            GD.Print("Jest tura przeciwnika, przeciwnik to Character2d i overwatch został włączony");
+            PawnBaseFuncsScript EnemyStats = Enemy as PawnBaseFuncsScript;
+            if (EnemyStats.TeamId != PawnScript.TeamId) // jeśli typo nie jest z naszej drużyny 
+            {
+                GD.Print("Shootfunc aktywowany ");
+                ShootingRayScript.Rayactive = true;
+                ShootingRayScript.OverrideTarget = Enemy;
+                GD.Print($"Cel ustawiony na  {ShootingRayScript.OverrideTarget}");
+                if (ShootingRayScript.RayHittenTarget != null)
+                {
+                    if (PawnScript.WeaponAmmo > 0)
+                    {
+                        ShootFunc(true);
+                    }
+                    else
+                    {
+                        GD.Print("overwatch wydany ");
+                    }
+                    PawnScript.OverwatchStatus = false;
+                    OverwatchMarkerNode.Visible = false;
+                    OVButtons.Visible = true;
+                }
+                else
+                {
+                    GD.Print("Promień nie trafił w cel ");
+                }
+            }
         }
     }
     void AimedShotChosenTargetListTrigger(int inx,float probabitity)
@@ -321,6 +405,14 @@ public partial class PawnPlayerController : Node2D
     {
         Player_ACT_Decline(3);
     }
+    void Button_ACT11() // decline melee atack order
+    {
+        Player_ACT_Confirm(4);
+    }
+    void Button_ACT12() // decline melee atack order
+    {
+        Player_ACT_Decline(4);
+    }
     void Player_ACT_Move(int Dump)
     {
         gameMNGR_Script.ChosenActionFinished = false;
@@ -350,6 +442,12 @@ public partial class PawnPlayerController : Node2D
         ShootingRayScript.Rayactive = true;
         PointerNode.Visible = true;
         GD.Print("teraz gracz wybiera celny strzał ...");
+    }
+    void Player_ACT_Overwatch(int Dump)
+    {
+        gameMNGR_Script.ChosenActionFinished = false;
+        ChosenAction = PlayersChosenAction.OverwatchAction;
+        GD.Print("teraz gracz wybiera overwatch ...");
     }
     void Player_ACT_Confirm(int Index)
     {
@@ -390,7 +488,7 @@ public partial class PawnPlayerController : Node2D
                     PawnScript.MP--;
                     gameMNGR_Script.TeamsCollectiveMP--;
                 }
-                else
+                if(ChosenAction == PlayersChosenAction.AimedRangeAttackAction)
                 {
                     PawnScript.MP -= 2;
                     gameMNGR_Script.TeamsCollectiveMP -= 2;
@@ -429,11 +527,24 @@ public partial class PawnPlayerController : Node2D
                         PawnBaseFuncsScript PS = body as PawnBaseFuncsScript;
                         if (PS.TeamId != PawnScript.TeamId)
                         {
-                            PS.Call("CalculateHit", PawnScript.MeleeDamage, 2.5f, PawnScript.UnitName); // więcej przeciwnikom
+                            PS.Call("CalculateHit", PawnScript.MeleeDamage, 2.5f,ShootingTargetLockIndex, PawnScript.UnitName); // więcej przeciwnikom
                         }
                     }
                 }
                 ResetActionCommitment(false);
+                break;
+            case 4: // overwatch 
+                OverwatchMarkerNode.Visible = true;
+                PawnScript.OverwatchStatus = true;
+                OVButtons.Visible = false;
+                PawnScript.MP -= 2;
+                gameMNGR_Script.TeamsCollectiveMP -= 2;
+                if (PawnScript.MP < 0)
+                {
+                    GD.PrintErr("Błąd kalkulacji MP przy strzale wycelowanym");
+                    gameMNGR_Script.TeamsCollectiveMP++;
+                }
+                ResetActionCommitment(true);
                 break;
             default:
                 GD.Print("Nie ma takiej akcji");
@@ -463,6 +574,12 @@ public partial class PawnPlayerController : Node2D
             case 3:
                 MeleeSlcieNode.Visible = false;
                 MeleeMarker.Visible = false;
+                ResetActionCommitment(false);
+                break;
+            case 4:
+                PawnScript.OverwatchStatus = false;
+                OverwatchMarkerNode.Visible = false;
+                OVButtons.Visible = true;
                 ResetActionCommitment(false);
                 break;
             default:

@@ -1,5 +1,5 @@
-using Godot;
 using System;
+using Godot;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -21,11 +21,12 @@ public partial class PawnSpawnerScript : Node2D
     [Export] Node2D Spawn6;
     [Export] Node2D Spawn7;
     [Export] Node2D Spawn8;
-    private float ThisSpecificPawnsRadius = 0;
+    private float SpecificPawnsRadius = 0;
+    private float AllPawnShitShiftfloat = 0;
     private float ThisSpecificSpawnWidth = 1000;
     private float ThisSpecificSpawnHeight = 1000;
     private float []ASS = {0,0}; // Avalabule Spawn Space (x,y)
-
+    private float []ASSPEP = {0,0}; // Avalabule Spawn Space previous end point (x,y)
     public override void _Ready()
     {
         RNGGEN.Randomize();
@@ -44,36 +45,48 @@ public partial class PawnSpawnerScript : Node2D
         string json = File.ReadAllText(SaveFilePath);
         var cfg = JsonSerializer.Deserialize<GameMNGR_Script.GameConfig>(json);
 
-        foreach (var team in cfg.teams)
+        foreach (var team in cfg.teams) // na karzdą drużynę ... 
         {
-            bool iniLastPawnSpawnAllowence = false;
+            ASSPEP[0] = 0; // reset uprzedniego offsetu spawnu 
+            ASSPEP[1] = 0;
+            bool iniLastPawnSpawnAllowence = false; // urzywane do sprawdzenia czy można zmieścić jeszcze pionak w danym miejscu 
             GD.Print($"Drużyna: {team.name}");
-            foreach (var TeamsPawn in team.UnitsForThisTeam)
+            foreach (var TeamsPawn in team.UnitsForThisTeam) // na karzdy typ pionka który wybvrała ta drużyna ... 
             {
-                bool iniFirstPawnRadius = false;
-                for (int i = 0; i < TeamsPawn.Count; i++)
+                bool iniFirstPawnRadius = false; // urzywane do tego by przypisać pierwszemu pionkowi koodrynaty 0,0
+                for (int i = 0; i < TeamsPawn.Count; i++)// czy jeszcze trzeba zespawnować pionka 
                 {
-                    if (iniLastPawnSpawnAllowence == false)
+                    if (iniLastPawnSpawnAllowence == false) // jeśli zmieści się pionek 
                     {
                         PawnScene = GD.Load<PackedScene>(TeamsPawn.ScenePath);
                         Node2D Pawn = PawnScene.Instantiate<Node2D>();
                         PawnBucketRef.AddChild(Pawn);
                         PawnBaseFuncsScript PawnScript = Pawn as PawnBaseFuncsScript;
                         // potrzebne do przypisania pionkowi pozycji
-                        if (iniFirstPawnRadius == false)
+                        if (iniFirstPawnRadius == false) // jeśli trzeba przypisać pionkowi koordynaty 0,0
                         {
-                            ThisSpecificPawnsRadius = PawnScript.ObjętośćPionka;
-                            GD.Print($"Prekalkulowana objętość Pionka wynosi {ThisSpecificPawnsRadius}");
-                            ASS[0] = ThisSpecificPawnsRadius;
-                            ASS[1] = ThisSpecificPawnsRadius;
-                            iniFirstPawnRadius = true;
+                            SpecificPawnsRadius = TeamsPawn.ThisSpecificPawnsRadius; // przypisujemy promień dla całego rzędu
+                            GD.Print($"objętość Pionka wynosi {SpecificPawnsRadius}");
+                            if (ASSPEP[0] == 0)
+                            {
+                                ASS[0] = SpecificPawnsRadius;// o ile musi pionek odstawać od pozycji 0,0
+                                ASS[1] = SpecificPawnsRadius;
+                                GD.Print($"pierwszy pionek więc koordynaty zostały ustawione na lewy górny");
+                            }
+                            else
+                            {
+                                ASS[0] = ASSPEP[0];// o ile musi pionek odstawać od pozycji 0,0
+                                ASS[1] = ASSPEP[1];
+                                GD.Print($"pierwszy pionek innego wariantu więc pierwsza pozycja bierze z asspep który wynosi {ASSPEP[0]} , {ASSPEP[1]}");
+                            }
+                            iniFirstPawnRadius = true; // nie trzeba już ustawiać pierwszego 
                         }
                         // ustawienie parametrów pionka 
                         Pawn.Call("SetTeam", team.name, team.team_colour);
                         Pawn.Call("ActivateCollision");
                         Pawn.Call("DeleteUnusedControlNodes", team.AI_Active);
-                        
-                        int Gender = RNGGEN.RandiRange(0, 1);
+
+                        int Gender = RNGGEN.RandiRange(0, 1); 
                         string Category;
                         string Surname;
                         if (Gender == 1)
@@ -99,24 +112,16 @@ public partial class PawnSpawnerScript : Node2D
                         Pawn.Call("Namechange", rngNameToolScript.GetRandomName(Category) + " " + Surname);
                         if (team.Spawn_ID != 9) // dziewięć to numer dowolnego układania pionków
                         {
-                            if (ASS[0] > ThisSpecificSpawnWidth)
-                            {
-                                GD.Print($"Doszło do resetu bo {ASS[0]} przekroczyło {ThisSpecificSpawnWidth}");
-                                ASS[0] = ThisSpecificPawnsRadius;
-                                ASS[1] = ASS[1] + (ThisSpecificPawnsRadius * 2);
-                            }
-                            Pawn.GlobalPosition = new Vector2(SpawnPointPos(team.Spawn_ID).X + ASS[0], SpawnPointPos(team.Spawn_ID).Y + ASS[1]);
-                            ASS[0] = ASS[0] + (PawnScript.ObjętośćPionka * 2);// przesunięcie w prawo
-                            GD.Print($"ASS[0] to {ASS[0]} ASS[1] to {ASS[1]}");
+                            Pawn.GlobalPosition = PawnRadiusSpawnCheckin(team.Spawn_ID);
                         }
                         else
                         {
                             GD.Print("Ten gracz wybrał spawn manualny musi poczekać na rozstawianie, TO DO .: zaprogramuj fazę rozstawiania");
                         }
-                        if (ThisSpecificSpawnHeight < ASS[1] + ThisSpecificPawnsRadius) // nieefektywne bo kalkulacja czy pionek tu wogóle może być nie powinna uwzględniać całego procesu układania pionka na miejsce
+                        if (ThisSpecificSpawnHeight < ASS[1] + SpecificPawnsRadius) // nieefektywne bo kalkulacja czy pionek tu wogóle może być nie powinna uwzględniać całego procesu układania pionka na miejsce
                         // chyba że znajdę sposób na to jak przywołać danego pionmka z poowrotem na planszę to wtedy będzie miało to sens 
                         {
-                            GD.Print("Więcej pionków się nie zmieści");
+                            GD.Print($"Więcej pionków się nie zmieści bo wysokość kontenera {ThisSpecificSpawnHeight} jest mniejsza od {ASS[1] + SpecificPawnsRadius}");
                             iniLastPawnSpawnAllowence = true;
                             Pawn.QueueFree();
                         }
@@ -126,6 +131,20 @@ public partial class PawnSpawnerScript : Node2D
                 }
             }
         }
+    }
+    Vector2 PawnRadiusSpawnCheckin(int SpawnID)
+    {
+        if (ASS[0] > ThisSpecificSpawnWidth)// jeśli dostępne miejsce jest 
+        {
+            GD.Print($"Doszło do resetu bo {ASS[0]} przekroczyło {ThisSpecificSpawnWidth}");
+            ASS[0] = SpecificPawnsRadius;
+            ASS[1] = ASS[1] + (SpecificPawnsRadius * 2);
+        }
+        ASS[0] = ASS[0] + (SpecificPawnsRadius * 2);// przesunięcie w prawo
+        ASSPEP[0] = ASS[0];
+        ASSPEP[1] = ASS[1];
+        GD.Print($"ASS[0] to {ASS[0]} ASS[1] to {ASS[1]} więc koniec linii został ustawiony na koordynaty x .: {ASSPEP[0]} y .: {ASSPEP[1]}");
+        return new Vector2(SpawnPointPos(SpawnID).X + ASS[0], SpawnPointPos(SpawnID).Y + ASS[1]);
     }
     Vector2 SpawnPointPos(int ChosenSpawnIDNum)
     {
