@@ -67,7 +67,7 @@ public partial class PawnSpawnerScript : Node2D
                         {
                             SpecificPawnsRadius = TeamsPawn.ThisSpecificPawnsRadius; // przypisujemy promień dla całego rzędu
                             GD.Print($"objętość Pionka wynosi {SpecificPawnsRadius}");
-                            if (ASSPEP[0] == 0)
+                            if (ASSPEP[0] == 0 && ASSPEP[1] == 0)// ASSPEP musiał się zresetować by to if zadziałało, a resetuje się przy starcie co nie ? 
                             {
                                 ASS[0] = SpecificPawnsRadius;// o ile musi pionek odstawać od pozycji 0,0
                                 ASS[1] = SpecificPawnsRadius;
@@ -134,17 +134,26 @@ public partial class PawnSpawnerScript : Node2D
     }
     Vector2 PawnRadiusSpawnCheckin(int SpawnID)
     {
-        if (ASS[0] > ThisSpecificSpawnWidth)// jeśli dostępne miejsce jest 
+        if (ASS[0] > ThisSpecificSpawnWidth)
         {
             GD.Print($"Doszło do resetu bo {ASS[0]} przekroczyło {ThisSpecificSpawnWidth}");
             ASS[0] = SpecificPawnsRadius;
             ASS[1] = ASS[1] + (SpecificPawnsRadius * 2);
         }
-        ASS[0] = ASS[0] + (SpecificPawnsRadius * 2);// przesunięcie w prawo
+
+        // Użyj bieżącej wartości ASS do wyliczenia pozycji
+        Vector2 spawnBase = SpawnPointPos(SpawnID);
+        Vector2 resultPos = new Vector2(spawnBase.X + ASS[0], spawnBase.Y + ASS[1]);
+
+        // Teraz przesuwamy ASS w prawo na kolejny pionek
+        ASS[0] = ASS[0] + (SpecificPawnsRadius * 2);
+
+        // Zaktualizuj punkt końcowy (koniec linii)
         ASSPEP[0] = ASS[0];
         ASSPEP[1] = ASS[1];
+
         GD.Print($"ASS[0] to {ASS[0]} ASS[1] to {ASS[1]} więc koniec linii został ustawiony na koordynaty x .: {ASSPEP[0]} y .: {ASSPEP[1]}");
-        return new Vector2(SpawnPointPos(SpawnID).X + ASS[0], SpawnPointPos(SpawnID).Y + ASS[1]);
+        return resultPos;
     }
     Vector2 SpawnPointPos(int ChosenSpawnIDNum)
     {
