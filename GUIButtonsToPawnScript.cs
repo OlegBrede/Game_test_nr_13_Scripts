@@ -25,16 +25,12 @@ public partial class GUIButtonsToPawnScript : Node2D
     [Signal] public delegate void StrongWallopActionEventHandler();
     [Signal] public delegate void PawnConfirmEventHandler(int index);
     [Signal] public delegate void PawnDeclineEventHandler(int index);
-    int Parameter = 0;
+    int Parameter = 0; // parameter to magiczny numer uzasadniający co konkretnie ma zaakceptować sygnał (z racji na to że akcje parametru nie biorą to może być punkt wycieku pamięci więc muszę się upewnić)
     public override void _Ready()
     {
         gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
         Actions.Visible = false;
         Confirmations.Visible = false;
-    }
-    void PawnConnectionFunc() // jakoś trzeba byłoby załatwić to bezpośrednio
-    {
-        
     }
     public void PALO(bool VisC,bool VisA) // Player Action LOader
     {
@@ -239,26 +235,25 @@ public partial class GUIButtonsToPawnScript : Node2D
     }
     void Button_ACT7() // Overwatch
     {
-        if (gameMNGR_Script.SelectedPawn.MP > 0)
+        if (gameMNGR_Script.SelectedPawn.MP > 1)
         {
             EmitSignal(SignalName.OverwatchAction);
             Parameter = 4;
             PALO(false, false);
+        }else
+        {
+            gameMNGR_Script.PlayerPhoneCallWarning("ACTION NEEDS 2 MP");
         }
     }
     void Button_ACT8() // mocniejszy wallop na niższą szansę, mniejszy cone ale większy DMG
     {
-        if (gameMNGR_Script.SelectedPawn != null) // potrzeba jakoś poinformować gracza że nie może wykonać tego ruchu 
+        if (gameMNGR_Script.SelectedPawn != null)
         {
-            if (gameMNGR_Script.SelectedPawn.MP > 1)
+            if (gameMNGR_Script.SelectedPawn.MP > 0)
             {
                 EmitSignal(SignalName.StrongWallopAction);
-                Parameter = 1;
+                Parameter = 3;
                 PALO(false, false);
-            }
-            else
-            {
-                gameMNGR_Script.PlayerPhoneCallWarning("ACTION NEEDS 2 MP");
             }
         }
     }

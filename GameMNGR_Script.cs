@@ -132,7 +132,14 @@ public partial class GameMNGR_Script : Node2D
     {
         if (pawn != null)
         {
-            return $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nAmmo({pawn.WeaponAmmo}/{pawn.WeaponMaxAmmo})\nMP ({pawn.MP})";;
+            if (pawn.ShootingAllowence > 0)
+            {
+                return $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nAmmo({pawn.WeaponAmmo}/{pawn.WeaponMaxAmmo})\nMP ({pawn.MP})";
+            }
+            else
+            {
+                return $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nMP ({pawn.MP})";
+            }
         }
         else
         {

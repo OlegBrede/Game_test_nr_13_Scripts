@@ -6,11 +6,13 @@ public partial class UNI_ControlOverPawnScript : Node2D
     [Export] public PawnBaseFuncsScript PawnScript;
     [Export] NavigationAgent2D NavAgent;
     [Export] UNI_LOSRayCalcScript ShootingRayScript;
-    [Export] Area2D MeleeAttackArea;
+    [Export] Area2D WideMeleeAttackArea;
+    [Export] Area2D StrongMeleeAttackArea;
     GameMNGR_Script gameMNGR_Script;
     Node2D UNI_MoveMarker;
     Area2D OverlapingBodiesArea;
-    List<PawnPart> EnemyPartsToHit = new List<PawnPart>();
+    RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
+    public List<PawnPart> EnemyPartsToHit = new List<PawnPart>();
     public override void _Ready()
     {
         gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
@@ -19,8 +21,6 @@ public partial class UNI_ControlOverPawnScript : Node2D
     }
     // TO DO .: MASZ SPRAWDZIĆ CZY TA KALKULACJA (RangeAttackEffectivenessCalculation) DZIAŁA, JEŚLI TAK PRZENIEŚ RESZTĘ KODÓW
     // DO ZROBIENIA SĄ JESZCZE .: 
-    // - AIMED SHOT NIE POBIERA CZĘŚCI CIAŁA
-    // - DODANIE OVERRIDE NA DMG Z MELEE 
     // - DODANIE LOSOWEGO DMG NA AIMEDSHOT 
     // - DODANIE HOVER INFO NA SAMPLEBUTTON 
     // - WYCIĄGNIJ CO MOŻESZ POZA PROCESS Z PLAYERCONTROLLER 
@@ -47,13 +47,23 @@ public partial class UNI_ControlOverPawnScript : Node2D
             PawnScript.PawnMoveStatus = PawnMoveState.Moving;
         }
     }
-    public void ActionMeleeAttack(int STLI) // wywołanie tej akcji ma zadać DMG do odpowiednich celów
+    public void ActionMeleeAttack(bool StrongOrNot,int STLI) // wywołanie tej akcji ma zadać DMG do odpowiednich celów
     {
         PawnScript.MP--;
         gameMNGR_Script.TeamsCollectiveMP--;
         PawnScript.PlayAttackAnim();
-        MeleeAttackArea.ForceUpdateTransform();
-        var overlaps = MeleeAttackArea.GetOverlappingBodies();
+        Godot.Collections.Array<Node2D> overlaps;
+        if (StrongOrNot == true)
+        {
+            StrongMeleeAttackArea.ForceUpdateTransform();
+            overlaps = StrongMeleeAttackArea.GetOverlappingBodies();
+        }
+        else
+        {
+            WideMeleeAttackArea.ForceUpdateTransform();
+            overlaps = WideMeleeAttackArea.GetOverlappingBodies();
+        }
+        
         foreach (var body in overlaps)
         {
             if (body is CharacterBody2D)
@@ -61,19 +71,28 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 PawnBaseFuncsScript PS = body as PawnBaseFuncsScript;
                 if (PS.TeamId != PawnScript.TeamId)
                 {
-                    PS.Call("CalculateHit", PawnScript.MeleeDamage, 2.5f,STLI, PawnScript.UnitName); // więcej przeciwnikom
+                    if (StrongOrNot == true) // strong wallop 
+                    {
+                        PS.Call("CalculateHit", PawnScript.MeleeDamage * 1.5f , 5f,STLI, PawnScript.UnitName);
+                    }
+                    else // wide wallop
+                    {
+                        PS.Call("CalculateHit", PawnScript.MeleeDamage, 2.5f,STLI, PawnScript.UnitName);
+                    }
                 }
             }
         }
     }
     public void ActionRangeAttack(bool AimedOrnot,float SFDV, float PartProbability,int STLI) //ShootingTargetLockIndex
     {
+        int WeaponDamageModified;
         if (AimedOrnot == false)
         {
             PawnScript.MP--;
             gameMNGR_Script.TeamsCollectiveMP--;
+            WeaponDamageModified = PawnScript.WeaponDamage;
         }
-        if(AimedOrnot == true)
+        else
         {
             PawnScript.MP -= 2;
             gameMNGR_Script.TeamsCollectiveMP -= 2;
@@ -82,12 +101,13 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 GD.PrintErr("Błąd kalkulacji MP przy strzale wycelowanym");
                 gameMNGR_Script.TeamsCollectiveMP++;
             }
+            WeaponDamageModified = PawnScript.WeaponDamage - RNGGEN.RandiRange(0,PawnScript.WeaponDamage / 2); // to powino zadziałać 
         }
         PawnScript.WeaponAmmo--;
         PawnScript.PlayAttackAnim();
         if (ShootingRayScript.RayHittenTarget != null)
         {
-            ShootingRayScript.RayHittenTarget.Call("CalculateHit", PawnScript.WeaponDamage, SFDV + PartProbability,STLI, PawnScript.UnitName);
+            ShootingRayScript.RayHittenTarget.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName);
             GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
             gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, ShootingRayScript.RayHittenTarget.GlobalPosition);
         }

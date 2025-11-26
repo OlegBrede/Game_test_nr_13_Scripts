@@ -23,7 +23,6 @@ public partial class PawnPlayerController : Node2D
     NodeCompButtonUni1FuncScript YayButton;
     NodeCompButtonUni1FuncScript NayButton;
     Sprite2D UNI_MarkerIcon;
-    List<PawnPart> EnemyPartsToHit = new List<PawnPart>();
     Node2D MovementAllowenceInyk_ator;
     Node2D OverwatchpointRefNode;
     Node2D OVButtons;
@@ -32,6 +31,8 @@ public partial class PawnPlayerController : Node2D
     Polygon2D OVDebugPoly;
     GameMNGR_Script gameMNGR_Script;
     Area2D OverwatchArea;
+    Area2D WideMelee;
+    Area2D StrongMelee;
     CollisionPolygon2D OverwatchTriangleHitbox;
     Label ChanceToHitLabel1;
     //################################# CALLABLES ######################################
@@ -70,13 +71,18 @@ public partial class PawnPlayerController : Node2D
         callableAimed = new Callable(this, nameof(Player_ACT_AimedShot));
         callableOverwatch = new Callable(this, nameof(Player_ACT_Overwatch));
         callableWideWallop = new Callable(this, nameof(Player_ACT_Punch));
-        callableStrongWallop = new Callable(this, nameof(Player_ACT_Punch));
+        callableStrongWallop = new Callable(this, nameof(Player_ACT_StrongPunch));
         callableConfirm = new Callable(this, nameof(Player_ACT_Confirm));
         callableDecline = new Callable(this, nameof(Player_ACT_Decline));
 
         ChanceToHitLabel1 = UNI_markerRef.GetNode<Label>("Label");
+        ChanceToHitLabel1.Visible = false;
         //GD.Print("PAMIĘTAJ by zawsze sprawdzić na którym pionku testujesz swe dodatki");
-        MeleeSlcieNode.Visible = false;
+        WideMelee = MeleeSlcieNode.GetNode<Area2D>("Area2DMeleeWideAttackRange");
+        StrongMelee = MeleeSlcieNode.GetNode<Area2D>("Area2DMeleeStrongAttackRange");
+        WideMelee.Visible = false;
+        StrongMelee.Visible = false;
+
         PointerNode.Visible = false;
         MovementAllowenceInyk_ator = GetNode<Node2D>("MoveIndicator");
         MovementAllowenceInyk_ator.Visible = false;
@@ -115,7 +121,7 @@ public partial class PawnPlayerController : Node2D
             {
                 ammoinfo = " ";
             }
-            StatsLabel.Text = $"{PawnScript.UnitName}\n{PawnScript.TeamId}\nHP {Mathf.RoundToInt((float)PawnScript.Integrity / (float)PawnScript.BaseIntegrity * 100f)}%\nMP {PawnScript.MP}\nStatus {PawnScript.PawnMoveStatus}\n{ammoinfo}\nDEBUG UI Connection status .: {DEBUG_UIConnectionStatus}";
+            StatsLabel.Text = $"{PawnScript.UnitName}\n{PawnScript.TeamId}\nHP {Mathf.RoundToInt((float)PawnScript.Integrity / (float)PawnScript.BaseIntegrity * 100f)}%\nMP {PawnScript.MP}\nStatus {PawnScript.PawnMoveStatus}\n{ammoinfo}";
         }
         // ################# INFO O PIONKU ######################
         // ################# AKCJE PONIŻEJ I ICH BLOK #########################
@@ -151,8 +157,18 @@ public partial class PawnPlayerController : Node2D
         {
             ShootFunc(false); // musiało zostać przesunięte zaśmiecało tu funkcje 
         }
-        if (ChosenAction == PlayersChosenAction.MeleeAttackAction) // tu podobnie jak dla akcji aimed range tu też powinna być opcja na jakiś mocny atak 
+        if (ChosenAction == PlayersChosenAction.MeleeAttackAction || ChosenAction == PlayersChosenAction.StrongMeleeAttackAction) // tu podobnie jak dla akcji aimed range tu też powinna być opcja na jakiś mocny atak 
         {
+            if (ChosenAction == PlayersChosenAction.MeleeAttackAction)
+            {
+                WideMelee.Visible = true;
+                StrongMelee.Visible = false;
+            }
+            else
+            {
+                WideMelee.Visible = false;
+                StrongMelee.Visible = true;
+            }
             if (UNI_markerRef.Visible == false)
             {
                 MeleeSlcieNode.LookAt(GetGlobalMousePosition());
@@ -167,7 +183,6 @@ public partial class PawnPlayerController : Node2D
                 UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
                 gameMNGR_Script.PlayerGUIRef.PALO(true, false);
             }
-
         }
         if (ChosenAction == PlayersChosenAction.OverwatchAction)
         {
@@ -189,10 +204,6 @@ public partial class PawnPlayerController : Node2D
                 OVDebugPoly.Polygon = points;
                 gameMNGR_Script.PlayerGUIRef.PALO(true, false);
             }
-        }
-        if (ChosenAction == PlayersChosenAction.StrongMeleeAttackAction)
-        {
-            // proste, kalkulacja dotarcia do typa przy X2 movement (o ile ma nogi) na sam koniec ktoś jest w zasięgu przyjebu dostaje po trzykroć, daj anulowanie pod osobny target marker natomiast// może daj też procent tego czy się udało ?
         }
     }
     public void SubscribeToUIControlls() // tu pionek subskrybuje UI by in tandem mógł działać bez potrzebu "telefonów" przez gameMNGR
@@ -257,12 +268,13 @@ public partial class PawnPlayerController : Node2D
         }
         ShootingFinalDiceVal = UCOPS.RangeAttackEffectivenessCalculation(ShootingRayScript.Raylengh,ShootingRayScript.RayHittenTarget,AimedOrnot);
         // ############### PODLICZENIE WYŚWIETLONEGO PROCENTU ##################
-        ChanceToHitLabel1.Text = UCOPS.PrecentCalculationFunction(ShootingFinalDiceVal).ToString();
+        ChanceToHitLabel1.Visible = true;
+        ChanceToHitLabel1.Text = $"{UCOPS.PrecentCalculationFunction(ShootingFinalDiceVal).ToString()}%";
         // ############### WIZUALNA REPREZENTACJA LOS DLA PIONKA  ##################
         if ((UNI_markerRef.Visible == false && ChosenAction == PlayersChosenAction.RangeAttackAction) || (UNI_markerRef.Visible == false && ChosenAction == PlayersChosenAction.AimedRangeAttackAction))
         {
             PointerNode.LookAt(GetGlobalMousePosition());
-            GD.Print($"chance is {ChanceToHitLabel1.Text}% (or {ShootingFinalDiceVal})");
+            //GD.Print($"chance is {ChanceToHitLabel1.Text}% (or {ShootingFinalDiceVal})");
         }
         // #################################### KLIKNIĘCIE ###################################
         if (ChosenAction == PlayersChosenAction.AimedRangeAttackAction)
@@ -282,9 +294,9 @@ public partial class PawnPlayerController : Node2D
                     UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
                     PointerNode.LookAt(UNI_markerRef.GlobalPosition);
                     ShootingRayScript.OverrideTarget = UNI_markerRef;
-                    if (EnemyPartsToHit.Count > 0)
+                    if (UCOPS.EnemyPartsToHit.Count > 0)
                     {
-                        gameMNGR_Script.ShowListPopUp(EnemyPartsToHit, this);
+                        gameMNGR_Script.ShowListPopUp(UCOPS.EnemyPartsToHit, this);
                     }
                     else
                     {
@@ -427,7 +439,12 @@ public partial class PawnPlayerController : Node2D
     {    
         Player_ACT_UNI_ChangeTargetMakerButtonNIcon(9,10);    
         ChosenAction = PlayersChosenAction.MeleeAttackAction;
-        MeleeSlcieNode.Visible = true;
+        gameMNGR_Script.ChosenActionFinished = false;
+    }
+    void Player_ACT_StrongPunch()
+    {    
+        Player_ACT_UNI_ChangeTargetMakerButtonNIcon(9,10);    
+        ChosenAction = PlayersChosenAction.StrongMeleeAttackAction;
         gameMNGR_Script.ChosenActionFinished = false;
     }
     void Player_ACT_AimedShot()
@@ -485,7 +502,14 @@ public partial class PawnPlayerController : Node2D
                     ResetActionCommitment(false);
                     break;
                 }
-                UCOPS.ActionMeleeAttack(ShootingTargetLockIndex);
+                if (ChosenAction == PlayersChosenAction.StrongMeleeAttackAction)
+                {
+                    UCOPS.ActionMeleeAttack(true,ShootingTargetLockIndex);
+                }
+                else
+                {
+                    UCOPS.ActionMeleeAttack(false,ShootingTargetLockIndex);
+                }
                 ResetActionCommitment(false);
                 break;
             case 4: // overwatch 
@@ -526,7 +550,6 @@ public partial class PawnPlayerController : Node2D
                 ResetActionCommitment(false);
                 break;
             case 3:
-                MeleeSlcieNode.Visible = false;
                 ResetActionCommitment(false);
                 break;
             case 4:
@@ -554,13 +577,14 @@ public partial class PawnPlayerController : Node2D
             ResetSelectedStatus();
         }
         ShootingRayScript.OverrideTarget = null;
+        WideMelee.Visible = false;
+        StrongMelee.Visible = false;
         StatsUI.Visible = false;
-        MeleeSlcieNode.Visible = false;
-        MeleeSlcieNode.Visible = false;
         ShootingRayScript.Rayactive = false;
         MovementAllowenceInyk_ator.Visible = false;
         NavAgent.DebugEnabled = false;
         PointerNode.Visible = false;
+        ChanceToHitLabel1.Visible = false;
         PawnScript.CheckFightingCapability();
     }
     public void ResetSelectedStatus()
