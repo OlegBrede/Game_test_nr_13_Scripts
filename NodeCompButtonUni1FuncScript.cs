@@ -7,12 +7,29 @@ public partial class NodeCompButtonUni1FuncScript : Node2D
 	[Export] int currentsize = 125;
 	[Export] string ChangedLabel = "qNullq\nqNullq";
 	[Export] private NodePath ParentPath;
+	[Export] private string IconPath = " ";
 	Node Menager;
 	TextureButton TextButtRef;
 	Label ButtonLabelRef;
-
+	Sprite2D ButtonIcon;
 	public override void _Ready()
 	{
+		ButtonIcon = GetNode<Sprite2D>("ButtonSprite");
+		ButtonIcon.Visible = false;
+        if (IconPath != " ")
+        {
+			GD.Print("BUTTON ICON TEXTURE SET");
+			Texture2D ButTex = GD.Load<Texture2D>(IconPath);
+            if (ButTex != null)
+            {
+				ButtonIcon.Texture = ButTex;
+				ButtonIcon.Visible = true;
+            }
+            else
+            {
+                GD.PrintErr($"Nie udało się wczytać tekstury z: {IconPath}");
+            }
+        }
 		TextButtRef = GetNode<TextureButton>("TextureButton");
 		TextButtRef.Connect("pressed", new Callable(this, nameof(OnACTButtonPressed)));
 		TextButtRef.Disabled = false;
@@ -23,11 +40,11 @@ public partial class NodeCompButtonUni1FuncScript : Node2D
 	}
 	void OnACTButtonPressed()
 	{
-		//GD.Print("ACT ON PRESS");
+		GD.Print($"ACT{ButtonIdNum} ON PRESS");
 		Menager.Call("Button_ACT" + ButtonIdNum);
 		//tutaj mogą być przykładowe błedy w odniesieniu do wejścia przycisków dla gracza
 	}
-	void OnChangeButtonFunc(int NowCurrentNum)
+	public void OnChangeButtonFunc(int NowCurrentNum)
 	{
 		ButtonIdNum = NowCurrentNum;
 		GD.Print("Przycisk Zmienił funkcję na " + ButtonIdNum);

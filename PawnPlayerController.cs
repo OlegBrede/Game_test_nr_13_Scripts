@@ -9,19 +9,20 @@ using System.Threading.Tasks;
 public partial class PawnPlayerController : Node2D
 {
     [Export] public PawnBaseFuncsScript PawnScript;
+    [Export] private UNI_ControlOverPawnScript UCOPS;
     [Export] public Node2D StatsUI;
     [Export] public Label StatsLabel;
-    [Export] public Node2D MoveMarker; // target marker na ruch TO DO .: - na co tyle markerów ? zrób jeden i miej spokój
-    [Export] public Node2D TargetMarker; // target marker na strzał
-    [Export] public Node2D AimedTargetMarker; //trudno, wiem że powielam kod, dziś mi się nie chce nad tym myśleć 
-    [Export] public Node2D MeleeMarker; // target marker na wpierdol
-    [Export] public Node2D OverwatchMarkerNode;
-    [Export] public Node2D MeleeSlcieNode;
+    [Export] public Node2D MeleeSlcieNode; // to też powinno iść do uni 
     [Export] public Node2D PointerNode;
     [Export] public NavigationAgent2D NavAgent;
     [Export] Sprite2D movementsprite;
     [Export] UNI_LOSRayCalcScript ShootingRayScript;
     [Export] Area2D MeleeAttackArea;
+    [Export] Node2D ONB; //overwatch node bucket
+    [Export] Node2D UNI_markerRef;
+    NodeCompButtonUni1FuncScript YayButton;
+    NodeCompButtonUni1FuncScript NayButton;
+    Sprite2D UNI_MarkerIcon;
     List<PawnPart> EnemyPartsToHit = new List<PawnPart>();
     Node2D MovementAllowenceInyk_ator;
     Node2D OverwatchpointRefNode;
@@ -30,29 +31,50 @@ public partial class PawnPlayerController : Node2D
     Node2D OVPoint2Ref;
     Polygon2D OVDebugPoly;
     GameMNGR_Script gameMNGR_Script;
-    Area2D OverlapingBodiesArea;
     Area2D OverwatchArea;
     CollisionPolygon2D OverwatchTriangleHitbox;
     Label ChanceToHitLabel1;
+    //################################# CALLABLES ######################################
+    private Callable callableMove;
+    private Callable callableShoot;
+    private Callable callableAimed;
+    private Callable callableOverwatch;
+    private Callable callableWideWallop;
+    private Callable callableStrongWallop;
+    private Callable callableConfirm;
+    private Callable callableDecline;
+    //################################# CALLABLES ######################################
     enum PlayersChosenAction
     {
-        None, MoveAction, RangeAttackAction, AimedRangeAttackAction, OverwatchAction, MeleeAttackAction, ChargeAction
+        None, MoveAction, RangeAttackAction, AimedRangeAttackAction, OverwatchAction, MeleeAttackAction, StrongMeleeAttackAction
     }
     private PlayersChosenAction ChosenAction = PlayersChosenAction.None;
     private bool isSelected = false;
     private Vector2 texSize;
     private float baseRadius;
     private float ShootingFinalDiceVal = 0;
-    private int ShootingTargetLockIndex = 999;
+    private int ShootingTargetLockIndex = 999; // index części ciała która ma być trafona 
     private float PartProbability = 0;
     private float MeleeFinalDiceVal = 0;
     bool Actionconfimrm = false;
-    
+    bool DEBUG_UIConnectionStatus = false;
     public override void _Ready()
     {
-        TargetMarker.Visible = false;
-        AimedTargetMarker.Visible = false;
-        ChanceToHitLabel1 = TargetMarker.GetNode<Label>("Label");
+        UNI_markerRef.Visible = false;
+        YayButton = UNI_markerRef.GetNode<NodeCompButtonUni1FuncScript>("SampleButton3");
+        NayButton = UNI_markerRef.GetNode<NodeCompButtonUni1FuncScript>("SampleButton4");
+        UNI_MarkerIcon = UNI_markerRef.GetNode<Sprite2D>("Uni_Icon");
+
+        callableMove = new Callable(this, nameof(Player_ACT_Move));
+        callableShoot = new Callable(this, nameof(Player_ACT_Shoot));
+        callableAimed = new Callable(this, nameof(Player_ACT_AimedShot));
+        callableOverwatch = new Callable(this, nameof(Player_ACT_Overwatch));
+        callableWideWallop = new Callable(this, nameof(Player_ACT_Punch));
+        callableStrongWallop = new Callable(this, nameof(Player_ACT_Punch));
+        callableConfirm = new Callable(this, nameof(Player_ACT_Confirm));
+        callableDecline = new Callable(this, nameof(Player_ACT_Decline));
+
+        ChanceToHitLabel1 = UNI_markerRef.GetNode<Label>("Label");
         //GD.Print("PAMIĘTAJ by zawsze sprawdzić na którym pionku testujesz swe dodatki");
         MeleeSlcieNode.Visible = false;
         PointerNode.Visible = false;
@@ -66,40 +88,47 @@ public partial class PawnPlayerController : Node2D
         statArea.InputEvent += OnAreaInputEvent;
 
         StatsUI.Visible = false;
-        MoveMarker.Visible = false;
 
-        OverlapingBodiesArea = MoveMarker.GetNode<Area2D>("Area2D");
         var circle = PawnScript.GetNode<CollisionShape2D>("CollisionShape2D").Shape as CircleShape2D;
         NavAgent.Radius = circle.Radius;
 
-        OverwatchMarkerNode.Visible = false;
-        OVDebugPoly = OverwatchMarkerNode.GetNode<Polygon2D>("Polygon2D");
-        OverwatchArea = OverwatchMarkerNode.GetNode<Area2D>("Area2D");
+        ONB.Visible = false;
+        OVDebugPoly = ONB.GetNode<Polygon2D>("Polygon2D");
+        OverwatchArea = ONB.GetNode<Area2D>("Area2D");
         //OverwatchArea.BodyEntered += OverwachedAreaEntered;
         OverwatchTriangleHitbox = OverwatchArea.GetNode<CollisionPolygon2D>("CollisionPolygon2D");
-        OverwatchpointRefNode = OverwatchMarkerNode.GetNode<Node2D>("NodeForAreaTriangulation");
+        OverwatchpointRefNode = ONB.GetNode<Node2D>("NodeForAreaTriangulation");
         OVPoint1Ref = OverwatchpointRefNode.GetNode<Node2D>("Point1");
         OVPoint2Ref = OverwatchpointRefNode.GetNode<Node2D>("Point2");
-        OVButtons = OverwatchMarkerNode.GetNode<Node2D>("ConfirmationButtonsBucket");
     }
-
     public override void _Process(double delta)
     {
-        if (StatsUI.Visible)
+        // ################# INFO O PIONKU ######################
+        if (StatsUI.Visible) // to może tak być, pierdole 
         {
-            StatsLabel.Text = $"{PawnScript.UnitName}\n{PawnScript.TeamId}\nHP {Mathf.RoundToInt((float)PawnScript.Integrity / (float)PawnScript.BaseIntegrity * 100f)}%\nMP {PawnScript.MP}\nStatus {PawnScript.PawnMoveStatus}\nAmmo ({PawnScript.WeaponAmmo}/{PawnScript.WeaponMaxAmmo})";
+            string ammoinfo;
+            if (PawnScript.ShootingAllowence > 0)
+            {
+                ammoinfo = $"Ammo ({PawnScript.WeaponAmmo}/{PawnScript.WeaponMaxAmmo})";
+            }
+            else
+            {
+                ammoinfo = " ";
+            }
+            StatsLabel.Text = $"{PawnScript.UnitName}\n{PawnScript.TeamId}\nHP {Mathf.RoundToInt((float)PawnScript.Integrity / (float)PawnScript.BaseIntegrity * 100f)}%\nMP {PawnScript.MP}\nStatus {PawnScript.PawnMoveStatus}\n{ammoinfo}\nDEBUG UI Connection status .: {DEBUG_UIConnectionStatus}";
         }
+        // ################# INFO O PIONKU ######################
+        // ################# AKCJE PONIŻEJ I ICH BLOK #########################
         if (ChosenAction == PlayersChosenAction.MoveAction)
         {
             bool CanGoThere;
-            if (MoveMarker.Visible == false)
+            if (UNI_markerRef.Visible == false)
             { // jeśli nie ma postawionego punktu ruchu śledź kursor
                 MovementAllowenceInyk_ator.GlobalPosition = GetGlobalMousePosition();
                 NavAgent.TargetPosition = MovementAllowenceInyk_ator.GlobalPosition;
                 NavAgent.GetNextPathPosition();
-                OverlapingBodiesArea.GlobalPosition = GetGlobalMousePosition();
             }
-            if (NavAgent.GetPathLength() <= PawnScript.MAD && IsTargetPositionFreeAsync()) // pokazujemy graczu że może tam stanąć 
+            if (UCOPS.MovementAllowenceCalculationResult(MovementAllowenceInyk_ator.GlobalPosition) == true) // pokazujemy graczu że może tam stanąć 
             {
                 movementsprite.Modulate = new Color(0, 1, 0);
                 CanGoThere = true;
@@ -109,49 +138,48 @@ public partial class PawnPlayerController : Node2D
                 movementsprite.Modulate = new Color(1, 0, 0);
                 CanGoThere = false;
             }
-            PawnScript.DistanceMovedByThisPawn = NavAgent.GetPathLength();
+            UCOPS.DistanceMovedUpdate(); // podanie ile się rusznął ruch dystansowy resetuje się przy poruszeniu się dwa razy ale to celowo, tu po prostu zaufam instynktowi który mówi mi że tak jest poprawnie
             //GD.Print($"Pionek rusza się o {PawnScript.DistanceMovedByThisPawn}");
-            if (Input.IsActionJustPressed("MYMOUSELEFT") && CanGoThere == true && MoveMarker.Visible == false) // można wybrać marker tylko wtedy gdy jego pozycja jest potwierdzona przez dystans 
+            if (Input.IsActionJustPressed("MYMOUSELEFT") && CanGoThere == true && UNI_markerRef.Visible == false) // można wybrać marker tylko wtedy gdy jego pozycja jest potwierdzona przez dystans 
             {
-                MoveMarker.GlobalPosition = GetGlobalMousePosition();
-                OverlapingBodiesArea.GlobalPosition = MoveMarker.GlobalPosition;
-                MoveMarker.Visible = true;
-                gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", true, false);
+                UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
+                UNI_markerRef.Visible = true;
+                gameMNGR_Script.PlayerGUIRef.PALO(true, false);
             }
         }
         if (ChosenAction == PlayersChosenAction.RangeAttackAction || ChosenAction == PlayersChosenAction.AimedRangeAttackAction)
         {
             ShootFunc(false); // musiało zostać przesunięte zaśmiecało tu funkcje 
         }
-        if (ChosenAction == PlayersChosenAction.MeleeAttackAction)
+        if (ChosenAction == PlayersChosenAction.MeleeAttackAction) // tu podobnie jak dla akcji aimed range tu też powinna być opcja na jakiś mocny atak 
         {
-            if (MeleeMarker.Visible == false)
+            if (UNI_markerRef.Visible == false)
             {
                 MeleeSlcieNode.LookAt(GetGlobalMousePosition());
             }
             else
             {
-                MeleeSlcieNode.LookAt(MeleeMarker.GlobalPosition);
+                MeleeSlcieNode.LookAt(UNI_markerRef.GlobalPosition);
             }
-            if (Input.IsActionJustPressed("MYMOUSELEFT") && MeleeMarker.Visible == false)
+            if (Input.IsActionJustPressed("MYMOUSELEFT") && UNI_markerRef.Visible == false)
             {
-                MeleeMarker.Visible = true;
-                MeleeMarker.GlobalPosition = GetGlobalMousePosition();
-                gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", true, false);
+                UNI_markerRef.Visible = true;
+                UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
+                gameMNGR_Script.PlayerGUIRef.PALO(true, false);
             }
 
         }
         if (ChosenAction == PlayersChosenAction.OverwatchAction)
         {
             // proponuję zrobić to tak jak w quar-ach area fire, to wtedy nie będzie trzeba się certolić z kierunkiem wzroku
-            if (OverwatchMarkerNode.Visible == false)
+            if (UNI_markerRef.Visible == false)
             {
-                OverwatchMarkerNode.GlobalPosition = GetGlobalMousePosition();
+                UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
                 OverwatchpointRefNode.LookAt(PawnScript.GlobalPosition);
             }
-            if (Input.IsActionJustPressed("MYMOUSELEFT") && OverwatchMarkerNode.Visible == false)
+            if (Input.IsActionJustPressed("MYMOUSELEFT") && UNI_markerRef.Visible == false)
             {
-                OverwatchMarkerNode.Visible = true;
+                UNI_markerRef.Visible = true;
                 var points = OverwatchTriangleHitbox.Polygon;
                 points[0] = OverwatchTriangleHitbox.ToLocal(OVPoint1Ref.GlobalPosition);
                 points[1] = OverwatchTriangleHitbox.ToLocal(PawnScript.GlobalPosition);
@@ -159,125 +187,101 @@ public partial class PawnPlayerController : Node2D
                 //GD.Print($"Pozycja zmieniona dla punktów .: {points[0]},{points[1]},{points[2]}, Pozycja pionka to {PawnScript.GlobalPosition}");
                 OverwatchTriangleHitbox.Polygon = points;
                 OVDebugPoly.Polygon = points;
-                gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", true, false);
+                gameMNGR_Script.PlayerGUIRef.PALO(true, false);
             }
         }
-        if (ChosenAction == PlayersChosenAction.ChargeAction)
+        if (ChosenAction == PlayersChosenAction.StrongMeleeAttackAction)
         {
             // proste, kalkulacja dotarcia do typa przy X2 movement (o ile ma nogi) na sam koniec ktoś jest w zasięgu przyjebu dostaje po trzykroć, daj anulowanie pod osobny target marker natomiast// może daj też procent tego czy się udało ?
         }
     }
+    public void SubscribeToUIControlls() // tu pionek subskrybuje UI by in tandem mógł działać bez potrzebu "telefonów" przez gameMNGR
+    {
+        if(gameMNGR_Script.SelectedPawn != null)
+        {
+            GD.Print($"Subscription triggered to {gameMNGR_Script.SelectedPawn.UnitName} ID .:{gameMNGR_Script.SelectedPawn.Name}...");
+        }
+        UnsubscribeFromUIControlls();
+        if(gameMNGR_Script.PlayerGUIRef.IsConnected(GUIButtonsToPawnScript.SignalName.MoveAction , callableMove) == false) // by zasubskrybować pawn, musi obecny nie być null oraz musi on nie być obecnym nowym pionkiem 
+        {
+            DEBUG_UIConnectionStatus = true;
+            GD.Print($"conectting subscription to {gameMNGR_Script.SelectedPawn.UnitName} ID .:{gameMNGR_Script.SelectedPawn.Name}... ");
+            //GUI_BTPS.Connect(GUIButtonsToPawnScript.SignalName.NAZWA, new Callable(this, nameof(SYGNAŁ)));
+            gameMNGR_Script.PlayerGUIRef.Connect(GUIButtonsToPawnScript.SignalName.MoveAction , callableMove);
+            gameMNGR_Script.PlayerGUIRef.Connect(GUIButtonsToPawnScript.SignalName.NormalShotAction , callableShoot);
+            gameMNGR_Script.PlayerGUIRef.Connect(GUIButtonsToPawnScript.SignalName.AimedShotAction , callableAimed);
+            gameMNGR_Script.PlayerGUIRef.Connect(GUIButtonsToPawnScript.SignalName.OverwatchAction , callableOverwatch);
+            gameMNGR_Script.PlayerGUIRef.Connect(GUIButtonsToPawnScript.SignalName.WideWallopAction , callableWideWallop);
+            gameMNGR_Script.PlayerGUIRef.Connect(GUIButtonsToPawnScript.SignalName.StrongWallopAction , callableStrongWallop);
+            gameMNGR_Script.PlayerGUIRef.Connect(GUIButtonsToPawnScript.SignalName.PawnConfirm , callableConfirm);
+            gameMNGR_Script.PlayerGUIRef.Connect(GUIButtonsToPawnScript.SignalName.PawnDecline, callableDecline);
+            //Current_GUI_BTPS.Call("bullshit"); // przykładowy trigger z powrotem do nadawcy
+        }
+        else
+        {
+            GD.Print("dany pionek ma już subskrybcję do gui");
+        }
+    }
+    public void UnsubscribeFromUIControlls()
+    {
+        if (gameMNGR_Script.PlayerGUIRef.IsConnected(GUIButtonsToPawnScript.SignalName.MoveAction , callableMove) == true)
+        {
+            GD.Print($"disconectting subscription from prev pawn ... ");
+            DEBUG_UIConnectionStatus = false;
+            //GUI_BTPS.Disconnect(GUIButtonsToPawnScript.SignalName.NAZWA SYGNAŁU TU , new Callable(this, nameof(NAZWA FUNKCJI)));
+            gameMNGR_Script.PlayerGUIRef.Disconnect(GUIButtonsToPawnScript.SignalName.MoveAction , callableMove);
+            gameMNGR_Script.PlayerGUIRef.Disconnect(GUIButtonsToPawnScript.SignalName.NormalShotAction , callableShoot);
+            gameMNGR_Script.PlayerGUIRef.Disconnect(GUIButtonsToPawnScript.SignalName.AimedShotAction , callableAimed);
+            gameMNGR_Script.PlayerGUIRef.Disconnect(GUIButtonsToPawnScript.SignalName.OverwatchAction , callableOverwatch);
+            gameMNGR_Script.PlayerGUIRef.Disconnect(GUIButtonsToPawnScript.SignalName.WideWallopAction , callableWideWallop);
+            gameMNGR_Script.PlayerGUIRef.Disconnect(GUIButtonsToPawnScript.SignalName.StrongWallopAction , callableStrongWallop);
+            gameMNGR_Script.PlayerGUIRef.Disconnect(GUIButtonsToPawnScript.SignalName.PawnConfirm , callableConfirm);
+            gameMNGR_Script.PlayerGUIRef.Disconnect(GUIButtonsToPawnScript.SignalName.PawnDecline, callableDecline);
+        }
+        else
+        {
+            GD.Print($"odsubskrybowanie niemożliwe dla już odsubskrybowanego elementu");
+        }
+    }
     void ShootFunc(bool OV_Active)
     {
-        // ################# KALKULACJA NA PODSTAWIE ZASIĘGU ######################
-        bool ShotPosibility;
-        float TargetRangeModifier;
-        float TargetOwnMoveModifier;
-        float TargetEnemyMoveModifier;
-        float ModiRayLenghCorrector = ShootingRayScript.Raylengh - PawnScript.DistanceZero;
-        if (ModiRayLenghCorrector < PawnScript.WeaponRange)
+        // ################# KALKULOWANIE W UCOPS ######################
+        bool AimedOrnot;
+        if (ChosenAction == PlayersChosenAction.AimedRangeAttackAction)
         {
-            ShotPosibility = true;
-            //TargetRangeModifier = Mathf.Clamp(ShootingRayScript.Raylengh / PawnScript.WeaponRange, 0, 1f);
-            TargetRangeModifier = Mathf.Clamp(ModiRayLenghCorrector / PawnScript.WeaponRange, 0, 1f) * PawnScript.Penalty_range;
-            //GD.Print($"TargetRangeModifier {TargetRangeModifier}");
+            AimedOrnot = true;
         }
         else
         {
-            ShotPosibility = false;
-            TargetRangeModifier = 11;
-            //GD.Print("Pionek nie trafi");
+            AimedOrnot = false;
         }
-        // ################# KALKULACJA NA PODSTAWIE WŁASNEGO RUCHU ######################
-        if (PawnScript.PawnMoveStatus == PawnMoveState.Moving)
-        {
-            TargetOwnMoveModifier = Mathf.Clamp(PawnScript.DistanceMovedByThisPawn / PawnScript.MAD, 0, 1f) * PawnScript.Penalty_shooter;
-            //GD.Print($"Na cel wpływa modyfikator bo strzelec się rusza {TargetOwnMoveModifier}");
-        }
-        else
-        {
-            TargetOwnMoveModifier = 0;
-        }
-        // ################# KALKULACJA NA PODSTAWIE RUCHU PRZECIWNIKA ######################
-        if (ShootingRayScript.RayHittenTarget != null)
-        {
-            PawnBaseFuncsScript PBFS = ShootingRayScript.RayHittenTarget as PawnBaseFuncsScript; //TO DO .: ten skrypt zakłada że każdy characterbody ma ten skrypt, sprawdź najpierw czy ma ten skrypt  
-            if (PBFS.PawnMoveStatus == PawnMoveState.Moving)
-            {
-                TargetEnemyMoveModifier = Mathf.Clamp(PBFS.DistanceMovedByThisPawn / PBFS.MAD, 0, 1f) * PawnScript.Penalty_target;
-                //GD.Print($"Na cel wpływa modyfikator bo cel się rusza {TargetEnemyMoveModifier}");
-            }
-            else
-            {
-                TargetEnemyMoveModifier = 0;
-            }
-        }
-        else
-        {
-            TargetEnemyMoveModifier = 0;
-        }
-        // ############################# KULMINACJA WARTOŚCI KOŃCOWEJ #######################
-        if (ChosenAction == PlayersChosenAction.AimedRangeAttackAction) // bo teraz szansa trafienia w konkretną cześć ciała może być znacznie trudniejsza niżeli taki se strzał losowy
-        {
-            EnemyPartsToHit.Clear();
-            if (ShootingRayScript.RayHittenTarget != null)
-            {
-                PawnBaseFuncsScript PBFS = ShootingRayScript.RayHittenTarget as PawnBaseFuncsScript;
-                foreach (PawnPart Part in PBFS.PawnParts)
-                {
-                    EnemyPartsToHit.Add(Part);
-                }
-                // tu kod dodający części ciała do listy 
-            }
-        }
-        // ############### PODLICZENIE DEBUFFÓW ##################
-        float penaltyTotal;
-        if (ShotPosibility == true)
-        {
-            penaltyTotal = Mathf.Clamp(TargetRangeModifier + TargetOwnMoveModifier + TargetEnemyMoveModifier, 0f, 1f);
-            ShootingFinalDiceVal = penaltyTotal * 10;
-        }
-        else
-        {
-            penaltyTotal = 0;
-            ShootingFinalDiceVal = 11;
-        }
+        ShootingFinalDiceVal = UCOPS.RangeAttackEffectivenessCalculation(ShootingRayScript.Raylengh,ShootingRayScript.RayHittenTarget,AimedOrnot);
         // ############### PODLICZENIE WYŚWIETLONEGO PROCENTU ##################
-        int Precent;
-        if (ShootingFinalDiceVal < 10)
-        {
-            Precent = Mathf.RoundToInt(100f - (ShootingFinalDiceVal * 10f));
-            ChanceToHitLabel1.Text = $"{Precent}%";
-        }
-        else
-        {
-            Precent = 0;
-            ChanceToHitLabel1.Text = $"{Precent}%";
-        }
+        ChanceToHitLabel1.Text = UCOPS.PrecentCalculationFunction(ShootingFinalDiceVal).ToString();
         // ############### WIZUALNA REPREZENTACJA LOS DLA PIONKA  ##################
-        if ((TargetMarker.Visible == false && ChosenAction == PlayersChosenAction.RangeAttackAction) || (AimedTargetMarker.Visible == false && ChosenAction == PlayersChosenAction.AimedRangeAttackAction))
+        if ((UNI_markerRef.Visible == false && ChosenAction == PlayersChosenAction.RangeAttackAction) || (UNI_markerRef.Visible == false && ChosenAction == PlayersChosenAction.AimedRangeAttackAction))
         {
             PointerNode.LookAt(GetGlobalMousePosition());
-            //GD.Print($"Range {ModiRayLenghCorrector} so chance is {Precent}% (or {ShootingFinalDiceVal})with mod1 = {TargetOwnMoveModifier} & mod2 = {TargetEnemyMoveModifier}");
+            GD.Print($"chance is {ChanceToHitLabel1.Text}% (or {ShootingFinalDiceVal})");
         }
         // #################################### KLIKNIĘCIE ###################################
         if (ChosenAction == PlayersChosenAction.AimedRangeAttackAction)
         {
-            if (Input.IsActionJustPressed("MYMOUSELEFT") && AimedTargetMarker.Visible == false)
+            if (Input.IsActionJustPressed("MYMOUSELEFT") && UNI_markerRef.Visible == false)
             {
-                if (ShotPosibility == false)
+                if (UCOPS.PrecentCalculationFunction(ShootingFinalDiceVal) == 0 || ShootingFinalDiceVal >= 10)
                 {
                     gameMNGR_Script.PlayerPhoneCallWarning("0% TO HIT TARGET");
-                    gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", false, false);
+                    gameMNGR_Script.PlayerGUIRef.PALO(false, false);
                     ResetActionCommitment(true);
                     return;
                 }
                 if (ShootingRayScript.RayHittenTarget != null)
                 {
-                    AimedTargetMarker.Visible = true;
-                    AimedTargetMarker.GlobalPosition = GetGlobalMousePosition();
-                    PointerNode.LookAt(AimedTargetMarker.GlobalPosition);
-                    ShootingRayScript.OverrideTarget = AimedTargetMarker;
+                    UNI_markerRef.Visible = true;
+                    UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
+                    PointerNode.LookAt(UNI_markerRef.GlobalPosition);
+                    ShootingRayScript.OverrideTarget = UNI_markerRef;
                     if (EnemyPartsToHit.Count > 0)
                     {
                         gameMNGR_Script.ShowListPopUp(EnemyPartsToHit, this);
@@ -291,7 +295,7 @@ public partial class PawnPlayerController : Node2D
                 else
                 {
                     gameMNGR_Script.PlayerPhoneCallWarning("NO TARGET");
-                    gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", false, false);
+                    gameMNGR_Script.PlayerGUIRef.PALO(false, false);
                     ResetActionCommitment(true);
                     return;
                 }
@@ -300,13 +304,13 @@ public partial class PawnPlayerController : Node2D
         }
         else if(ChosenAction == PlayersChosenAction.RangeAttackAction || OV_Active == true )
         {
-            if (Input.IsActionJustPressed("MYMOUSELEFT") && TargetMarker.Visible == false && OV_Active == false)
+            if (Input.IsActionJustPressed("MYMOUSELEFT") && UNI_markerRef.Visible == false && OV_Active == false)
             {
-                TargetMarker.Visible = true;
-                TargetMarker.GlobalPosition = GetGlobalMousePosition();
-                PointerNode.LookAt(TargetMarker.GlobalPosition);
-                ShootingRayScript.OverrideTarget = TargetMarker;
-                gameMNGR_Script.PlayerPhoneCallback2Flag("PALO", true, false);
+                UNI_markerRef.Visible = true;
+                UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
+                PointerNode.LookAt(UNI_markerRef.GlobalPosition);
+                ShootingRayScript.OverrideTarget = UNI_markerRef;
+                gameMNGR_Script.PlayerGUIRef.PALO(true, false);
             }
             if (OV_Active == true)
             {
@@ -346,7 +350,7 @@ public partial class PawnPlayerController : Node2D
                         GD.Print("overwatch wydany ");
                     }
                     PawnScript.OverwatchStatus = false;
-                    OverwatchMarkerNode.Visible = false;
+                    UNI_markerRef.Visible = false;
                     OVButtons.Visible = true;
                 }
                 else
@@ -356,24 +360,12 @@ public partial class PawnPlayerController : Node2D
             }
         }
     }
-    void AimedShotChosenTargetListTrigger(int inx,float probabitity)
+    void AimedShotChosenTargetListTrigger(int inx,float probabitity) // to jest zapewne wywoływane z listy części ciała, pytanie czy AI byłoby w stanie ustalić index bezpośrednio ? jeśli tak to ta funkcja może zostać tu
     {
         ShootingTargetLockIndex = inx;
         PartProbability = 3f - Mathf.Clamp(probabitity,0,2.5f)*18; // te 3 kontroluje że strzał w głowe nie jest zbyt OP
         //Mathf.Clamp(probabitity,0,2.5f)*18
         Player_ACT_Confirm(2);
-    }
-    private bool IsTargetPositionFreeAsync()
-    {
-        var overlaps = OverlapingBodiesArea.GetOverlappingBodies();
-        foreach (var body in overlaps)
-        {
-            if (body is StaticBody2D)
-                return false;
-            if (body is CharacterBody2D && body.GetInstanceId != PawnScript.GetInstanceId)
-                return false;
-        }
-        return true;
     }
     private void OnMouseEnter() => StatsUI.Visible = true;
     private void OnMouseExit()
@@ -381,11 +373,11 @@ public partial class PawnPlayerController : Node2D
         if (!isSelected)
             StatsUI.Visible = false;
     }
-    void Button_ACT1() // accept move order 
+    public void Button_ACT1() // accept move order 
     {
         Player_ACT_Confirm(1);
     }
-    void Button_ACT6() // decline move order
+    public void Button_ACT6() // decline move order
     {
         Player_ACT_Decline(1);
     }
@@ -405,38 +397,42 @@ public partial class PawnPlayerController : Node2D
     {
         Player_ACT_Decline(3);
     }
-    void Button_ACT11() // decline melee atack order
+    void Button_ACT11() // accept overwatch order ?
     {
         Player_ACT_Confirm(4);
     }
-    void Button_ACT12() // decline melee atack order
+    void Button_ACT12() // decline overwatch order ? 
     {
         Player_ACT_Decline(4);
     }
-    void Player_ACT_Move(int Dump)
+    void Player_ACT_Move()
     {
+        Player_ACT_UNI_ChangeTargetMakerButtonNIcon(1,6);
         gameMNGR_Script.ChosenActionFinished = false;
         ChosenAction = PlayersChosenAction.MoveAction;
         MovementAllowenceInyk_ator.Visible = true;
         NavAgent.DebugEnabled = true;
-        //GD.Print("teraz gracz wybiera ruch...");
+        GD.Print("teraz gracz wybiera ruch...");
     }
-    void Player_ACT_Shoot(int Dump)
+    void Player_ACT_Shoot()
     {
+        Player_ACT_UNI_ChangeTargetMakerButtonNIcon(4,5);
         gameMNGR_Script.ChosenActionFinished = false;
         ChosenAction = PlayersChosenAction.RangeAttackAction;
         ShootingRayScript.Rayactive = true;
         PointerNode.Visible = true;
         //GD.Print("teraz gracz wybiera cel...");
     }
-    void Player_ACT_Punch(int Dump)
-    {        
+    void Player_ACT_Punch()
+    {    
+        Player_ACT_UNI_ChangeTargetMakerButtonNIcon(9,10);    
         ChosenAction = PlayersChosenAction.MeleeAttackAction;
         MeleeSlcieNode.Visible = true;
         gameMNGR_Script.ChosenActionFinished = false;
     }
-    void Player_ACT_AimedShot(int Dump)
+    void Player_ACT_AimedShot()
     {
+        Player_ACT_UNI_ChangeTargetMakerButtonNIcon(4,5);
         gameMNGR_Script.ChosenActionFinished = false;
         ChosenAction = PlayersChosenAction.AimedRangeAttackAction;
         ShootingRayScript.Rayactive = true;
@@ -449,92 +445,52 @@ public partial class PawnPlayerController : Node2D
         ChosenAction = PlayersChosenAction.OverwatchAction;
         GD.Print("teraz gracz wybiera overwatch ...");
     }
+    void Player_ACT_UNI_ChangeTargetMakerButtonNIcon(int ACTI1,int ACTI2)//(Yay/Nay) to wybiera powyższy button ACT (w przyszłości modyfikuj via string, mniej magicznych liczb pls)
+    {
+        YayButton.OnChangeButtonFunc(ACTI1);
+        NayButton.OnChangeButtonFunc(ACTI2);
+    }
     void Player_ACT_Confirm(int Index)
     {
-        gameMNGR_Script.PlayerPhoneCallback2Flag("PALO",true,false);
+        gameMNGR_Script.PlayerGUIRef.PALO(true, false);
         switch (Index)
         {
-            case 1:
-                PawnScript.MP--;
-                gameMNGR_Script.TeamsCollectiveMP--;
-                var path = NavAgent.GetCurrentNavigationPath();
-                if (path.Length > 0)
-                {
-                    var targetPos = path[path.Length - 1];
-                    PawnScript.GlobalPosition = targetPos;
-                    if (PawnScript.PawnMoveStatus == PawnMoveState.Moving)
-                    {
-                        float Addtive = PawnScript.PrevDistance + PawnScript.DistanceMovedByThisPawn;
-                        //GD.Print(Addtive);// nie mam pojęcia czemu to nie działa , ale nie jest to na tyle inwazyjne żeby się za to raptownie brać, bo pionek zurzuwając dwa punkty ruchu na to by zresetować prędkość nic nie osiągnie 
-                        PawnScript.PrevDistance = Addtive;
-                    }
-                    else
-                    {
-                        PawnScript.PrevDistance = PawnScript.DistanceMovedByThisPawn;
-                    }
-                    PawnScript.PawnMoveStatus = PawnMoveState.Moving;
-                }
+            case 1: // potwierdzenie ruchu
+                UCOPS.ActionMove();
                 ResetActionCommitment(false); // ten reset statusu będzie musiał zostać usunięty z tąd gdyż to że dany pionek zakończył TEN ruch nie oznacza że nie może zrobić kolejnego, więc pomyśl nad sprawdzeniem selekcji i deselekcji by działała poprawnie
                 break;
             case 2:
+                bool AimedOrnot;
                 if (PawnScript.ShootingAllowence <= 0 || PawnScript.WeaponAmmo <= 0)
                 {
                     GD.Print("You cant shoot fucko' ");
                     ResetActionCommitment(false);
                     break;
                 }
-                if (ChosenAction == PlayersChosenAction.RangeAttackAction)
+                if(ChosenAction == PlayersChosenAction.AimedRangeAttackAction) // jest Aimed albo nie 
                 {
-                    PawnScript.MP--;
-                    gameMNGR_Script.TeamsCollectiveMP--;
+                    AimedOrnot = true;
                 }
-                if(ChosenAction == PlayersChosenAction.AimedRangeAttackAction)
+                else // by AimedOrnot nie było przez przypadek nullem, ale jak co to może być prowodyrem w przyszłości 
                 {
-                    PawnScript.MP -= 2;
-                    gameMNGR_Script.TeamsCollectiveMP -= 2;
-                    if (PawnScript.MP < 0)
-                    {
-                        GD.PrintErr("Błąd kalkulacji MP przy strzale wycelowanym");
-                        gameMNGR_Script.TeamsCollectiveMP++;
-                    }
+                    AimedOrnot = false;
                 }
-                PawnScript.WeaponAmmo--;
-                PawnScript.PlayAttackAnim();
-                if (ShootingRayScript.RayHittenTarget != null)
-                {
-                    ShootingRayScript.RayHittenTarget.Call("CalculateHit", PawnScript.WeaponDamage, ShootingFinalDiceVal + PartProbability,ShootingTargetLockIndex, PawnScript.UnitName);
-                    GD.Print($"Kość floatDice10 musi przebić nad {ShootingFinalDiceVal} dodatkowe Part probability było {PartProbability} więc razem {ShootingFinalDiceVal + PartProbability}");
-                    gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, ShootingRayScript.RayHittenTarget.GlobalPosition);
-                }
+                UCOPS.ActionRangeAttack(AimedOrnot,ShootingFinalDiceVal,PartProbability,ShootingTargetLockIndex);
                 ResetActionCommitment(false);
                 break;
             case 3:
-                PawnScript.MP--;
-                gameMNGR_Script.TeamsCollectiveMP--;
                 if (PawnScript.MeleeAllowence <= 0)
                 {
                     GD.Print("You cant melee fucko' ");
                     ResetActionCommitment(false);
                     break;
                 }
-                PawnScript.PlayAttackAnim();
-                MeleeAttackArea.ForceUpdateTransform();
-                var overlaps = MeleeAttackArea.GetOverlappingBodies();
-                foreach (var body in overlaps)
-                {
-                    if (body is CharacterBody2D)
-                    {
-                        PawnBaseFuncsScript PS = body as PawnBaseFuncsScript;
-                        if (PS.TeamId != PawnScript.TeamId)
-                        {
-                            PS.Call("CalculateHit", PawnScript.MeleeDamage, 2.5f,ShootingTargetLockIndex, PawnScript.UnitName); // więcej przeciwnikom
-                        }
-                    }
-                }
+                UCOPS.ActionMeleeAttack(ShootingTargetLockIndex);
                 ResetActionCommitment(false);
                 break;
             case 4: // overwatch 
-                OverwatchMarkerNode.Visible = true;
+            // jak już rozkminisz jak to zaaranżować to weż to daj do UNIcontroll w UCOPS
+                UNI_markerRef.Visible = true;
                 PawnScript.OverwatchStatus = true;
                 OVButtons.Visible = false;
                 PawnScript.MP -= 2;
@@ -555,12 +511,11 @@ public partial class PawnPlayerController : Node2D
     }
     void Player_ACT_Decline(int Index)
     {
-        gameMNGR_Script.PlayerPhoneCallback2Flag("PALO",true,false);
+        gameMNGR_Script.PlayerGUIRef.PALO(true, false);
         switch (Index)
         {
             case 1:
                 PawnScript.DistanceMovedByThisPawn = PawnScript.PrevDistance;
-                MoveMarker.Visible = false;
                 MovementAllowenceInyk_ator.Visible = false;
                 NavAgent.DebugEnabled = false;
                 ResetActionCommitment(false);
@@ -568,17 +523,14 @@ public partial class PawnPlayerController : Node2D
             case 2:
                 ShootingRayScript.OverrideTarget = null;
                 ShootingRayScript.Rayactive = false;
-                TargetMarker.Visible = false;
                 ResetActionCommitment(false);
                 break;
             case 3:
                 MeleeSlcieNode.Visible = false;
-                MeleeMarker.Visible = false;
                 ResetActionCommitment(false);
                 break;
             case 4:
                 PawnScript.OverwatchStatus = false;
-                OverwatchMarkerNode.Visible = false;
                 OVButtons.Visible = true;
                 ResetActionCommitment(false);
                 break;
@@ -593,10 +545,10 @@ public partial class PawnPlayerController : Node2D
     {
         ChosenAction = PlayersChosenAction.None;
         ShootingTargetLockIndex = 999; // na wszelki wypadek
-        PartProbability = 0;
-        AimedTargetMarker.Visible = false;
+        PartProbability = 0; //prawdopodobieństwo by trafić w daną część ciała
+        UNI_markerRef.Visible = false;
         gameMNGR_Script.ChosenActionFinished = true;
-        gameMNGR_Script.PlayerPhoneCallback2Flag("PALO",false,true);
+        gameMNGR_Script.PlayerGUIRef.PALO(false, true);
         if (PawnScript.MP <= 0 || forceDeselect == true)
         {
             ResetSelectedStatus();
@@ -605,10 +557,7 @@ public partial class PawnPlayerController : Node2D
         StatsUI.Visible = false;
         MeleeSlcieNode.Visible = false;
         MeleeSlcieNode.Visible = false;
-        MeleeMarker.Visible = false;
-        TargetMarker.Visible = false;
         ShootingRayScript.Rayactive = false;
-        MoveMarker.Visible = false;
         MovementAllowenceInyk_ator.Visible = false;
         NavAgent.DebugEnabled = false;
         PointerNode.Visible = false;
@@ -616,8 +565,9 @@ public partial class PawnPlayerController : Node2D
     }
     public void ResetSelectedStatus()
     {
-        gameMNGR_Script.PlayerPhoneCallback2Flag("PALO",false,false);
-        gameMNGR_Script.Call("DeselectPawn");
+        gameMNGR_Script.PlayerGUIRef.PALO(false, false);
+        gameMNGR_Script.DeselectPawn();
+        UnsubscribeFromUIControlls();
         isSelected = false;
     }
 

@@ -12,9 +12,9 @@ public partial class GameMNGR_Script : Node2D
     [Export] Label UnitInfoGuiLabel;
     [Export] Label TotalMPLabel;
     [Export] Label SNTWN; // Show no target warning node
-    [Export] GUIButtonsToPawnScript GBTPS;
     [Export] VBoxContainer LogBucket;
     [Export] ScrollContainer KontenrLogów;
+    [Export] public GUIButtonsToPawnScript PlayerGUIRef;
     string SceneToLoad = "res://Scenes/MultiGameOverScreen.tscn";
     public int Round = 0; // zmienić by kod wchodząc do sceny zaczynał next round i zobaczyć gdzie to nas zaniesie 
     public string Turn = "";
@@ -67,6 +67,7 @@ public partial class GameMNGR_Script : Node2D
 
     public void SetupGameScene()
     {
+        //PlayerGUIRef = GetTree().Root.GetNode<GUIButtonsToPawnScript>("BaseTestScene/Camera2D/GUI_to_Pawn_Input_Translator");
         SNTWN.Visible = false;
         UnitsBucket = GetNode<Node>("UnitsBucket");
         ESCMenu.Visible = false;
@@ -95,17 +96,18 @@ public partial class GameMNGR_Script : Node2D
         {
             if (SelectedPawn != null) // trzeba wysłać reset do skryptu gracza bo inaczej zaznaczenie się zduplikuje 
             {
-                SelectedPawn.Call("ShowSelection", false);
-                SelectedPawn.Call("RSSP");
+                SelectedPawn.Call("ShowSelection", false); // animacja
+                SelectedPawn.Call("RSSP"); // reset selekcji, teoretycznie niepotrzebny ale... TO DO .: - sprawdź czy usunięcie resetu zepsuje grę 
             }
             SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
+            SelectedPawn.SetUISubscription(); // Subskrypcja do UI
             PrevSelectedPawn = SelectedPawn;
-            GBTPS.ShowActions(); // pokaż akcje które może podjąć pionek na GUI
-            GBTPS.RecivePaperdoll(pawn.PathToPaperDoll);
+            PlayerGUIRef.PALO(false,true); // pokaż akcje które może podjąć pionek na GUI
+            PlayerGUIRef.RecivePaperdoll(pawn.PathToPaperDoll);
             pawn.CheckFightingCapability();
             foreach (PawnPart part in pawn.PawnParts)
             {
-                GBTPS.ReciveWellBeingInfo(part.Name,part.HP,part.MAXHP);
+                PlayerGUIRef.ReciveWellBeingInfo(part.Name,part.HP,part.MAXHP);
             }
             //GD.Print($"Selected Pawn Now is {SelectedPawn}");
             if (FocusCam != null)
@@ -122,7 +124,7 @@ public partial class GameMNGR_Script : Node2D
     }
     public void DeselectPawn()
     {
-        GBTPS.DeletePaperDoll();
+        PlayerGUIRef.DeletePaperDoll();
         SelectedPawn = null;
         UnitInfoGuiLabel.Text = "";
     }
@@ -139,15 +141,15 @@ public partial class GameMNGR_Script : Node2D
     }
     public void PlayerPhoneCallback2Flag(string CalledFuncName, bool Flag1,bool Flag2)
     {
-        GBTPS.Call(CalledFuncName, Flag1,Flag2);
+        PlayerGUIRef.Call(CalledFuncName, Flag1,Flag2);
     }
     public void PlayerPhoneCallbackInt(string CalledFuncName, int NumVal)
     {
-        GBTPS.Call(CalledFuncName, NumVal); 
+        PlayerGUIRef.Call(CalledFuncName, NumVal); 
     }
     public void PlayerPhoneCallbackIntBool(string CalledFuncName,int NumVal,bool Flag)
     {
-        GBTPS.Call(CalledFuncName,NumVal,Flag);
+        PlayerGUIRef.Call(CalledFuncName,NumVal,Flag);
     }
     public void CaptureAction(Vector2 Giver, Vector2 Recypiant)
     {
@@ -272,11 +274,11 @@ public partial class GameMNGR_Script : Node2D
         CalculateActiveTeamPawns(false);
         if (TrueisNext)
         {
-            GD.Print("Kliknięty został przycisk (Następny pionek)");
+            //GD.Print("Kliknięty został przycisk (Następny pionek)");
         }
         else
         {
-            GD.Print("Kliknięty został przycisk (Poprzedni pionek)");
+            //GD.Print("Kliknięty został przycisk (Poprzedni pionek)");
         }
         if (ActiveTeamPawns.Count == 0)
         {
@@ -301,7 +303,7 @@ public partial class GameMNGR_Script : Node2D
             if (NextPawn != null && NextPawn.IsInsideTree())
             {
                 SelectPawn(NextPawn);
-                GD.Print($"int indeksowy to {IntForUnitSelection} dla {NextPawn.Name}");
+                //GD.Print($"int indeksowy to {IntForUnitSelection} dla {NextPawn.Name}"); // naprawięto jednego dnia 
                 if (TrueisNext) // jeśli następny pionek 
                 {
                     IntForUnitSelection = (IntForUnitSelection + 1) % ActiveTeamPawns.Count;
@@ -367,7 +369,7 @@ public partial class GameMNGR_Script : Node2D
         {
             if (child is PawnBaseFuncsScript pawn)
             {
-                GD.Print("reset MP dokonany");
+                //GD.Print("reset MP dokonany");
                 pawn.Call("ResetMP");
                 if (pawn.TeamId == Turn)
                 {

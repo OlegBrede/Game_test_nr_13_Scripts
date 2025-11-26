@@ -17,6 +17,14 @@ public partial class GUIButtonsToPawnScript : Node2D
     [Export] Node2D MeleeButton;
     [Export] Node2D MeleeWeaponBigStrikeButton;
     [Export] Node2D OverwatchButton;
+    [Signal] public delegate void MoveActionEventHandler();
+    [Signal] public delegate void NormalShotActionEventHandler();
+    [Signal] public delegate void AimedShotActionEventHandler();
+    [Signal] public delegate void OverwatchActionEventHandler();
+    [Signal] public delegate void WideWallopActionEventHandler();
+    [Signal] public delegate void StrongWallopActionEventHandler();
+    [Signal] public delegate void PawnConfirmEventHandler(int index);
+    [Signal] public delegate void PawnDeclineEventHandler(int index);
     int Parameter = 0;
     public override void _Ready()
     {
@@ -24,10 +32,9 @@ public partial class GUIButtonsToPawnScript : Node2D
         Actions.Visible = false;
         Confirmations.Visible = false;
     }
-    public void ShowActions()
+    void PawnConnectionFunc() // jakoś trzeba byłoby załatwić to bezpośrednio
     {
-        Actions.Visible = true;
-        Confirmations.Visible = false;
+        
     }
     public void PALO(bool VisC,bool VisA) // Player Action LOader
     {
@@ -177,13 +184,13 @@ public partial class GUIButtonsToPawnScript : Node2D
             Paperdollref.Call("HP_InfoParser",Part,HP,MAXHP);
         }
     }
-    void Button_ACT1()
+    void Button_ACT1() // szerszy cone oraz większa szansa na trafienie ale mniejszy DMG
     {
         if (gameMNGR_Script.SelectedPawn != null)
         {
             if (gameMNGR_Script.SelectedPawn.MP > 0)
             {
-                gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Punch", 0);
+                EmitSignal(SignalName.WideWallopAction);
                 Parameter = 3;
                 PALO(false, false);
             }
@@ -195,7 +202,7 @@ public partial class GUIButtonsToPawnScript : Node2D
         {
             if (gameMNGR_Script.SelectedPawn.MP > 1) // potrzeba jakoś poinformować gracza że nie może wykonać tego ruchu 
             {
-                gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_AimedShot", 0);
+                EmitSignal(SignalName.AimedShotAction);
                 Parameter = 4;
                 PALO(false, false);
             }
@@ -211,7 +218,7 @@ public partial class GUIButtonsToPawnScript : Node2D
         {
             if (gameMNGR_Script.SelectedPawn.MP > 0)
             {
-                gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Shoot", 0);
+                EmitSignal(SignalName.NormalShotAction);
                 Parameter = 2;
                 PALO(false, false);
             }
@@ -223,7 +230,8 @@ public partial class GUIButtonsToPawnScript : Node2D
         {
             if (gameMNGR_Script.SelectedPawn.MP > 0)
             {
-                gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Move", 0);
+                GD.Print("MoveAction ordered");
+                EmitSignal(SignalName.MoveAction);
                 Parameter = 1;
                 PALO(false, false);
             }
@@ -233,18 +241,18 @@ public partial class GUIButtonsToPawnScript : Node2D
     {
         if (gameMNGR_Script.SelectedPawn.MP > 0)
         {
-            gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Overwatch", 0);
+            EmitSignal(SignalName.OverwatchAction);
             Parameter = 4;
             PALO(false, false);
         }
     }
-    void Button_ACT8() //charge
+    void Button_ACT8() // mocniejszy wallop na niższą szansę, mniejszy cone ale większy DMG
     {
         if (gameMNGR_Script.SelectedPawn != null) // potrzeba jakoś poinformować gracza że nie może wykonać tego ruchu 
         {
             if (gameMNGR_Script.SelectedPawn.MP > 1)
             {
-                gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Move", 0);
+                EmitSignal(SignalName.StrongWallopAction);
                 Parameter = 1;
                 PALO(false, false);
             }
@@ -260,7 +268,7 @@ public partial class GUIButtonsToPawnScript : Node2D
         {
             if (gameMNGR_Script.SelectedPawn.MP > 0)
             {
-                gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Decline", Parameter);
+                EmitSignal(SignalName.PawnDecline,Parameter);
             }
         }
     }
@@ -270,7 +278,7 @@ public partial class GUIButtonsToPawnScript : Node2D
         {
             if (gameMNGR_Script.SelectedPawn.MP > 0)
             {
-                gameMNGR_Script.SelectedPawn.Call("PlayerActionPhone", "Player_ACT_Confirm", Parameter); // by tu modyfikować ilość punktów ruchu co do akcji jest głupie, bo nie uwzględnia to potwierdzeń z fizycznego markera, nie rób tego więcej 
+                EmitSignal(SignalName.PawnConfirm,Parameter);
             }
         }
     }

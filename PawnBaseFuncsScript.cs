@@ -57,7 +57,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public Node2D TargetMarkerRef;
     public PawnMoveState PawnMoveStatus { get; set; } = PawnMoveState.Standing;
     public PawnStatusEffect PawnsActiveStates = PawnStatusEffect.None;
-    GameMNGR_Script gameMNGR_Script = null;
+    GameMNGR_Script gameMNGR_Script;
     private bool AC = false;
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     public override void _Ready()
@@ -72,16 +72,16 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             ObjętośćPionka = radius;
         }
         // ustalenie gamemenagera
-        gameMNGR_Script = GetTree().Root.GetNodeOrNull<GameMNGR_Script>("BaseTestScene");
-        if (gameMNGR_Script != null)
+        if (GetTree().CurrentScene.Name != "BaseTestScene") // hack ale powinien naprawić błąd wyskakujący przy wczytywaniu
         {
-            //GD.Print("gameMNGR_Script został poprawnie znaleziony.");
+            GD.Print($"Scena nie jest BaseTestScene, jest {GetTree().CurrentScene.Name}");
+            return;
         }
         else
         {
-            GD.Print($"Nie udało się znaleźć GameMNGR_Script w BaseTestScene");
-            return;
+            GD.Print("Scena jest BaseTestScene");
         }
+        gameMNGR_Script = GetTree().Root.GetNodeOrNull<GameMNGR_Script>("BaseTestScene"); // to dalej daje error, pomyślę nad rozwiązaniem 
         //GD.Print("skrypt przechodzi dalej ... ");
         RNGGEN.Randomize();
         UNIAnimPlayerRef.Play("StandStill");
@@ -118,13 +118,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         }
         //GD.Print($"ShootingAllowence is {ShootingAllowence}, MeleeAllowence is {MeleeAllowence} MeleeWeaponAllowence is {MeleeWeaponAllowence}");
         BaseIntegrity = Integrity;
-    }
-    public override void _Process(double delta)
-    {
-        if (AC == true)
-        {
-            //MoveAndSlide();
-        }
     }
     void Namechange(string Changetothis)
     {
@@ -393,9 +386,21 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     public void RSSP() // reset selected status player
     {
+        if(PCNP == null)
+        {
+            GD.Print($"pionek nie ma kontrolera gracza ");
+            return;
+        }  
         PCNP.Call("ResetSelectedStatus");
+        PawnPlayerController PPC = PCNP as PawnPlayerController;
+        PPC.UnsubscribeFromUIControlls();
     }
-    public void PlayerActionPhone(string FuncName,int Parameter)
+    public void SetUISubscription()
+    {
+        PawnPlayerController PPC = PCNP as PawnPlayerController;
+        PPC.SubscribeToUIControlls();
+    }
+    public void PlayerActionPhone(string FuncName,int Parameter) // TO DO .: - to jest "chyba" do wywalenia z racji na zastąpienie tego sygnałami
     {
         PCNP.Call(FuncName,Parameter);
     }
