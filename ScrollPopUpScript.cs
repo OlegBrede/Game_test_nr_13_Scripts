@@ -28,11 +28,13 @@ public partial class ScrollPopUpScript : Node2D
 
         foreach (PawnPart Part in PartsToShow)
         {
-
-            PackedScene PartButtonScene = GD.Load<PackedScene>("res://Prefabs/body_part_instance_button.tscn");
-            Button Button = PartButtonScene.Instantiate<Button>();
-            PartExtractor.AddChild(Button);
-            Button.Call("PrimeButton", PartsToShow.IndexOf(Part), Part.Name,LocationRollCalc(PartsToShow,Part.Name), Twat);
+            if(Part.HP > 0)
+            {
+                PackedScene PartButtonScene = GD.Load<PackedScene>("res://Prefabs/body_part_instance_button.tscn");
+                Button Button = PartButtonScene.Instantiate<Button>();
+                PartExtractor.AddChild(Button);
+                Button.Call("PrimeButton", PartsToShow.IndexOf(Part), Part.Name,LocationRollCalc(PartsToShow,Part.Name), Twat);
+            }
         }
     }
     float LocationRollCalc(List<PawnPart> PartsToShow,string WANTED_P_NAME)

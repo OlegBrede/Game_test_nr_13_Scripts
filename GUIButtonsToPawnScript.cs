@@ -56,11 +56,13 @@ public partial class GUIButtonsToPawnScript : Node2D
                 {
                     ShootButton.Call("OnDisablebutton");
                     AimShootButton.Call("OnDisablebutton");
+                    OverwatchButton.Call("OnDisablebutton");
                 }
                 else
                 {
                     ShootButton.Call("OnEnablebutton");
                     AimShootButton.Call("OnEnablebutton");
+                    OverwatchButton.Call("OnEnablebutton");
                 }
                 break;
             case 3:  // disable melee 
@@ -73,26 +75,6 @@ public partial class GUIButtonsToPawnScript : Node2D
                 {
                     MeleeButton.Call("OnEnablebutton");
                     MeleeWeaponBigStrikeButton.Call("OnEnablebutton");
-                }
-                break;
-                case 4:  // disable overwatch
-                if (what == false)
-                {
-                    OverwatchButton.Call("OnDisablebutton");
-                }
-                else
-                {
-                    OverwatchButton.Call("OnEnablebutton");
-                }
-                break;
-                case 5:  // disable overwatch
-                if (what == false)
-                {
-                    OverwatchButton.Call("OnDisablebutton");
-                }
-                else
-                {
-                    OverwatchButton.Call("OnEnablebutton");
                 }
                 break;
             default:

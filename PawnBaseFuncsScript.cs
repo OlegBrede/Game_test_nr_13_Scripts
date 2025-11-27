@@ -28,8 +28,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public int MeleeWeaponAllowence = 0;
     public int ShootingAllowence = 0;
     public int MovinCapability = 0;
-    public bool CanAimshoot = true;
     [Export] bool CanOverwatch = true;
+    [Export] bool ZweiHanderShootah = false;
     public bool OverwatchStatus = false;
     [Export]public float Penalty_range = 1.15f;
     [Export]public float Penalty_shooter = 0.64f;
@@ -111,10 +111,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             {
                 MeleeWeaponAllowence++;
             }
-            if (MP >= 2)// To chyba będzie później trzeba zmienić 
-            {
-                CanAimshoot = true;
-            }
         }
         //GD.Print($"ShootingAllowence is {ShootingAllowence}, MeleeAllowence is {MeleeAllowence} MeleeWeaponAllowence is {MeleeWeaponAllowence}");
         BaseIntegrity = Integrity;
@@ -161,8 +157,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     void TakeDamage(int dmg,int Where)
     {
-        // chwilowo wszystkie części ciała mają tę samą szansę na bycie wylosowanym
-        int finalBodyPart;
+        int finalBodyPart; // końcowa część ciała do kalkulacji lokacji trafienia (bo losowy strzał może trafić w cześć ciała która nie ma już HP)
         int PlacementRoll_INDEX;
         string W_co;
         if (Where <= PawnParts.Count())
@@ -177,32 +172,47 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             W_co = PawnParts[PlacementRoll_INDEX].Name;
             GD.Print($"Losowy strzał w {W_co}");
         }
-        if (PawnParts[PlacementRoll_INDEX].HP > 0)
+        int LeftoverDMG = 0;
+        if (PawnParts[PlacementRoll_INDEX].HP > 0 && PawnParts[PlacementRoll_INDEX].HP >= dmg)// jeśli dana część ciała ma jeszcze HP i DMG jest mniejszy lub równy HP
         {
-            PawnParts[PlacementRoll_INDEX].HP -= dmg;
-            finalBodyPart = PlacementRoll_INDEX;
+            PawnParts[PlacementRoll_INDEX].HP -= dmg; //DMG dociera do części ciała
+            finalBodyPart = PlacementRoll_INDEX; //index
         }
-        else
+        else if(PawnParts[PlacementRoll_INDEX].HP < dmg) // jeśli DMG jest większy od HP
+        {
+            PawnParts[PlacementRoll_INDEX].HP -= dmg; //odejmujemy DMG
+            LeftoverDMG = PawnParts[PlacementRoll_INDEX].HP * -1; //odwracając ujemny DMG dostajemy ile DMG będzie transferowana w górę
+            GD.Print($"Dana część nie wytrzyma DMG, więc resztę obrażeń ({LeftoverDMG}) dostanie rodzic ...");
+            PawnParts[PlacementRoll_INDEX].HP = 0; //ustawiamy HP na 0 by nie było tu ujemnej wartości
+            DecreseFightCapability(PawnParts[PlacementRoll_INDEX].MeleeCapability, PawnParts[PlacementRoll_INDEX].ShootingCapability,PawnParts[PlacementRoll_INDEX].EsentialForMovement);
+            int FoundDamageRecypiant = FindPartToDamage(PlacementRoll_INDEX); //szukamy rodzica który ma dostać DMG
+            PawnParts[FoundDamageRecypiant].HP -= LeftoverDMG;// od zdrowia rodzica zostaje odjęty DMG
+            W_co = PawnParts[FoundDamageRecypiant].Name; // ustawienie nazwy części ciała
+            finalBodyPart = FoundDamageRecypiant; // index ostatniej części ciała która dostanie DMG
+        }
+        else // jeśli Trafiony obszar nie ma już HP i dostał DMG 
         {
             GD.Print("Dana część jest już zepsuta idziemy dalej z DMG ...");
-            int FoundDamageRecypiant = FindPartToDamage(PlacementRoll_INDEX);
-            PawnParts[FoundDamageRecypiant].HP -= dmg;
-            W_co = PawnParts[FoundDamageRecypiant].Name;
-            finalBodyPart = FoundDamageRecypiant;
+            int FoundDamageRecypiant = FindPartToDamage(PlacementRoll_INDEX); // Znajdujemy rodzica do transferu DMG
+            PawnParts[FoundDamageRecypiant].HP -= dmg; //Aplikacja DMG
+            W_co = PawnParts[FoundDamageRecypiant].Name; // ustawienie nazwy części ciała
+            finalBodyPart = FoundDamageRecypiant; // index ostatniej części ciała która dostanie DMG
         }
         UNIAnimPlayerRef.Play("Damage");
         gameMNGR_Script.GenerateActionLog($"{UnitName} took {dmg} damage to the {W_co}");
-        Integrity = 0;
+        Integrity = 0; // czyszczenie numery który wyświetla integralność pionka (te tamte procenty)
         foreach (var Bodypart in PawnParts)
         {
             Integrity += Bodypart.HP;
         }
         //GD.Print($"{UnitName} took {dmg} damage");
-        GD.Print($"dany pionek ma {CriticalParts.Count()} krytyczne części");
-        if (PawnParts[finalBodyPart].HP <= 0)
-        {
-            DecreseFightCapability(PawnParts[finalBodyPart].MeleeCapability, PawnParts[finalBodyPart].ShootingCapability,PawnParts[finalBodyPart].EsentialForMovement);
-        }
+        //GD.Print($"dany pionek ma {CriticalParts.Count()} krytyczne części");
+        //if (PawnParts[finalBodyPart].HP <= 0)
+        //{
+            //GD.Print($"efektywność {UnitName} spada...");
+            // uprzednio tu był DecreseFightCapability ale został on przeniesiony w górę bo tu nie działał
+            // jeśli to natomiast dalej nie będzie działąło to postaraj się przepisać to tu rekurencyjnie, na wypadek gdyby DMG przeszedł hen dalej 
+        //}
         foreach (string CriticalPart in CriticalParts)
         {
             if (CriticalPart == PawnParts[finalBodyPart].Name && PawnParts[finalBodyPart].HP <= 0)
@@ -251,7 +261,14 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         }
         if (Shootah == true)
         {
-            ShootingAllowence--;
+            if (ZweiHanderShootah == true)
+            {
+                ShootingAllowence -= 2; //albo lewa albo prawa ręka musi zostać usunięta by broń została dezaktywowana
+            }
+            else
+            {
+                ShootingAllowence--;
+            }
         }
         if (Legs == true)
         {
@@ -264,7 +281,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         if (ShootingAllowence <= 0 || WeaponAmmo <= 0)
         {
-            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 2,false);
+            GD.Print("pionek nie może strzelać");
+            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 2,false); // zapewne będzie trzeba to zastąpić sygnałem jak uprzednio ale .... może jak starczy czasu ?
         }
         else
         {
@@ -272,6 +290,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         }
         if (MeleeAllowence <= 0)
         {
+            GD.Print("pionek nie może atakować wręcz");
             gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 3, false);
         }
         else
@@ -280,19 +299,12 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         }
         if (MovinCapability <= 0)
         {
+            GD.Print("pionek nie może się ruszać");
             gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 1, false);
         }
         else
         {
             gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 1, true);
-        }
-        if (CanAimshoot == false)
-        {
-            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 5,false);
-        }
-        else
-        {
-            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 5,true);
         }
     }
     public void Die()

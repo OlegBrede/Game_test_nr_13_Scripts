@@ -281,6 +281,8 @@ public partial class PawnPlayerController : Node2D
         {
             if (Input.IsActionJustPressed("MYMOUSELEFT") && UNI_markerRef.Visible == false)
             {
+                YayButton.Visible = false;
+                NayButton.Visible = false;
                 if (UCOPS.PrecentCalculationFunction(ShootingFinalDiceVal) == 0 || ShootingFinalDiceVal >= 10)
                 {
                     gameMNGR_Script.PlayerPhoneCallWarning("0% TO HIT TARGET");
@@ -576,6 +578,8 @@ public partial class PawnPlayerController : Node2D
         {
             ResetSelectedStatus();
         }
+        YayButton.Visible = true;
+        NayButton.Visible = true;
         ShootingRayScript.OverrideTarget = null;
         WideMelee.Visible = false;
         StrongMelee.Visible = false;
