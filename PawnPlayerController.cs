@@ -61,6 +61,17 @@ public partial class PawnPlayerController : Node2D
     bool DEBUG_UIConnectionStatus = false;
     public override void _Ready()
     {
+        if (GetTree().CurrentScene.Name != "BaseTestScene") // hack ale powinien naprawić błąd wyskakujący przy wczytywaniu
+        {
+            GD.Print($"Scena nie jest BaseTestScene, jest {GetTree().CurrentScene.Name}");
+            GD.Print("PawnBaseFuncsScript wyłączone ... ");
+            return;
+        }
+        else
+        {
+            GD.Print("Scena jest BaseTestScene");
+            GD.Print("PawnBaseFuncsScript włączone ... ");
+        }
         UNI_markerRef.Visible = false;
         YayButton = UNI_markerRef.GetNode<NodeCompButtonUni1FuncScript>("SampleButton3");
         NayButton = UNI_markerRef.GetNode<NodeCompButtonUni1FuncScript>("SampleButton4");
@@ -269,7 +280,7 @@ public partial class PawnPlayerController : Node2D
         ShootingFinalDiceVal = UCOPS.RangeAttackEffectivenessCalculation(ShootingRayScript.Raylengh,ShootingRayScript.RayHittenTarget,AimedOrnot);
         // ############### PODLICZENIE WYŚWIETLONEGO PROCENTU ##################
         ChanceToHitLabel1.Visible = true;
-        ChanceToHitLabel1.Text = $"{UCOPS.PrecentCalculationFunction(ShootingFinalDiceVal).ToString()}%";
+        ChanceToHitLabel1.Text = $"{UCOPS.PrecentCalculationFunction(ShootingFinalDiceVal)}%";
         // ############### WIZUALNA REPREZENTACJA LOS DLA PIONKA  ##################
         if ((UNI_markerRef.Visible == false && ChosenAction == PlayersChosenAction.RangeAttackAction) || (UNI_markerRef.Visible == false && ChosenAction == PlayersChosenAction.AimedRangeAttackAction))
         {
@@ -298,7 +309,7 @@ public partial class PawnPlayerController : Node2D
                     ShootingRayScript.OverrideTarget = UNI_markerRef;
                     if (UCOPS.EnemyPartsToHit.Count > 0)
                     {
-                        gameMNGR_Script.ShowListPopUp(UCOPS.EnemyPartsToHit, this);
+                        gameMNGR_Script.ShowListPopUp(UCOPS.EnemyPartsToHit, this,UCOPS.PrecentCalculationFunction(ShootingFinalDiceVal));
                     }
                     else
                     {

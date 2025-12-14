@@ -167,11 +167,12 @@ public partial class GameMNGR_Script : Node2D
     {
         SNTWN.Call("ShowFadeWarning", messig);
     }
-    public void ShowListPopUp(List<PawnPart> PartsToShow, PawnPlayerController TwatCallin)
+    public void ShowListPopUp(List<PawnPart> PartsToShow, PawnPlayerController TwatCallin,int Hitprecent)
     {
         ScrollPopUpRef.Visible = true;
         ScrollPopUpScript SPS = ScrollPopUpRef as ScrollPopUpScript;
         SPS.GeneratePartButtons(PartsToShow, TwatCallin);
+        SPS.ShowHitPrecent(Hitprecent);
     }
     public void HideListPupUp()
     {
@@ -328,7 +329,7 @@ public partial class GameMNGR_Script : Node2D
     {
         Label Log = new Label();
         Log.Text = Message;
-        Log.AddThemeFontSizeOverride("font_size", 110);
+        Log.AddThemeFontSizeOverride("font_size", 140);
         LogBucket.AddChild(Log);
         KontenrLogów.ScrollVertical = (int)KontenrLogów.GetVScrollBar().MaxValue;
     }

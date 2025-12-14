@@ -18,6 +18,7 @@ public partial class MainMenuScript : Node2D
     [Export] Label LowPlaerCountWarnin;
     [Export] Label NoPawnsWarning;
     [Export] public Control UnitList;
+    [Export] public CheckBox DebugModeMenuCheck;
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
     private int VisibleMenuScreenID;
     public int TeamCallInCount = 0;

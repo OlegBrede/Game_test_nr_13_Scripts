@@ -35,7 +35,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export]public float Penalty_shooter = 0.64f;
     [Export]public float Penalty_target = 0.42f;
     [Export] public float WeaponRange = 1750; // jest to mierzone w innyhc jednostkach od tych systemowych, może kiedyś zrobię parser
-    [Export] public float DistanceZero = 10000; // dystans który jest objętością pionka w lokalnych jednostkach raycast'u by wszystko grało spójnie
+    [Export] public float DistanceZero = 0; // dystans który jest objętością pionka w lokalnych jednostkach raycast'u by wszystko grało spójnie
     [Export] public int WeaponDamage = 85; // może w wypadku broni białej może dałoby się mieć "rzut" zamiast strzału ? ale znowu , trzeba byłoby jakoś coś zrobić z tym tamtym mieczem shotgun
     [Export] public int WeaponAmmo = 7;
     [Export] public int WeaponMaxAmmo = 7;
@@ -51,6 +51,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public Sprite2D ProfilePick;
     [Export] string[] CriticalParts; // części ciała pionka bez których nie może on funkcjonować 
     [Export] public PawnPart[] PawnParts { get; set; } // części ciała pionka
+    public bool Gameplayprimed = false;
     public float PrevDistance = 0;
     public float ObjętośćPionka = 0;
     public int kills = 0; // TEMP
@@ -58,7 +59,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public PawnMoveState PawnMoveStatus { get; set; } = PawnMoveState.Standing;
     public PawnStatusEffect PawnsActiveStates = PawnStatusEffect.None;
     GameMNGR_Script gameMNGR_Script;
-    private bool AC = false;
+    private bool AC = false; // (ACTIVATE COLLISION) TEMP 
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     public override void _Ready()
     {
@@ -72,16 +73,20 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             ObjętośćPionka = radius;
         }
         // ustalenie gamemenagera
+        
         if (GetTree().CurrentScene.Name != "BaseTestScene") // hack ale powinien naprawić błąd wyskakujący przy wczytywaniu
         {
             GD.Print($"Scena nie jest BaseTestScene, jest {GetTree().CurrentScene.Name}");
+            GD.Print("PawnBaseFuncsScript wyłączone ... ");
             return;
         }
         else
         {
             GD.Print("Scena jest BaseTestScene");
+            GD.Print("PawnBaseFuncsScript włączone ... ");
+            Gameplayprimed = true;
         }
-        gameMNGR_Script = GetTree().Root.GetNodeOrNull<GameMNGR_Script>("BaseTestScene"); // to dalej daje error, pomyślę nad rozwiązaniem 
+        gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene"); // to dalej daje error, pomyślę nad rozwiązaniem 
         //GD.Print("skrypt przechodzi dalej ... ");
         RNGGEN.Randomize();
         UNIAnimPlayerRef.Play("StandStill");
@@ -157,68 +162,51 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     void TakeDamage(int dmg,int Where)
     {
-        int finalBodyPart; // końcowa część ciała do kalkulacji lokacji trafienia (bo losowy strzał może trafić w cześć ciała która nie ma już HP)
-        int PlacementRoll_INDEX;
-        string W_co;
-        if (Where <= PawnParts.Count())
+        UNIAnimPlayerRef.Play("Damage");
+        string W_co; // nazwa części ciała która dostaje 
+        int PlacementRoll_INDEX; // index części ciała która dostaje 
+        if (Where <= PawnParts.Count()) // to działą na zasadzie takiej że lokacja obrażeń danego miejsca jest predefiniowana do czasu jak nie wyjdzie poza zakres, a zakres zewnętrznie ustalony jest na 999 (chyba nie będzie nigdy pionka z 1000 części ciała)
         {
-            PlacementRoll_INDEX = Where;
-            W_co = PawnParts[Where].Name;
+            PlacementRoll_INDEX = Where; //index na wskazaną część ciała
+            W_co = PawnParts[Where].Name; // nazwa części ciała
             GD.Print($"Nielosowy strzał w {W_co}");
         }
         else
         {
-            PlacementRoll_INDEX = LocationRollCalc();
-            W_co = PawnParts[PlacementRoll_INDEX].Name;
+            PlacementRoll_INDEX = LocationRollCalc(); // losowy index
+            W_co = PawnParts[PlacementRoll_INDEX].Name; // nazwa części ciała
             GD.Print($"Losowy strzał w {W_co}");
         }
         int LeftoverDMG = 0;
-        if (PawnParts[PlacementRoll_INDEX].HP > 0 && PawnParts[PlacementRoll_INDEX].HP >= dmg)// jeśli dana część ciała ma jeszcze HP i DMG jest mniejszy lub równy HP
+        if (PawnParts[PlacementRoll_INDEX].HP > dmg)// jeśli DMG jest mniejszy od HP
         {
             PawnParts[PlacementRoll_INDEX].HP -= dmg; //DMG dociera do części ciała
-            finalBodyPart = PlacementRoll_INDEX; //index
+            gameMNGR_Script.GenerateActionLog($"{UnitName} took {dmg} damage to the {W_co}");
         }
-        else if(PawnParts[PlacementRoll_INDEX].HP < dmg) // jeśli DMG jest większy od HP
+        else // równy DMG lub większy od HP to utrata części i/lub przeniesienie DMG dalej
         {
             PawnParts[PlacementRoll_INDEX].HP -= dmg; //odejmujemy DMG
             LeftoverDMG = PawnParts[PlacementRoll_INDEX].HP * -1; //odwracając ujemny DMG dostajemy ile DMG będzie transferowana w górę
-            GD.Print($"Dana część nie wytrzyma DMG, więc resztę obrażeń ({LeftoverDMG}) dostanie rodzic ...");
-            PawnParts[PlacementRoll_INDEX].HP = 0; //ustawiamy HP na 0 by nie było tu ujemnej wartości
-            DecreseFightCapability(PawnParts[PlacementRoll_INDEX].MeleeCapability, PawnParts[PlacementRoll_INDEX].ShootingCapability,PawnParts[PlacementRoll_INDEX].EsentialForMovement);
-            int FoundDamageRecypiant = FindPartToDamage(PlacementRoll_INDEX); //szukamy rodzica który ma dostać DMG
-            PawnParts[FoundDamageRecypiant].HP -= LeftoverDMG;// od zdrowia rodzica zostaje odjęty DMG
-            W_co = PawnParts[FoundDamageRecypiant].Name; // ustawienie nazwy części ciała
-            finalBodyPart = FoundDamageRecypiant; // index ostatniej części ciała która dostanie DMG
-        }
-        else // jeśli Trafiony obszar nie ma już HP i dostał DMG 
-        {
-            GD.Print("Dana część jest już zepsuta idziemy dalej z DMG ...");
-            int FoundDamageRecypiant = FindPartToDamage(PlacementRoll_INDEX); // Znajdujemy rodzica do transferu DMG
-            PawnParts[FoundDamageRecypiant].HP -= dmg; //Aplikacja DMG
-            W_co = PawnParts[FoundDamageRecypiant].Name; // ustawienie nazwy części ciała
-            finalBodyPart = FoundDamageRecypiant; // index ostatniej części ciała która dostanie DMG
-        }
-        UNIAnimPlayerRef.Play("Damage");
-        gameMNGR_Script.GenerateActionLog($"{UnitName} took {dmg} damage to the {W_co}");
-        Integrity = 0; // czyszczenie numery który wyświetla integralność pionka (te tamte procenty)
-        foreach (var Bodypart in PawnParts)
-        {
-            Integrity += Bodypart.HP;
-        }
-        //GD.Print($"{UnitName} took {dmg} damage");
-        //GD.Print($"dany pionek ma {CriticalParts.Count()} krytyczne części");
-        //if (PawnParts[finalBodyPart].HP <= 0)
-        //{
-            //GD.Print($"efektywność {UnitName} spada...");
-            // uprzednio tu był DecreseFightCapability ale został on przeniesiony w górę bo tu nie działał
-            // jeśli to natomiast dalej nie będzie działąło to postaraj się przepisać to tu rekurencyjnie, na wypadek gdyby DMG przeszedł hen dalej 
-        //}
-        foreach (string CriticalPart in CriticalParts)
-        {
-            if (CriticalPart == PawnParts[finalBodyPart].Name && PawnParts[finalBodyPart].HP <= 0)
+            GD.Print($"Dana część nie wytrzyma DMG, więc reszts obrażeń to ({LeftoverDMG})");
+            gameMNGR_Script.GenerateActionLog($"{UnitName} lost {W_co} due to damage");
+            foreach (string CriticalPart in CriticalParts)// szukamy czy dana część ciała była krytyczna do funkcjonowania jednostki
             {
-                GD.Print($"dany pionek dostał w {PawnParts[finalBodyPart].Name}");
-                Die();
+                if (CriticalPart == PawnParts[PlacementRoll_INDEX].Name && PawnParts[PlacementRoll_INDEX].HP <= 0)// jak była, i nie ma HP
+                {
+                    GD.Print($"dany pionek umiera od dostania w {PawnParts[PlacementRoll_INDEX].Name}");
+                    Die(); // YOU MUST DIE
+                    return; // tak na wszelki wypadek by ten kod nie szedł dalej po tym jak już zadecyduje umrzeć 
+                }
+            }
+            if (PawnParts[PlacementRoll_INDEX].ParentPart != null)
+            {
+                GD.Print("DMG idzie w górę hierarchii");
+                TakeDamage(LeftoverDMG,FindPartToDamage(PlacementRoll_INDEX)); // okej, teraz rekurencja nie powinna crash-ować gry
+            }
+            Integrity = 0; // czyszczenie numery który wyświetla integralność pionka (te tamte procenty)
+            foreach (var Bodypart in PawnParts)
+            {
+                Integrity += Bodypart.HP;
             }
         }
     }

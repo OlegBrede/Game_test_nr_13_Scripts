@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public partial class ScrollPopUpScript : Node2D
 {
     [Export] VBoxContainer PartExtractor;
+    [Export] Label label;
     PawnPlayerController Twat;
     public void GeneratePartButtons(List<PawnPart> PartsToShow, PawnPlayerController TwatThatCalled)
     {
@@ -36,6 +37,10 @@ public partial class ScrollPopUpScript : Node2D
                 Button.Call("PrimeButton", PartsToShow.IndexOf(Part), Part.Name,LocationRollCalc(PartsToShow,Part.Name), Twat);
             }
         }
+    }
+    public void ShowHitPrecent(int Hitprecent)
+    {
+        label.Text = $"{Hitprecent}%";
     }
     float LocationRollCalc(List<PawnPart> PartsToShow,string WANTED_P_NAME)
     {

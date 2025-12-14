@@ -15,16 +15,28 @@ public partial class UNI_ControlOverPawnScript : Node2D
     public List<PawnPart> EnemyPartsToHit = new List<PawnPart>();
     public override void _Ready()
     {
+        if (GetTree().CurrentScene.Name != "BaseTestScene")
+        {
+            GD.Print($"Scena nie jest BaseTestScene, jest {GetTree().CurrentScene.Name}");
+            GD.Print("UNI_ControlOverPawnScript wyłączone ... ");
+            return;
+        }
+        else
+        {
+            GD.Print("Scena jest BaseTestScene");
+            GD.Print("UNI_ControlOverPawnScript włączone ... ");
+        }
         gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
         UNI_MoveMarker = GetNode<Node2D>("UNI_MoveNode");
         OverlapingBodiesArea = UNI_MoveMarker.GetNode<Area2D>("Area2D");
     }
-    // TO DO .: MASZ SPRAWDZIĆ CZY TA KALKULACJA (RangeAttackEffectivenessCalculation) DZIAŁA, JEŚLI TAK PRZENIEŚ RESZTĘ KODÓW
     // DO ZROBIENIA SĄ JESZCZE .: 
-    // - DODANIE LOSOWEGO DMG NA AIMEDSHOT 
     // - DODANIE HOVER INFO NA SAMPLEBUTTON 
-    // - WYCIĄGNIJ CO MOŻESZ POZA PROCESS Z PLAYERCONTROLLER 
-    // - PRZY OKAZJI NAPRAW TEN BUG PRZY POBIERANIU OBJĘTOŚCI 
+    // - PRZY OKAZJI NAPRAW TEN BUG PRZY POBIERANIU OBJĘTOŚCI
+    // - PRZYWRÓĆ FUNKCJONALNOŚĆ KODU ODPOWIEDZIALNEGO ZA GENEROWANBIE PROPORCJONALNEJ BAŃKI NA PODSTAWIE RADIUS COLLISIONSHAPE 2D SPHEARE ?
+    // - NAPRAW I PRZYWRÓĆ OVERWATCH
+    // - BRONIE MAJĄ MIEĆ TYPY STRZAŁÓW
+    // - 
     public void ActionMove() // wywołanie tej akcji ma sprawić poruszenie się na pozycję PosToMoveTo
     {
         PawnScript.MP--;
@@ -212,13 +224,13 @@ public partial class UNI_ControlOverPawnScript : Node2D
         {
             penaltyTotal = Mathf.Clamp(TargetRangeModifier + TargetOwnMoveModifier + TargetEnemyMoveModifier, 0f, 1f);
             ShootingFinalDiceVal = penaltyTotal * 10;
+            //GD.Print($"{PrecentCalculationFunction(ShootingFinalDiceVal)}% to hit Modifiers are .: Range ({TargetRangeModifier}) PawnMovement ({TargetOwnMoveModifier}) TargetMovement ({TargetEnemyMoveModifier})");
         }
         else
         {
             penaltyTotal = 0;
             ShootingFinalDiceVal = 11;
         }
-
         return ShootingFinalDiceVal; // TEMP 
     }
     public int PrecentCalculationFunction(float SFDV) // shooting final dice value. daje to tu dlatego bo możliwe będzie że dla czytelności będzie łatwiej obliczać szansę trafienia w logice AI na procentach zamiast na dice value 
