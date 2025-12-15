@@ -53,6 +53,7 @@ public partial class UNI_LOSRayCalcScript : RayCast2D
         startPoint = endPoint - (endPoint.Normalized() * 60);
         Vector2 GlobalToLocalPos = ToLocal(GlobalPosition);
         Raylengh = GlobalToLocalPos.DistanceTo(endPoint);
+        //GD.Print("Raylengh is " + Raylengh);
         DrawLine(startPoint , endPoint, Colors.Red, 35);
     }
 }

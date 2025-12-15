@@ -18,7 +18,7 @@ public partial class NodeCompButtonUni1FuncScript : Node2D
 		ButtonIcon.Visible = false;
         if (IconPath != " ")
         {
-			GD.Print("BUTTON ICON TEXTURE SET");
+			//GD.Print("BUTTON ICON TEXTURE SET");
 			Texture2D ButTex = GD.Load<Texture2D>(IconPath);
             if (ButTex != null)
             {
@@ -40,14 +40,14 @@ public partial class NodeCompButtonUni1FuncScript : Node2D
 	}
 	void OnACTButtonPressed()
 	{
-		GD.Print($"ACT{ButtonIdNum} ON PRESS");
+		//GD.Print($"ACT{ButtonIdNum} ON PRESS");
 		Menager.Call("Button_ACT" + ButtonIdNum);
 		//tutaj mogą być przykładowe błedy w odniesieniu do wejścia przycisków dla gracza
 	}
 	public void OnChangeButtonFunc(int NowCurrentNum)
 	{
 		ButtonIdNum = NowCurrentNum;
-		GD.Print("Przycisk Zmienił funkcję na " + ButtonIdNum);
+		//GD.Print("Przycisk Zmienił funkcję na " + ButtonIdNum);
 	}
 	void OnChangeButtonLabel(string NewLabel, int Size)
 	{

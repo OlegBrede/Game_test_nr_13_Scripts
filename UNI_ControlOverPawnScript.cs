@@ -13,6 +13,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
     Area2D OverlapingBodiesArea;
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     public List<PawnPart> EnemyPartsToHit = new List<PawnPart>();
+    float EngagementDistance = 0f;
     public override void _Ready()
     {
         if (GetTree().CurrentScene.Name != "BaseTestScene")
@@ -85,11 +86,11 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 {
                     if (StrongOrNot == true) // strong wallop 
                     {
-                        PS.Call("CalculateHit", PawnScript.MeleeDamage * 1.5f , 5f,STLI, PawnScript.UnitName);
+                        PS.Call("CalculateHit", PawnScript.MeleeDamage * 1.5f , 5f,STLI, PawnScript.UnitName,50f);
                     }
                     else // wide wallop
                     {
-                        PS.Call("CalculateHit", PawnScript.MeleeDamage, 2.5f,STLI, PawnScript.UnitName);
+                        PS.Call("CalculateHit", PawnScript.MeleeDamage, 2.5f,STLI, PawnScript.UnitName,50f);
                     }
                 }
             }
@@ -119,7 +120,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
         PawnScript.PlayAttackAnim();
         if (ShootingRayScript.RayHittenTarget != null)
         {
-            ShootingRayScript.RayHittenTarget.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName);
+            ShootingRayScript.RayHittenTarget.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName, EngagementDistance);
             GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
             gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, ShootingRayScript.RayHittenTarget.GlobalPosition);
         }
@@ -162,6 +163,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
         float TargetRangeModifier;
         float TargetOwnMoveModifier;
         float TargetEnemyMoveModifier;
+        EngagementDistance = Raylengh;
         float ModiRayLenghCorrector = Raylengh - PawnScript.DistanceZero;
         if (ModiRayLenghCorrector < PawnScript.WeaponRange)
         {

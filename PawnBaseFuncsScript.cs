@@ -59,6 +59,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public float PrevDistance = 0;
     public float ObjętośćPionka = 0;
     public int kills = 0; // TEMP
+    float FightDistance = 0; // dystans w jakim zadziała się akcja, usprawiedliwiający pokazanie walki w wolnym tępie
     public Node2D TargetMarkerRef;
     public PawnMoveState PawnMoveStatus { get; set; } = PawnMoveState.Standing;
     public PawnStatusEffect PawnsActiveStates = PawnStatusEffect.None;
@@ -136,8 +137,9 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         AC = true;
     }
-    public void CalculateHit(int dmg, float probability,int Where, string Bname)
+    public void CalculateHit(int dmg, float probability,int Where, string Bname,float DamageDistance)
     {
+        FightDistance = DamageDistance;
         float FloatDice = RNGGEN.RandfRange(0, 10);
         if (FloatDice >= probability) // rzucarz na liczbę powyżej kostki
         {
@@ -171,20 +173,19 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     void TakeDamage(int dmg,int Where)
     {
         responseAnimLexicon = ResponseAnimLexicon.damage;
-        //UNIAnimPlayerRef.Play("Damage");
         string W_co; // nazwa części ciała która dostaje 
         int PlacementRoll_INDEX; // index części ciała która dostaje 
         if (Where <= PawnParts.Count()) // to działą na zasadzie takiej że lokacja obrażeń danego miejsca jest predefiniowana do czasu jak nie wyjdzie poza zakres, a zakres zewnętrznie ustalony jest na 999 (chyba nie będzie nigdy pionka z 1000 części ciała)
         {
             PlacementRoll_INDEX = Where; //index na wskazaną część ciała
             W_co = PawnParts[Where].Name; // nazwa części ciała
-            GD.Print($"Nielosowy strzał w {W_co}");
+            GD.Print($"Nielosowy traf w {W_co}");
         }
         else
         {
             PlacementRoll_INDEX = LocationRollCalc(); // losowy index
             W_co = PawnParts[PlacementRoll_INDEX].Name; // nazwa części ciała
-            GD.Print($"Losowy strzał w {W_co}");
+            GD.Print($"Losowy traf w {W_co}");
         }
         int LeftoverDMG = 0;
         if (PawnParts[PlacementRoll_INDEX].HP > dmg)// jeśli DMG jest mniejszy od HP
@@ -204,8 +205,17 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                 {
                     GD.Print($"dany pionek umiera od dostania w {PawnParts[PlacementRoll_INDEX].Name}");
                     responseAnimLexicon = ResponseAnimLexicon.die;
-                    ResponseAnimTimer.Start();
-                    //Die(); // YOU MUST DIE
+                    if (FightDistance > 1500f)
+                    {
+                        ResponseAnimTimer.Start();
+                    }
+                    else
+                    {
+                        GD.Print("Dystans zbyt krótki by angarzować spowolnienie kamery");
+                        UNIAnimPlayerRef.Play("Damage");
+                        Die();
+                    }
+                    FightDistance = 0;
                     return; // tak na wszelki wypadek by ten kod nie szedł dalej po tym jak już zadecyduje umrzeć 
                 }
             }
@@ -214,13 +224,22 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                 GD.Print("DMG idzie w górę hierarchii");
                 TakeDamage(LeftoverDMG,FindPartToDamage(PlacementRoll_INDEX)); // okej, teraz rekurencja nie powinna crash-ować gry
             }
-            Integrity = 0; // czyszczenie numery który wyświetla integralność pionka (te tamte procenty)
-            foreach (var Bodypart in PawnParts)
-            {
-                Integrity += Bodypart.HP;
-            }
         }
-        ResponseAnimTimer.Start();
+        Integrity = 0; // czyszczenie numery który wyświetla integralność pionka (te tamte procenty)
+        foreach (var Bodypart in PawnParts)
+        {
+            Integrity += Bodypart.HP;
+        }
+        if (FightDistance > 1500f)
+        {
+            ResponseAnimTimer.Start();
+        }
+        else
+        {
+            GD.Print("Dystans zbyt krótki by angarzować spowolnienie kamery");
+            UNIAnimPlayerRef.Play("Damage");
+        }
+        FightDistance = 0;
     }
     int FindPartToDamage(int partIndex)
     {
@@ -309,15 +328,18 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     public void AnimAwaitResponse()
     {
-        switch (responseAnimLexicon)
+        if (FightDistance > 1500f)
         {
-            case ResponseAnimLexicon.damage:
-                UNIAnimPlayerRef.Play("Damage");
-            break;
-            case ResponseAnimLexicon.die:
-                UNIAnimPlayerRef.Play("Damage");
-                Die();
-            break;
+            switch (responseAnimLexicon)
+            {
+                case ResponseAnimLexicon.damage:
+                    UNIAnimPlayerRef.Play("Damage");
+                break;
+                case ResponseAnimLexicon.die:
+                    UNIAnimPlayerRef.Play("Damage");
+                    Die();
+                break;
+            }
         }
     }
     public void Die()
