@@ -12,7 +12,11 @@ public enum PawnStatusEffect // TEMP
     Imobalized = 1 << 1,
     Bleeding = 1 << 2,
 }
-
+public enum ResponseAnimLexicon // zapewnie będzie więej
+{
+    damage,
+    die
+}
 public partial class PawnBaseFuncsScript : CharacterBody2D
 {
     [Export] public string UnitName = "Princess"; // TEMP
@@ -59,6 +63,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public PawnMoveState PawnMoveStatus { get; set; } = PawnMoveState.Standing;
     public PawnStatusEffect PawnsActiveStates = PawnStatusEffect.None;
     GameMNGR_Script gameMNGR_Script;
+    Timer ResponseAnimTimer;
+    ResponseAnimLexicon responseAnimLexicon;
     private bool AC = false; // (ACTIVATE COLLISION) TEMP 
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     public override void _Ready()
@@ -90,6 +96,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         //GD.Print("skrypt przechodzi dalej ... ");
         RNGGEN.Randomize();
         UNIAnimPlayerRef.Play("StandStill");
+        ResponseAnimTimer = GetNode<Timer>("ResponseAnimTimer");
+        ResponseAnimTimer.Timeout += AnimAwaitResponse;
         if (SpecificAnimPlayer != null)
         {
             SpecificAnimPlayer.AnimationFinished += OnAnimDone;
@@ -162,7 +170,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     void TakeDamage(int dmg,int Where)
     {
-        UNIAnimPlayerRef.Play("Damage");
+        responseAnimLexicon = ResponseAnimLexicon.damage;
+        //UNIAnimPlayerRef.Play("Damage");
         string W_co; // nazwa części ciała która dostaje 
         int PlacementRoll_INDEX; // index części ciała która dostaje 
         if (Where <= PawnParts.Count()) // to działą na zasadzie takiej że lokacja obrażeń danego miejsca jest predefiniowana do czasu jak nie wyjdzie poza zakres, a zakres zewnętrznie ustalony jest na 999 (chyba nie będzie nigdy pionka z 1000 części ciała)
@@ -194,7 +203,9 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                 if (CriticalPart == PawnParts[PlacementRoll_INDEX].Name && PawnParts[PlacementRoll_INDEX].HP <= 0)// jak była, i nie ma HP
                 {
                     GD.Print($"dany pionek umiera od dostania w {PawnParts[PlacementRoll_INDEX].Name}");
-                    Die(); // YOU MUST DIE
+                    responseAnimLexicon = ResponseAnimLexicon.die;
+                    ResponseAnimTimer.Start();
+                    //Die(); // YOU MUST DIE
                     return; // tak na wszelki wypadek by ten kod nie szedł dalej po tym jak już zadecyduje umrzeć 
                 }
             }
@@ -209,6 +220,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                 Integrity += Bodypart.HP;
             }
         }
+        ResponseAnimTimer.Start();
     }
     int FindPartToDamage(int partIndex)
     {
@@ -295,6 +307,19 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 1, true);
         }
     }
+    public void AnimAwaitResponse()
+    {
+        switch (responseAnimLexicon)
+        {
+            case ResponseAnimLexicon.damage:
+                UNIAnimPlayerRef.Play("Damage");
+            break;
+            case ResponseAnimLexicon.die:
+                UNIAnimPlayerRef.Play("Damage");
+                Die();
+            break;
+        }
+    }
     public void Die()
     {
         PawnMoveStatus = PawnMoveState.Dead;
@@ -314,7 +339,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             ProcessMode = ProcessModeEnum.Disabled;
             QueueFree();
         }
-        
     }
     void OnAnimDone(StringName animName)
     {

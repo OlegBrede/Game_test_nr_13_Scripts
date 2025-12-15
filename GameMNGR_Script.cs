@@ -8,7 +8,16 @@ using System.Text.Json;
 public partial class GameMNGR_Script : Node2D
 {
     [Export] Node2D ESCMenu;
+    // ####################### KAMERA #######################
     [Export] Camera2D FocusCam;
+    [Export] Timer CamShowActionTimer;
+    private float waitDuration = 1f;
+    private Tween.TransitionType transition = Tween.TransitionType.Sine;
+    private Tween.EaseType ease = Tween.EaseType.InOut;
+    private Tween activeTween;
+    Vector2 ActionView;
+    Vector2 ReactionView;
+    // ####################### KAMERA #######################
     [Export] Label UnitInfoGuiLabel;
     [Export] Label TotalMPLabel;
     [Export] Label SNTWN; // Show no target warning node
@@ -68,6 +77,7 @@ public partial class GameMNGR_Script : Node2D
     public void SetupGameScene()
     {
         //PlayerGUIRef = GetTree().Root.GetNode<GUIButtonsToPawnScript>("BaseTestScene/Camera2D/GUI_to_Pawn_Input_Translator");
+        CamShowActionTimer.Timeout += ShowReactionAfterTimeout;
         SNTWN.Visible = false;
         UnitsBucket = GetNode<Node>("UnitsBucket");
         ESCMenu.Visible = false;
@@ -160,8 +170,27 @@ public partial class GameMNGR_Script : Node2D
     }
     public void CaptureAction(Vector2 Giver, Vector2 Recypiant)
     {
-        FocusCam.GlobalPosition = Recypiant; // to jest leprzy placeholder, bo upiększanie tego byłoby trochę teraz nieistotne
-        //FocusCam.GlobalPosition = (Giver + Recypiant) / 2; // zmęczony jestem i mam wydupione 
+        ActionView = Giver;
+        ReactionView = Recypiant;
+        CamShowActionTimer.WaitTime = waitDuration;
+        ShowActionAfterTimeout();
+        //FocusCam.GlobalPosition = Recypiant; // to jest leprzy placeholder, bo upiększanie tego byłoby trochę teraz nieistotne
+    }
+    void ShowActionAfterTimeout()
+    {
+        activeTween?.Kill();
+        activeTween = GetTree().CreateTween();
+        activeTween.TweenProperty(FocusCam,"global_position",ActionView,0.05f).SetTrans(transition).SetEase(ease);
+        CamShowActionTimer.Start();
+        //GD.Print("Timer włączony");
+    }
+    void ShowReactionAfterTimeout()
+    {
+        activeTween?.Kill();
+        activeTween = GetTree().CreateTween();
+        activeTween.TweenProperty(FocusCam,"global_position",ReactionView,0.05f).SetTrans(transition).SetEase(ease);
+        CamShowActionTimer.Stop();
+        //GD.Print("Timer skończcył");
     }
     public void PlayerPhoneCallWarning(string messig)
     {
