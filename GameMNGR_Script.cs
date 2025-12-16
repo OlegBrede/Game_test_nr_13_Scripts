@@ -20,6 +20,7 @@ public partial class GameMNGR_Script : Node2D
     // ####################### KAMERA #######################
     [Export] Label UnitInfoGuiLabel;
     [Export] Label TotalMPLabel;
+    [Export] Label ULTIMATENAMELABEL;
     [Export] Label SNTWN; // Show no target warning node
     [Export] VBoxContainer LogBucket;
     [Export] ScrollContainer KontenrLogów;
@@ -144,11 +145,11 @@ public partial class GameMNGR_Script : Node2D
         {
             if (pawn.ShootingAllowence > 0)
             {
-                return $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nAmmo({pawn.WeaponAmmo}/{pawn.WeaponMaxAmmo})\nMP ({pawn.MP})";
+                return $"Unit({pawn.UnitType})\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nMP ({pawn.MP})\nAmmo({pawn.WeaponAmmo}/{pawn.WeaponMaxAmmo})";
             }
             else
             {
-                return $"{pawn.UnitType}\n{pawn.UnitName}\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nMP ({pawn.MP})";
+                return $"Unit({pawn.UnitType})\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nMP ({pawn.MP})";
             }
         }
         else
@@ -263,6 +264,14 @@ public partial class GameMNGR_Script : Node2D
         {
             GameInfoLabelRef.Text = $" Round {Round} | Turn {Turn}"; // zamienić na odwołanie się do tablicy statycznej z nazwą drużyny
             UnitInfoGuiLabel.Text = PawnInfoToGUITransmision(SelectedPawn);
+            if (SelectedPawn != null)
+            {
+                ULTIMATENAMELABEL.Text = SelectedPawn.UnitName;
+            }
+            else
+            {
+                ULTIMATENAMELABEL.Text = "";
+            }
             TotalMPLabel.Text = TeamsCollectiveMP.ToString();
             if (TeamsCollectiveMP <= 0)
             {

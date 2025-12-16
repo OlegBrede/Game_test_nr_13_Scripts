@@ -35,6 +35,7 @@ public partial class PawnPlayerController : Node2D
     Area2D StrongMelee;
     CollisionPolygon2D OverwatchTriangleHitbox;
     Label ChanceToHitLabel1;
+    Sprite2D MACircleSprite;
     //################################# CALLABLES ######################################
     private Callable callableMove;
     private Callable callableShoot;
@@ -96,6 +97,7 @@ public partial class PawnPlayerController : Node2D
 
         PointerNode.Visible = false;
         MovementAllowenceInyk_ator = GetNode<Node2D>("MoveIndicator");
+        MACircleSprite = MovementAllowenceInyk_ator.GetNode<Sprite2D>("Sprite2D");
         MovementAllowenceInyk_ator.Visible = false;
         gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
 
@@ -392,6 +394,13 @@ public partial class PawnPlayerController : Node2D
         //Mathf.Clamp(probabitity,0,2.5f)*18
         Player_ACT_Confirm(2);
     }
+    private void ChangeVisibleMovementHitboxSpriteSize()
+    {
+        texSize = MACircleSprite.Texture.GetSize(); // pobranie rozmiaru tekstury
+        baseRadius = texSize.X / 2f; // bazow rozmiar to szerokość podzielona na pół
+        float scale =  PawnScript.ObjętośćPionka / baseRadius; // skala powiększenia widocznego okręgu to objętość pionka podzielona przez bazowy rozmiar
+        MACircleSprite.Scale = new Vector2(scale, scale); // zaaplikowanie 
+    }
     private void OnMouseEnter() => StatsUI.Visible = true;
     private void OnMouseExit()
     {
@@ -433,6 +442,7 @@ public partial class PawnPlayerController : Node2D
     void Player_ACT_Move()
     {
         Player_ACT_UNI_ChangeTargetMakerButtonNIcon(1,6);
+        ChangeVisibleMovementHitboxSpriteSize();
         gameMNGR_Script.ChosenActionFinished = false;
         ChosenAction = PlayersChosenAction.MoveAction;
         MovementAllowenceInyk_ator.Visible = true;
