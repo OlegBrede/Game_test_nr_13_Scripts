@@ -68,6 +68,9 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     ResponseAnimLexicon responseAnimLexicon;
     private bool AC = false; // (ACTIVATE COLLISION) TEMP 
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
+    Node2D DMG_Label_bucket;
+    PackedScene ThisLabelScene;
+    int DMG_to_label = 0;
     public override void _Ready()
     {
         //GD.Print("PawnReadyTriggered");
@@ -98,6 +101,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         RNGGEN.Randomize();
         UNIAnimPlayerRef.Play("StandStill");
         ResponseAnimTimer = GetNode<Timer>("ResponseAnimTimer");
+        DMG_Label_bucket = GetNode<Node2D>("DMG_Label_bucket");
         ResponseAnimTimer.Timeout += AnimAwaitResponse;
         if (SpecificAnimPlayer != null)
         {
@@ -140,17 +144,20 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public void CalculateHit(int dmg, float probability,int Where, string Bname,float DamageDistance)
     {
         FightDistance = DamageDistance;
+        GD.Print($"Engagement Distance is {FightDistance}");
         float FloatDice = RNGGEN.RandfRange(0, 10);
         if (FloatDice >= probability) // rzucarz na liczbę powyżej kostki
         {
             //GD.Print($"hit on {FloatDice}");
             gameMNGR_Script.GenerateActionLog($"{Bname} Hit {UnitName}");
             TakeDamage(dmg,Where);
+            DMG_to_label = dmg;
         }
         else
         {
             //GD.Print($"miss on {FloatDice}");
             gameMNGR_Script.GenerateActionLog($"{Bname} Missed {UnitName}");
+            DMG_to_label = 0;
         }
     }
     int LocationRollCalc()
@@ -207,15 +214,17 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                     responseAnimLexicon = ResponseAnimLexicon.die;
                     if (FightDistance > 1500f)
                     {
+                        GD.Print("Anim Resp Timer start trigger...");
                         ResponseAnimTimer.Start();
                     }
                     else
                     {
+                        ResponseAnimTimer.Stop(); // nie diała, mimo tego i tak strzelanie powoduje że kamera leci do celu 
                         GD.Print("Dystans zbyt krótki by angarzować spowolnienie kamery");
                         UNIAnimPlayerRef.Play("Damage");
+                        ShowHitInfoLabel(DMG_to_label);
                         Die();
                     }
-                    FightDistance = 0;
                     return; // tak na wszelki wypadek by ten kod nie szedł dalej po tym jak już zadecyduje umrzeć 
                 }
             }
@@ -232,14 +241,16 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         }
         if (FightDistance > 1500f)
         {
+            GD.Print("Anim Resp Timer start trigger...");
             ResponseAnimTimer.Start();
         }
         else
         {
+            ResponseAnimTimer.Stop(); // nie diała, mimo tego i tak strzelanie powoduje że kamera leci do celu 
             GD.Print("Dystans zbyt krótki by angarzować spowolnienie kamery");
             UNIAnimPlayerRef.Play("Damage");
+            ShowHitInfoLabel(DMG_to_label);
         }
-        FightDistance = 0;
     }
     int FindPartToDamage(int partIndex)
     {
@@ -328,12 +339,16 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     public void AnimAwaitResponse()
     {
+        GD.Print("AnimAwaitResponse triggered ...");
+        ShowHitInfoLabel(DMG_to_label);
         if (FightDistance > 1500f)
         {
             switch (responseAnimLexicon)
             {
                 case ResponseAnimLexicon.damage:
+                    GD.Print("DMG aim played now ...");
                     UNIAnimPlayerRef.Play("Damage");
+
                 break;
                 case ResponseAnimLexicon.die:
                     UNIAnimPlayerRef.Play("Damage");
@@ -341,6 +356,32 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                 break;
             }
         }
+        FightDistance = 0;
+    }
+    void ShowHitInfoLabel(int dmg)
+    {
+        ThisLabelScene = GD.Load<PackedScene>("res://Prefabs/dmg_num_popup.tscn");
+        Label dmgLabel = ThisLabelScene.Instantiate<Label>();
+        DMG_Label_bucket.AddChild(dmgLabel);
+        // --- KOLOR + OUTLINE ---
+        if (dmg == 0)
+        {
+            dmgLabel.Call("ShowFadeWarning","Miss");
+            dmgLabel.AddThemeColorOverride("font_color", Colors.White);
+            dmgLabel.AddThemeColorOverride("font_outline_color", Colors.Gray);
+        }
+        else
+        {
+            dmgLabel.Call("ShowFadeWarning",$"-{dmg}");
+            dmgLabel.AddThemeColorOverride("font_color", Colors.Red);
+            dmgLabel.AddThemeColorOverride("font_outline_color",new Color(0.4f, 0f, 0f));// bordowy
+        }
+        dmgLabel.AddThemeConstantOverride("outline_size", 22);
+        // --- LOSOWA POZYCJA NAD PIONKIEM ---
+        float randomX = (float)GD.RandRange(-100, 100);
+        float randomY = - ObjętośćPionka + (float)GD.RandRange(-100, 100);
+        randomY = Mathf.Max(randomY, -380); // limit Y
+        dmgLabel.Position = new Vector2(randomX, randomY);
     }
     public void Die()
     {
