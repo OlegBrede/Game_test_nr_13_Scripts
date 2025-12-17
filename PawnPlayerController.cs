@@ -119,6 +119,7 @@ public partial class PawnPlayerController : Node2D
         OverwatchpointRefNode = ONB.GetNode<Node2D>("NodeForAreaTriangulation");
         OVPoint1Ref = OverwatchpointRefNode.GetNode<Node2D>("Point1");
         OVPoint2Ref = OverwatchpointRefNode.GetNode<Node2D>("Point2");
+
     }
     public override void _Process(double delta)
     {
@@ -515,7 +516,7 @@ public partial class PawnPlayerController : Node2D
                 {
                     AimedOrnot = false;
                 }
-                UCOPS.ActionRangeAttack(AimedOrnot,ShootingFinalDiceVal,PartProbability,ShootingTargetLockIndex);
+                UCOPS.ActionRangeAttack(AimedOrnot,ShootingFinalDiceVal,PartProbability,ShootingTargetLockIndex,PawnScript.Firemode);
                 ResetActionCommitment(false);
                 break;
             case 3:

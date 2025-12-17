@@ -43,6 +43,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public int WeaponDamage = 85; // może w wypadku broni białej może dałoby się mieć "rzut" zamiast strzału ? ale znowu , trzeba byłoby jakoś coś zrobić z tym tamtym mieczem shotgun
     [Export] public int WeaponAmmo = 7;
     [Export] public int WeaponMaxAmmo = 7;
+    [Export] public int Firemode = 1; // informacje o trybach strzału są opisane w UNI_ControlOverPawnScript
+    [Export] public int ShotsPerMP = 3; // ile strzałów na jedną akcję (np. przy burst fire lub przy shotgun)
     [Export] public int MeleeDamage = 38;
     [Export] public int MeleeWeaponDamage = 120;
     [Export] public int MP = 2; //movement points (how many times can a pawn move in one turn)
@@ -59,7 +61,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public float PrevDistance = 0;
     public float ObjętośćPionka = 0;
     public int kills = 0; // TEMP
-    float FightDistance = 0; // dystans w jakim zadziała się akcja, usprawiedliwiający pokazanie walki w wolnym tępie
+    float FightDistance = 0; // dystans w jakim zadziała się akcja, usprawiedliwiający pokazanie walki w wolnym tępie, jest terz obsługiwana w UNI_ControlOverPawnScript, to dlaego że dystans dalej wpywa na aktywację timera
     public Node2D TargetMarkerRef;
     public PawnMoveState PawnMoveStatus { get; set; } = PawnMoveState.Standing;
     public PawnStatusEffect PawnsActiveStates = PawnStatusEffect.None;
@@ -70,7 +72,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     Node2D DMG_Label_bucket;
     PackedScene ThisLabelScene;
-    int DMG_to_label = 0;
     public override void _Ready()
     {
         //GD.Print("PawnReadyTriggered");
@@ -151,13 +152,13 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             //GD.Print($"hit on {FloatDice}");
             gameMNGR_Script.GenerateActionLog($"{Bname} Hit {UnitName}");
             TakeDamage(dmg,Where);
-            DMG_to_label = dmg;
+            ShowHitInfoLabel(dmg);
         }
         else
         {
             //GD.Print($"miss on {FloatDice}");
             gameMNGR_Script.GenerateActionLog($"{Bname} Missed {UnitName}");
-            DMG_to_label = 0;
+            ShowHitInfoLabel(0);
         }
     }
     int LocationRollCalc()
@@ -222,7 +223,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                         ResponseAnimTimer.Stop(); // nie diała, mimo tego i tak strzelanie powoduje że kamera leci do celu 
                         GD.Print("Dystans zbyt krótki by angarzować spowolnienie kamery");
                         UNIAnimPlayerRef.Play("Damage");
-                        ShowHitInfoLabel(DMG_to_label);
                         Die();
                     }
                     return; // tak na wszelki wypadek by ten kod nie szedł dalej po tym jak już zadecyduje umrzeć 
@@ -249,7 +249,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             ResponseAnimTimer.Stop(); // nie diała, mimo tego i tak strzelanie powoduje że kamera leci do celu 
             GD.Print("Dystans zbyt krótki by angarzować spowolnienie kamery");
             UNIAnimPlayerRef.Play("Damage");
-            ShowHitInfoLabel(DMG_to_label);
         }
     }
     int FindPartToDamage(int partIndex)
@@ -337,18 +336,19 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 1, true);
         }
     }
-    public void AnimAwaitResponse()
+    void AnimAwaitResponse()
     {
         GD.Print("AnimAwaitResponse triggered ...");
-        ShowHitInfoLabel(DMG_to_label);
         if (FightDistance > 1500f)
         {
             switch (responseAnimLexicon)
             {
                 case ResponseAnimLexicon.damage:
-                    GD.Print("DMG aim played now ...");
+                    if (UNIAnimPlayerRef.IsPlaying())
+                    {
+                        UNIAnimPlayerRef.Stop();
+                    }
                     UNIAnimPlayerRef.Play("Damage");
-
                 break;
                 case ResponseAnimLexicon.die:
                     UNIAnimPlayerRef.Play("Damage");
@@ -378,8 +378,9 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         }
         dmgLabel.AddThemeConstantOverride("outline_size", 22);
         // --- LOSOWA POZYCJA NAD PIONKIEM ---
-        float randomX = (float)GD.RandRange(-100, 100);
-        float randomY = - ObjętośćPionka + (float)GD.RandRange(-100, 100);
+        float RandomPosNum = 500f;
+        float randomX = (float)GD.RandRange(-RandomPosNum, RandomPosNum); // ta randomizacja nie raandoizuje, proszę poprawić statycznym stołem ala doom jak nie pyknie 
+        float randomY = - ObjętośćPionka + (float)GD.RandRange(-RandomPosNum, RandomPosNum);
         randomY = Mathf.Max(randomY, -380); // limit Y
         dmgLabel.Position = new Vector2(randomX, randomY);
     }
@@ -451,11 +452,18 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             WeaponAmmo = WeaponMaxAmmo;
         }
     }
-    public void PlayAttackAnim()
+    public void PlayAttackAnim(bool trueisRange)
     {
         if (SpecificAnimPlayer != null)
         {
-            SpecificAnimPlayer.Play("Attack");
+            if (trueisRange == true)
+            {
+                SpecificAnimPlayer.Play("Attack"); // trza zmienić nazwę na "Range attack" i "melee Attack"
+            }
+            else
+            {
+                SpecificAnimPlayer.Play("Attack");
+            }
         }
     }
     void DeleteUnusedControlNodes(bool TrueisAI)

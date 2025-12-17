@@ -169,13 +169,19 @@ public partial class GameMNGR_Script : Node2D
     {
         PlayerGUIRef.Call(CalledFuncName,NumVal,Flag);
     }
-    public void CaptureAction(Vector2 Giver, Vector2 Recypiant)
+    public void CaptureAction(Vector2 Giver, Vector2 Recypiant,bool TrueisWideShotNeeded)
     {
         ActionView = Giver;
         ReactionView = Recypiant;
-        CamShowActionTimer.WaitTime = waitDuration;
-        ShowActionAfterTimeout();
-        //FocusCam.GlobalPosition = Recypiant; // to jest leprzy placeholder, bo upiększanie tego byłoby trochę teraz nieistotne
+        if (TrueisWideShotNeeded == true)
+        {
+            CamShowActionTimer.WaitTime = waitDuration;
+            ShowActionAfterTimeout();
+        }
+        else
+        {
+            FocusCam.GlobalPosition = Recypiant;
+        }
     }
     void ShowActionAfterTimeout()
     {
@@ -367,7 +373,7 @@ public partial class GameMNGR_Script : Node2D
     {
         Label Log = new Label();
         Log.Text = Message;
-        Log.AddThemeFontSizeOverride("font_size", 140);
+        Log.AddThemeFontSizeOverride("font_size", 150);
         LogBucket.AddChild(Log);
         KontenrLogów.ScrollVertical = (int)KontenrLogów.GetVScrollBar().MaxValue;
     }

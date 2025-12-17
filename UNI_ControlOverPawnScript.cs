@@ -14,6 +14,10 @@ public partial class UNI_ControlOverPawnScript : Node2D
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     public List<PawnPart> EnemyPartsToHit = new List<PawnPart>();
     float EngagementDistance = 0f;
+    int BurstFireCounter = 0;
+    Timer BurstFireTimer;
+    int[] BurstfireARGints = {0,0};
+    float[] BurstfireARGfoats = {0,0};
     public override void _Ready()
     {
         if (GetTree().CurrentScene.Name != "BaseTestScene")
@@ -27,6 +31,8 @@ public partial class UNI_ControlOverPawnScript : Node2D
             GD.Print("Scena jest BaseTestScene");
             GD.Print("UNI_ControlOverPawnScript włączone ... ");
         }
+        BurstFireTimer = GetNode<Timer>("BurstFireTimer");
+        BurstFireTimer.Timeout += () => BurstFireTrigger(BurstfireARGints[0],BurstfireARGints[1],BurstfireARGfoats[0],BurstfireARGfoats[1]);
         gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
         UNI_MoveMarker = GetNode<Node2D>("UNI_MoveNode");
         OverlapingBodiesArea = UNI_MoveMarker.GetNode<Area2D>("Area2D");
@@ -64,7 +70,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
     {
         PawnScript.MP--;
         gameMNGR_Script.TeamsCollectiveMP--;
-        PawnScript.PlayAttackAnim();
+        PawnScript.PlayAttackAnim(false);
         Godot.Collections.Array<Node2D> overlaps;
         if (StrongOrNot == true)
         {
@@ -86,7 +92,8 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 {
                     if (StrongOrNot == true) // strong wallop 
                     {
-                        PS.Call("CalculateHit", PawnScript.MeleeDamage * 1.5f , 5f,STLI, PawnScript.UnitName,50f);
+                        float FinalDMG = PawnScript.MeleeDamage * 1.5f;
+                        PS.Call("CalculateHit", (int)FinalDMG , 5f,STLI, PawnScript.UnitName,50f);
                     }
                     else // wide wallop
                     {
@@ -96,9 +103,18 @@ public partial class UNI_ControlOverPawnScript : Node2D
             }
         }
     }
-    public void ActionRangeAttack(bool AimedOrnot,float SFDV, float PartProbability,int STLI) //ShootingTargetLockIndex
+    public void ActionRangeAttack(bool AimedOrnot,float SFDV, float PartProbability,int STLI,int Firemode) //ShootingTargetLockIndex
     {
         int WeaponDamageModified;
+        bool ShowActionWdeShot;
+        if (ShootingRayScript.Raylengh > 1500)
+        {
+            ShowActionWdeShot = true;
+        }
+        else
+        {
+            ShowActionWdeShot = false;
+        }
         if (AimedOrnot == false)
         {
             PawnScript.MP--;
@@ -116,13 +132,82 @@ public partial class UNI_ControlOverPawnScript : Node2D
             }
             WeaponDamageModified = PawnScript.WeaponDamage - RNGGEN.RandiRange(0,PawnScript.WeaponDamage / 2); // to powino zadziałać 
         }
-        PawnScript.WeaponAmmo--;
-        PawnScript.PlayAttackAnim();
+        switch (Firemode)
+        {
+            case 2: // burst fire, ilość wystrzelonych pocisków w skrypcie bazowym pionka
+                if (ShootingRayScript.RayHittenTarget != null)
+                {
+                    gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, ShootingRayScript.RayHittenTarget.GlobalPosition,ShowActionWdeShot);
+                }
+                BurstfireARGints[0] = WeaponDamageModified;
+                BurstfireARGints[1] = STLI;
+                BurstfireARGfoats[0] = SFDV;
+                BurstfireARGfoats[1] = PartProbability;
+                BurstFireTimer.Start();
+            break;
+            case 3: // Shotgun, ilość wystrzelonych pocisków na raz w skrypcie bazowym pionka (ten sam co burst fire)
+                ClusterFire(WeaponDamageModified,STLI,SFDV,PartProbability,ShowActionWdeShot);
+            break;
+            default: // to jest jeden czyli inaczej ojedyńczy strzał
+                PawnScript.WeaponAmmo--;
+                if (ShootingRayScript.RayHittenTarget != null)
+                {
+                    ShootingRayScript.RayHittenTarget.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName, EngagementDistance);
+                    GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
+                    gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, ShootingRayScript.RayHittenTarget.GlobalPosition,ShowActionWdeShot);
+                }
+            break;
+        }
+        PawnScript.PlayAttackAnim(true);
+    }
+    void BurstFireTrigger(int WeaponDamageModified, int STLI, float SFDV, float PartProbability)
+    {
+        if (BurstFireCounter < PawnScript.ShotsPerMP)
+        {
+            BurstFireCounter ++;
+            if (PawnScript.WeaponAmmo > 0)
+            {
+                PawnScript.WeaponAmmo--;
+                if (ShootingRayScript.RayHittenTarget != null)
+                {
+                    ShootingRayScript.RayHittenTarget.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName, EngagementDistance);
+                    GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
+                }
+            }
+            else
+            {
+                GD.Print("Burst Fire przerwany z racji na brak amunicji");
+                BurstFireStop();
+            }
+        }
+        else
+        {
+            BurstFireStop();
+        }
+    }
+    void BurstFireStop()
+    {
+        BurstFireTimer.Stop();
+        BurstFireCounter = 0;
+        BurstfireARGints[0] = 0;
+        BurstfireARGints[1] = 0;
+        BurstfireARGfoats[0] = 0;
+        BurstfireARGfoats[1] = 0;
+    }
+    void ClusterFire(int WeaponDamageModified, int STLI, float SFDV, float PartProbability, bool ShowActionWdeShot)
+    {
         if (ShootingRayScript.RayHittenTarget != null)
         {
-            ShootingRayScript.RayHittenTarget.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName, EngagementDistance);
-            GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
-            gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, ShootingRayScript.RayHittenTarget.GlobalPosition);
+            gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, ShootingRayScript.RayHittenTarget.GlobalPosition,ShowActionWdeShot);
+        }
+        for (int i = 0; i < PawnScript.ShotsPerMP; i++)
+        {
+            PawnScript.WeaponAmmo--;
+            if (ShootingRayScript.RayHittenTarget != null)
+            {
+                ShootingRayScript.RayHittenTarget.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName, EngagementDistance);
+                GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
+            }
         }
     }
     // ################################# RUSZANIE SIĘ ################################# 
