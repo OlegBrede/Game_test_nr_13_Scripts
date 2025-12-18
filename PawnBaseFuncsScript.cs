@@ -67,6 +67,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public PawnStatusEffect PawnsActiveStates = PawnStatusEffect.None;
     GameMNGR_Script gameMNGR_Script;
     Timer ResponseAnimTimer;
+    Timer DMGLabelVisTimer;
     ResponseAnimLexicon responseAnimLexicon;
     private bool AC = false; // (ACTIVATE COLLISION) TEMP 
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
@@ -101,6 +102,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         //GD.Print("skrypt przechodzi dalej ... ");
         RNGGEN.Randomize();
         UNIAnimPlayerRef.Play("StandStill");
+        DMGLabelVisTimer = GetNode<Timer>("DMGLabelVisTimer");
+        DMGLabelVisTimer.Timeout += DeleteDamageNumbers;
         ResponseAnimTimer = GetNode<Timer>("ResponseAnimTimer");
         DMG_Label_bucket = GetNode<Node2D>("DMG_Label_bucket");
         ResponseAnimTimer.Timeout += AnimAwaitResponse;
@@ -362,7 +365,9 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         ThisLabelScene = GD.Load<PackedScene>("res://Prefabs/dmg_num_popup.tscn");
         Label dmgLabel = ThisLabelScene.Instantiate<Label>();
-        DMG_Label_bucket.AddChild(dmgLabel);
+        Control dmgLabelPosControl = new Control();
+        DMG_Label_bucket.AddChild(dmgLabelPosControl);
+        dmgLabelPosControl.AddChild(dmgLabel);
         // --- KOLOR + OUTLINE ---
         if (dmg == 0)
         {
@@ -378,11 +383,21 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         }
         dmgLabel.AddThemeConstantOverride("outline_size", 22);
         // --- LOSOWA POZYCJA NAD PIONKIEM ---
-        float RandomPosNum = 500f;
-        float randomX = (float)GD.RandRange(-RandomPosNum, RandomPosNum); // ta randomizacja nie raandoizuje, proszę poprawić statycznym stołem ala doom jak nie pyknie 
-        float randomY = - ObjętośćPionka + (float)GD.RandRange(-RandomPosNum, RandomPosNum);
-        randomY = Mathf.Max(randomY, -380); // limit Y
-        dmgLabel.Position = new Vector2(randomX, randomY);
+        float RandomPosNum = 300f;
+        float randomX = (float)GD.RandRange(-RandomPosNum - 100, RandomPosNum); // ta randomizacja nie raandoizuje, proszę poprawić statycznym stołem ala doom jak nie pyknie 
+        float randomY = (float)GD.RandRange(-RandomPosNum - 100, RandomPosNum);
+        GD.Print($"random X i Y to {randomX},{randomY}");
+        //randomY = Mathf.Max(randomY, 380); // limit Y
+        dmgLabelPosControl.Position = new Vector2(randomX, randomY);
+        DMGLabelVisTimer.Start();
+    }
+    void DeleteDamageNumbers()
+    {
+        foreach (Control Numbers in DMG_Label_bucket.GetChildren())
+        {
+            Numbers.QueueFree();
+            GD.Print("Damage number deleted");
+        }
     }
     public void Die()
     {
