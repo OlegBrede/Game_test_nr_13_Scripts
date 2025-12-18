@@ -18,6 +18,9 @@ public partial class GameMNGR_Script : Node2D
     Vector2 ActionView;
     Vector2 ReactionView;
     // ####################### KAMERA #######################
+    // ####################### SOUNDS #######################
+    [Export] SoundControlScript SCS;
+    // ####################### SOUNDS #######################
     [Export] Label UnitInfoGuiLabel;
     [Export] Label TotalMPLabel;
     [Export] Label ULTIMATENAMELABEL;

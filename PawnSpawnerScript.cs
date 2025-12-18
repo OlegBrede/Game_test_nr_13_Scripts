@@ -110,6 +110,7 @@ public partial class PawnSpawnerScript : Node2D
                             }
                         }
                         Pawn.Call("Namechange", rngNameToolScript.GetRandomName(Category) + " " + Surname);
+                        Pawn.Call("SetGendah",Gender);
                         if (team.Spawn_ID != 9) // dziewięć to numer dowolnego układania pionków
                         {
                             Pawn.GlobalPosition = PawnRadiusSpawnCheckin(team.Spawn_ID);

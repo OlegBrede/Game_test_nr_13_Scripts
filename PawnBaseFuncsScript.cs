@@ -57,6 +57,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public Sprite2D ProfilePick;
     [Export] string[] CriticalParts; // części ciała pionka bez których nie może on funkcjonować 
     [Export] public PawnPart[] PawnParts { get; set; } // części ciała pionka
+    [Export] UNI_AudioStreamPlayer2d ASP;
     public bool Gameplayprimed = false;
     public float PrevDistance = 0;
     public float ObjętośćPionka = 0;
@@ -73,6 +74,9 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     Node2D DMG_Label_bucket;
     PackedScene ThisLabelScene;
+    // 0 = selection sounds
+    // 1 = hurt sounds
+    int[,] VoicelineRange = {{0,0},{0,0}}; 
     public override void _Ready()
     {
         //GD.Print("PawnReadyTriggered");
@@ -140,6 +144,21 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     void Namechange(string Changetothis)
     {
         UnitName = Changetothis;
+    }
+    void SetGendah(int GenderNumber)
+    {
+        if (GenderNumber == 1)//male
+        {
+            VoicelineRange[0,0] = 0;
+            VoicelineRange[0,1] = 1;
+            VoicelineRange[1,0] = 2;
+            VoicelineRange[1,1] = 3;
+        }else{// female
+            VoicelineRange[0,0] = 4;
+            VoicelineRange[0,1] = 5;
+            VoicelineRange[1,0] = 6;
+            VoicelineRange[1,1] = 7;
+        }
     }
     void ActivateCollision()
     {
@@ -225,6 +244,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                     {
                         ResponseAnimTimer.Stop(); // nie diała, mimo tego i tak strzelanie powoduje że kamera leci do celu 
                         GD.Print("Dystans zbyt krótki by angarzować spowolnienie kamery");
+                        ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)]);
                         UNIAnimPlayerRef.Play("Damage");
                         Die();
                     }
@@ -251,6 +271,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         {
             ResponseAnimTimer.Stop(); // nie diała, mimo tego i tak strzelanie powoduje że kamera leci do celu 
             GD.Print("Dystans zbyt krótki by angarzować spowolnienie kamery");
+            ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)]);
             UNIAnimPlayerRef.Play("Damage");
         }
     }
@@ -351,9 +372,11 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                     {
                         UNIAnimPlayerRef.Stop();
                     }
+                    ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)]);
                     UNIAnimPlayerRef.Play("Damage");
                 break;
                 case ResponseAnimLexicon.die:
+                    ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)]);
                     UNIAnimPlayerRef.Play("Damage");
                     Die();
                 break;

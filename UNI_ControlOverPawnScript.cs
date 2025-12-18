@@ -8,6 +8,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
     [Export] UNI_LOSRayCalcScript ShootingRayScript;
     [Export] Area2D WideMeleeAttackArea;
     [Export] Area2D StrongMeleeAttackArea;
+    [Export] UNI_AudioStreamPlayer2d ASP;
     GameMNGR_Script gameMNGR_Script;
     Node2D UNI_MoveMarker;
     Area2D OverlapingBodiesArea;
@@ -143,12 +144,14 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 BurstfireARGints[1] = STLI;
                 BurstfireARGfoats[0] = SFDV;
                 BurstfireARGfoats[1] = PartProbability;
+                ASP.PlaySound(0);
                 BurstFireTimer.Start();
             break;
             case 3: // Shotgun, ilość wystrzelonych pocisków na raz w skrypcie bazowym pionka (ten sam co burst fire)
                 ClusterFire(WeaponDamageModified,STLI,SFDV,PartProbability,ShowActionWdeShot);
+                ASP.PlaySound(1);
             break;
-            default: // to jest jeden czyli inaczej ojedyńczy strzał
+            default: // to jest jeden czyli inaczej pojedyńczy strzał
                 PawnScript.WeaponAmmo--;
                 if (ShootingRayScript.RayHittenTarget != null)
                 {
@@ -156,6 +159,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
                     GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
                     gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, ShootingRayScript.RayHittenTarget.GlobalPosition,ShowActionWdeShot);
                 }
+                ASP.PlaySound(0);
             break;
         }
         PawnScript.PlayAttackAnim(true);
@@ -172,6 +176,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 {
                     ShootingRayScript.RayHittenTarget.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName, EngagementDistance);
                     GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
+                    
                 }
             }
             else

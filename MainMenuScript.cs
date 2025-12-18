@@ -156,7 +156,7 @@ public partial class MainMenuScript : Node2D
         if (File.Exists(SaveFilePath))
         {
             File.Delete(SaveFilePath);
-            GD.Print("Stary plik JSON usunięty.");
+            GD.Print("Stary plik JSON z ustawieniami wstępnymi potyczki usunięty.");
         }
         var cfg = new GameMNGR_Script.GameConfig();
         TeamQuerryConfinginfo.Clear(); // zawsze najpierw czyścimy listę
