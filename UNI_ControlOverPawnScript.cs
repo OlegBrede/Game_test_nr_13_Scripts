@@ -48,6 +48,11 @@ public partial class UNI_ControlOverPawnScript : Node2D
     // - 
     public void ActionMove() // wywołanie tej akcji ma sprawić poruszenie się na pozycję PosToMoveTo
     {
+        if (PawnScript.MovinCapability < 1)
+        {
+            GD.Print("Pioek chce się poruszyć ale nie może");
+            return;
+        }
         PawnScript.MP--;
         gameMNGR_Script.TeamsCollectiveMP--;
         var path = NavAgent.GetCurrentNavigationPath();
@@ -66,10 +71,16 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 PawnScript.PrevDistance = PawnScript.DistanceMovedByThisPawn;
             }
             PawnScript.PawnMoveStatus = PawnMoveState.Moving;
+            PawnScript.SpecificAnimPlayer.Play("Walk");
         }
     }
     public void ActionMeleeAttack(bool StrongOrNot,int STLI) // wywołanie tej akcji ma zadać DMG do odpowiednich celów
     {
+        if (PawnScript.MeleeAllowence < 1)
+        {
+            GD.Print("Pioek chce walczyć wręcz ale nie może");
+            return;
+        }
         PawnScript.MP--;
         gameMNGR_Script.TeamsCollectiveMP--;
         PawnScript.PlayAttackAnim(false);
@@ -84,7 +95,6 @@ public partial class UNI_ControlOverPawnScript : Node2D
             WideMeleeAttackArea.ForceUpdateTransform();
             overlaps = WideMeleeAttackArea.GetOverlappingBodies();
         }
-        
         foreach (var body in overlaps)
         {
             if (body is CharacterBody2D)
@@ -92,14 +102,23 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 PawnBaseFuncsScript PS = body as PawnBaseFuncsScript;
                 if (PS.TeamId != PawnScript.TeamId)
                 {
+                    float FinalDMG;
+                    if (PawnScript.MeleeWeaponAllowence > 0)
+                    {
+                        FinalDMG = PawnScript.MeleeWeaponDamage;
+                    }
+                    else
+                    {
+                        FinalDMG = PawnScript.MeleeDamage;
+                    }
                     if (StrongOrNot == true) // strong wallop 
                     {
-                        float FinalDMG = PawnScript.MeleeDamage * 1.5f;
+                        FinalDMG = FinalDMG * 1.5f;
                         PS.Call("CalculateHit", (int)FinalDMG , 5f,STLI, PawnScript.UnitName,50f);
                     }
                     else // wide wallop
                     {
-                        PS.Call("CalculateHit", PawnScript.MeleeDamage, 2.5f,STLI, PawnScript.UnitName,50f);
+                        PS.Call("CalculateHit", FinalDMG, 2.5f,STLI, PawnScript.UnitName,50f);
                     }
                 }
             }
@@ -107,6 +126,11 @@ public partial class UNI_ControlOverPawnScript : Node2D
     }
     public void ActionRangeAttack(bool AimedOrnot,float SFDV, float PartProbability,int STLI,int Firemode) //ShootingTargetLockIndex
     {
+        if (PawnScript.ShootingAllowence < 1 || PawnScript.WeaponAmmo < 1)
+        {
+            GD.Print("Pioek chce strzelić ale nie może");
+            return;
+        }
         int WeaponDamageModified;
         bool ShowActionWdeShot;
         if (ShootingRayScript.Raylengh > 1500)

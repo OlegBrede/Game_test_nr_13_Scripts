@@ -53,7 +53,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] Node2D PCNP; // player controller node path
     [Export] Node2D AICNP; // AI controller node path
     [Export] AnimationPlayer UNIAnimPlayerRef;
-    [Export] AnimationPlayer SpecificAnimPlayer;
+    [Export] public AnimationPlayer SpecificAnimPlayer;
     [Export] public Sprite2D ProfilePick;
     [Export] string[] CriticalParts; // części ciała pionka bez których nie może on funkcjonować 
     [Export] public PawnPart[] PawnParts { get; set; } // części ciała pionka
@@ -70,7 +70,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     Timer ResponseAnimTimer;
     Timer DMGLabelVisTimer;
     ResponseAnimLexicon responseAnimLexicon;
-    private bool AC = false; // (ACTIVATE COLLISION) TEMP 
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     Node2D DMG_Label_bucket;
     PackedScene ThisLabelScene;
@@ -139,7 +138,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                 MeleeWeaponAllowence++;
             }
         }
-        //GD.Print($"ShootingAllowence is {ShootingAllowence}, MeleeAllowence is {MeleeAllowence} MeleeWeaponAllowence is {MeleeWeaponAllowence}");
+        GD.Print($"ShootingAllowence is {ShootingAllowence}, MeleeAllowence is {MeleeAllowence} MeleeWeaponAllowence is {MeleeWeaponAllowence}");
         BaseIntegrity = Integrity;
     }
     void Namechange(string Changetothis)
@@ -161,9 +160,9 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             VoicelineRange[1,1] = 7;
         }
     }
-    void ActivateCollision()
+    public void OnSellectSay()
     {
-        AC = true;
+        ASP.PlaySound(VoicelineRange[0,RNGGEN.RandiRange(0,1)],true);
     }
     public void CalculateHit(int dmg, float probability,int Where, string Bname,float DamageDistance)
     {
@@ -230,6 +229,10 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             LeftoverDMG = PawnParts[PlacementRoll_INDEX].HP * -1; //odwracając ujemny DMG dostajemy ile DMG będzie transferowana w górę
             GD.Print($"Dana część nie wytrzyma DMG, więc reszts obrażeń to ({LeftoverDMG})");
             gameMNGR_Script.GenerateActionLog($"{UnitName} lost {W_co} due to damage");
+            DecreseFightCapability(PawnParts[PlacementRoll_INDEX].MeleeCapability,
+            PawnParts[PlacementRoll_INDEX].MeleeWeaponCapability,
+            PawnParts[PlacementRoll_INDEX].ShootingCapability,
+            PawnParts[PlacementRoll_INDEX].EsentialForMovement);
             foreach (string CriticalPart in CriticalParts)// szukamy czy dana część ciała była krytyczna do funkcjonowania jednostki
             {
                 if (CriticalPart == PawnParts[PlacementRoll_INDEX].Name && PawnParts[PlacementRoll_INDEX].HP <= 0)// jak była, i nie ma HP
@@ -306,12 +309,16 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             return FindPartToDamage(parentIndex);
         }
     }
-    void DecreseFightCapability(bool Melee, bool Shootah, bool Legs)
+    void DecreseFightCapability(bool Melee, bool MeleeWeapon, bool Shootah, bool Legs)// nie ma tu melee weapon
     {
         GD.Print("Częśćciała zniszczona, efektywność walki zmniejszona");
         if (Melee == true)
         {
             MeleeAllowence--;
+        }
+        if (MeleeWeapon == true)
+        {
+            MeleeWeaponAllowence--;
         }
         if (Shootah == true)
         {
@@ -329,38 +336,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             MAD = MAD / MovinCapability; // tu odejmowana jest możliwość szybszego ruchu gdy postać ma mniej nóg
             MovinCapability--;
         }
-        CheckFightingCapability();
     }
-    public void CheckFightingCapability()
-    {
-        if (ShootingAllowence <= 0 || WeaponAmmo <= 0)
-        {
-            GD.Print("pionek nie może strzelać");
-            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 2,false); // zapewne będzie trzeba to zastąpić sygnałem jak uprzednio ale .... może jak starczy czasu ?
-        }
-        else
-        {
-            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 2,true);
-        }
-        if (MeleeAllowence <= 0)
-        {
-            GD.Print("pionek nie może atakować wręcz");
-            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 3, false);
-        }
-        else
-        {
-            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 3,true);
-        }
-        if (MovinCapability <= 0)
-        {
-            GD.Print("pionek nie może się ruszać");
-            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 1, false);
-        }
-        else
-        {
-            gameMNGR_Script.PlayerPhoneCallbackIntBool("DisableNEnableAction", 1, true);
-        }
-    }
+
     void AnimAwaitResponse()
     {
         GD.Print("AnimAwaitResponse triggered ...");
@@ -451,6 +428,10 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             ProcessMode = ProcessModeEnum.Disabled;
             QueueFree();
         }
+        if (animName == "Attack" && PawnMoveStatus == PawnMoveState.Moving)
+        {
+            SpecificAnimPlayer.Play("Walk");
+        }
     }
     public void ShowSelection(bool ShowAnim)
     {
@@ -478,6 +459,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         if (PawnMoveStatus == PawnMoveState.Moving && PawnMoveStatus != PawnMoveState.Fainted)
         {
             PawnMoveStatus = PawnMoveState.Standing;
+            SpecificAnimPlayer.Play("None");
             DistanceMovedByThisPawn = 0;
             PrevDistance = 0;
         }
@@ -495,6 +477,10 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         if (SpecificAnimPlayer != null)
         {
+            if (SpecificAnimPlayer.IsPlaying())
+            {
+                SpecificAnimPlayer.Stop();
+            }
             if (trueisRange == true)
             {
                 SpecificAnimPlayer.Play("Attack"); // trza zmienić nazwę na "Range attack" i "melee Attack"
@@ -537,5 +523,9 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public void PlayerActionPhone(string FuncName,int Parameter) // TO DO .: - to jest "chyba" do wywalenia z racji na zastąpienie tego sygnałami
     {
         PCNP.Call(FuncName,Parameter);
+    }
+    public void ActivateCollision()
+    {
+        // dopóki nie znajdę gdzie jest to wywoływane to niech to tu będzie 
     }
 }

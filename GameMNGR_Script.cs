@@ -117,11 +117,12 @@ public partial class GameMNGR_Script : Node2D
                 SelectedPawn.Call("RSSP"); // reset selekcji, teoretycznie niepotrzebny ale... TO DO .: - sprawdź czy usunięcie resetu zepsuje grę 
             }
             SelectedPawn = pawn; // możesz też emitować sygnał tutaj jeśli kto inny chce reagować
+            SelectedPawn.OnSellectSay();
             SelectedPawn.SetUISubscription(); // Subskrypcja do UI
             PrevSelectedPawn = SelectedPawn;
             PlayerGUIRef.PALO(false,true); // pokaż akcje które może podjąć pionek na GUI
             PlayerGUIRef.RecivePaperdoll(pawn.PathToPaperDoll);
-            pawn.CheckFightingCapability();
+            PlayerGUIRef.ReciveWellBeingInfo(pawn); // pokaż które akcje może podjąć pionek , ale teraz sprawdzając zrdowie pionka 
             foreach (PawnPart part in pawn.PawnParts)
             {
                 PlayerGUIRef.ReciveWellBeingInfo(part.Name,part.HP,part.MAXHP);
@@ -163,18 +164,7 @@ public partial class GameMNGR_Script : Node2D
             return "";
         }
     }
-    public void PlayerPhoneCallback2Flag(string CalledFuncName, bool Flag1,bool Flag2)
-    {
-        PlayerGUIRef.Call(CalledFuncName, Flag1,Flag2);
-    }
-    public void PlayerPhoneCallbackInt(string CalledFuncName, int NumVal)
-    {
-        PlayerGUIRef.Call(CalledFuncName, NumVal); 
-    }
-    public void PlayerPhoneCallbackIntBool(string CalledFuncName,int NumVal,bool Flag)
-    {
-        PlayerGUIRef.Call(CalledFuncName,NumVal,Flag);
-    }
+    // ########################################### KAMERA ###########################################
     public void CaptureAction(Vector2 Giver, Vector2 Recypiant,bool TrueisWideShotNeeded)
     {
         ActionView = Giver;
@@ -205,6 +195,7 @@ public partial class GameMNGR_Script : Node2D
         CamShowActionTimer.Stop();
         //GD.Print("Timer skończcył");
     }
+    // ########################################### KAMERA ###########################################
     public void PlayerPhoneCallWarning(string messig)
     {
         SNTWN.Call("ShowFadeWarning", messig);
@@ -278,7 +269,7 @@ public partial class GameMNGR_Script : Node2D
             UnitInfoGuiLabel.Text = PawnInfoToGUITransmision(SelectedPawn);
             if (SelectedPawn != null)
             {
-                ULTIMATENAMELABEL.Text = SelectedPawn.UnitName;
+                ULTIMATENAMELABEL.Text = "Selected\n" +SelectedPawn.UnitName;
             }
             else
             {

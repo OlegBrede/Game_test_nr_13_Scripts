@@ -32,6 +32,36 @@ public partial class GUIButtonsToPawnScript : Node2D
         Actions.Visible = false;
         Confirmations.Visible = false;
     }
+    public void ReciveWellBeingInfo(PawnBaseFuncsScript PawnScript)
+    {
+        if (PawnScript.ShootingAllowence <= 0 || PawnScript.WeaponAmmo <= 0)
+        {
+            GD.Print("pionek nie może strzelać");
+            DisableNEnableAction(2,false);
+        }
+        else
+        {
+            DisableNEnableAction(2,true);
+        }
+        if (PawnScript.MeleeAllowence <= 0)
+        {
+            GD.Print("pionek nie może atakować wręcz");
+            DisableNEnableAction(3,false);
+        }
+        else
+        {
+            DisableNEnableAction(3,true);
+        }
+        if (PawnScript.MovinCapability <= 0)
+        {
+            GD.Print("pionek nie może się ruszać");
+            DisableNEnableAction(1,false);
+        }
+        else
+        {
+            DisableNEnableAction(1,true);
+        }
+    } 
     public void PALO(bool VisC,bool VisA) // Player Action LOader
     {
         Confirmations.Visible = VisC;

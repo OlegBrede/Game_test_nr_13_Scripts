@@ -555,7 +555,6 @@ public partial class PawnPlayerController : Node2D
                 ResetActionCommitment(true);
                 break;
         }
-        PawnScript.CheckFightingCapability();
     }
     void Player_ACT_Decline(int Index)
     {
@@ -586,7 +585,6 @@ public partial class PawnPlayerController : Node2D
                 ResetActionCommitment(true);
                 break;
         }
-        PawnScript.CheckFightingCapability();
     }
     public void ResetActionCommitment(bool forceDeselect)
     {
@@ -611,7 +609,6 @@ public partial class PawnPlayerController : Node2D
         NavAgent.DebugEnabled = false;
         PointerNode.Visible = false;
         ChanceToHitLabel1.Visible = false;
-        PawnScript.CheckFightingCapability();
     }
     public void ResetSelectedStatus()
     {
