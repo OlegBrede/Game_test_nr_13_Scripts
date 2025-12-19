@@ -35,6 +35,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
         BurstFireTimer = GetNode<Timer>("BurstFireTimer");
         BurstFireTimer.Timeout += () => BurstFireTrigger(BurstfireARGints[0],BurstfireARGints[1],BurstfireARGfoats[0],BurstfireARGfoats[1]);
         gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
+        ASP.SCS = gameMNGR_Script.SCS;
         UNI_MoveMarker = GetNode<Node2D>("UNI_MoveNode");
         OverlapingBodiesArea = UNI_MoveMarker.GetNode<Area2D>("Area2D");
     }
@@ -144,12 +145,12 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 BurstfireARGints[1] = STLI;
                 BurstfireARGfoats[0] = SFDV;
                 BurstfireARGfoats[1] = PartProbability;
-                ASP.PlaySound(0);
+                ASP.PlaySound(0,true);
                 BurstFireTimer.Start();
             break;
             case 3: // Shotgun, ilość wystrzelonych pocisków na raz w skrypcie bazowym pionka (ten sam co burst fire)
                 ClusterFire(WeaponDamageModified,STLI,SFDV,PartProbability,ShowActionWdeShot);
-                ASP.PlaySound(1);
+                ASP.PlaySound(1,true);
             break;
             default: // to jest jeden czyli inaczej pojedyńczy strzał
                 PawnScript.WeaponAmmo--;
@@ -159,7 +160,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
                     GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
                     gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, ShootingRayScript.RayHittenTarget.GlobalPosition,ShowActionWdeShot);
                 }
-                ASP.PlaySound(0);
+                ASP.PlaySound(0,true);
             break;
         }
         PawnScript.PlayAttackAnim(true);

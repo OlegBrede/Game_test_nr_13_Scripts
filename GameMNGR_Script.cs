@@ -19,7 +19,8 @@ public partial class GameMNGR_Script : Node2D
     Vector2 ReactionView;
     // ####################### KAMERA #######################
     // ####################### SOUNDS #######################
-    [Export] SoundControlScript SCS;
+    [Export] public SoundControlScript SCS;
+    [Export] UNI_AudioStreamPlayer2d UASP;
     // ####################### SOUNDS #######################
     [Export] Label UnitInfoGuiLabel;
     [Export] Label TotalMPLabel;
@@ -80,6 +81,8 @@ public partial class GameMNGR_Script : Node2D
 
     public void SetupGameScene()
     {
+        UASP.SCS = SCS;
+        UASP.PlaySound(0,false);
         //PlayerGUIRef = GetTree().Root.GetNode<GUIButtonsToPawnScript>("BaseTestScene/Camera2D/GUI_to_Pawn_Input_Translator");
         CamShowActionTimer.Timeout += ShowReactionAfterTimeout;
         SNTWN.Visible = false;

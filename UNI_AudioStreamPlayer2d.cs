@@ -6,9 +6,11 @@ using System.Linq;
 public partial class UNI_AudioStreamPlayer2d : AudioStreamPlayer2D
 {
     public SoundControlScript SCS;
+    GameMNGR_Script gameMNGR_Script;
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     [Export] int SoundGroup = 1;// grupy dźwiękowe to 0 = Music, 1 = SFX, 2 = Voice
     [Export] AudioStream[] AFSB; // audio from sound bank
+    [Export] bool Debug = false;
     public override void _Ready()
     {
         RNGGEN.Randomize();
@@ -19,16 +21,9 @@ public partial class UNI_AudioStreamPlayer2d : AudioStreamPlayer2D
         percent = Mathf.Clamp(percent, 0, 100);
         return Mathf.LinearToDb(percent / 100.0f);
     }
-    public void PlaySound(int SoundBankndex)
+    public override void _Process(double delta)
     {
-        if (SoundBankndex < 0 || SoundBankndex >= AFSB.Length)
-        {
-            GD.PrintErr("Sound index poza zakresem banku");
-            return;
-        }
-        PitchScale = RNGGEN.RandfRange(0.85f,1.15f);
-        Stream = AFSB[SoundBankndex];
-        if (SCS != null)
+       if (SCS != null)
         {
             switch (SoundGroup)
             {
@@ -45,7 +40,25 @@ public partial class UNI_AudioStreamPlayer2d : AudioStreamPlayer2D
                     GD.Print("UNI_AudioStreamPlayer2d nie ma ustawień głośności więc wartość dźwięku będzie ustawiona do tej w edytorze");
                 break;
             }
+        } 
+    }
+    public void PlaySound(int SoundBankndex,bool TrueisRNGPitch)
+    {
+        if (SoundBankndex < 0 || SoundBankndex >= AFSB.Length)
+        {
+            GD.PrintErr("Sound index poza zakresem banku");
+            return;
         }
+        if (TrueisRNGPitch == true)
+        {
+            PitchScale = RNGGEN.RandfRange(0.9f,1.1f);
+        }
+        else
+        {
+            PitchScale = 1;
+        }
+        Stream = AFSB[SoundBankndex];
+        
         Play();
     }
 }

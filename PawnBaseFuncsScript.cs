@@ -102,7 +102,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             GD.Print("PawnBaseFuncsScript włączone ... ");
             Gameplayprimed = true;
         }
-        gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene"); // to dalej daje error, pomyślę nad rozwiązaniem 
+        gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene"); // to dalej daje error, pomyślę nad rozwiązaniem
+        ASP.SCS = gameMNGR_Script.SCS;
         //GD.Print("skrypt przechodzi dalej ... ");
         RNGGEN.Randomize();
         UNIAnimPlayerRef.Play("StandStill");
@@ -244,7 +245,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                     {
                         ResponseAnimTimer.Stop(); // nie diała, mimo tego i tak strzelanie powoduje że kamera leci do celu 
                         GD.Print("Dystans zbyt krótki by angarzować spowolnienie kamery");
-                        ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)]);
+                        ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)],true);
                         UNIAnimPlayerRef.Play("Damage");
                         Die();
                     }
@@ -271,7 +272,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         {
             ResponseAnimTimer.Stop(); // nie diała, mimo tego i tak strzelanie powoduje że kamera leci do celu 
             GD.Print("Dystans zbyt krótki by angarzować spowolnienie kamery");
-            ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)]);
+            ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)],true);
             UNIAnimPlayerRef.Play("Damage");
         }
     }
@@ -372,11 +373,11 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                     {
                         UNIAnimPlayerRef.Stop();
                     }
-                    ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)]);
+                    ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)],true);
                     UNIAnimPlayerRef.Play("Damage");
                 break;
                 case ResponseAnimLexicon.die:
-                    ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)]);
+                    ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)],true);
                     UNIAnimPlayerRef.Play("Damage");
                     Die();
                 break;
