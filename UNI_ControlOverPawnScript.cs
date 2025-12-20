@@ -41,11 +41,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
     }
     // DO ZROBIENIA SĄ JESZCZE .: 
     // - DODANIE HOVER INFO NA SAMPLEBUTTON 
-    // - PRZY OKAZJI NAPRAW TEN BUG PRZY POBIERANIU OBJĘTOŚCI
-    // - PRZYWRÓĆ FUNKCJONALNOŚĆ KODU ODPOWIEDZIALNEGO ZA GENEROWANBIE PROPORCJONALNEJ BAŃKI NA PODSTAWIE RADIUS COLLISIONSHAPE 2D SPHEARE ?
     // - NAPRAW I PRZYWRÓĆ OVERWATCH
-    // - BRONIE MAJĄ MIEĆ TYPY STRZAŁÓW
-    // - 
     public void ActionMove() // wywołanie tej akcji ma sprawić poruszenie się na pozycję PosToMoveTo
     {
         if (PawnScript.MovinCapability < 1)
@@ -115,10 +111,12 @@ public partial class UNI_ControlOverPawnScript : Node2D
                     {
                         FinalDMG = FinalDMG * 1.5f;
                         PS.Call("CalculateHit", (int)FinalDMG , 5f,STLI, PawnScript.UnitName,50f);
+                        ASP.PlaySound(2,true);
                     }
                     else // wide wallop
                     {
                         PS.Call("CalculateHit", FinalDMG, 2.5f,STLI, PawnScript.UnitName,50f);
+                        ASP.PlaySound(2,true);
                     }
                 }
             }

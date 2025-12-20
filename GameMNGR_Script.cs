@@ -59,7 +59,7 @@ public partial class GameMNGR_Script : Node2D
     }
     public List<string> TeamTurnTable = new List<string>(); // lista do tur
     public List<TeamConfig> ActiveTeams = new List<TeamConfig>(); // aktywne w danej grze
-    List<PawnBaseFuncsScript> ActiveTeamPawns = new List<PawnBaseFuncsScript>();
+    List<PawnBaseFuncsScript>[] ActiveTeamPawns = {new List<PawnBaseFuncsScript>(),new List<PawnBaseFuncsScript>()};
     private PawnBaseFuncsScript PrevSelectedPawn;
     Node2D PopUpRef;
     Node2D ScrollPopUpRef;
@@ -313,58 +313,72 @@ public partial class GameMNGR_Script : Node2D
             }
         }
     }
-    void UltimatePawnSwitchingFunc(bool TrueisNext,bool TrueisMPActive)// tym bardziej pierdole, liczba razy ile mi się nie udało tego kodu naprawić .: 3
+    void UltimatePawnSwitchingFunc(bool TrueisNext,bool TrueisMPActive) // Next/prev    active/inactive
     {
+        //bool MPHavers = true;
+        CalculateActiveTeamPawns(false); // kalkulacja pionków do list, tej z aktywnymi pionkami i tej z ieaktywnymi pionkami 
+        if (ActiveTeamPawns[0].Count == 0) //guziki nie mogą operować gdy ne ma pionków na których można opreować
+        {
+            GD.Print("Nie ma pionków do kalkulacji");
+            return;
+        }
         if (ChosenActionFinished == false)
         {
             GD.Print("Nie można zaznaczyć pionka bo gracz nie zfinalizował akcji");
             return;
         }
-        CalculateActiveTeamPawns(false);
-        if (TrueisNext)
+        if (SelectedPawn != null) // Deselekcja tego pionka co teraz jest zaselekcjonowany
         {
-            //GD.Print("Kliknięty został przycisk (Następny pionek)");
+            //DeselectPawn();
+        }
+        int ActiveOrnot; // z której listy ma czerpać index info o tym gdzie przejść teraz 
+        if (TrueisMPActive == true) // wybrano wybieranie po tych co mają MP 
+        {
+            if (ActiveTeamPawns[1].Count == 0) // tu także musi być przynajmniej jeden pionek 
+            {
+                GD.Print("Nie ma aktywnych pionków do kalkulacji");
+                return;
+            }
+            else
+            {
+                ActiveOrnot = 1;
+            }
         }
         else
         {
-            //GD.Print("Kliknięty został przycisk (Poprzedni pionek)");
+            ActiveOrnot = 0;
         }
-        if (ActiveTeamPawns.Count == 0)
-        {
-            GD.Print("Nie ma pionka do którego możnaby przejść");
-            return;
-        }
-
-        if (IntForUnitSelection >= ActiveTeamPawns.Count)
-        {
-            IntForUnitSelection = 0;
-        }
-        else if (IntForUnitSelection <= 0)
-        {
-            IntForUnitSelection = (IntForUnitSelection + ActiveTeamPawns.Count) % ActiveTeamPawns.Count; 
-        }
-        
-        // Znajdź najbliższą nie-null jednostkę
-        int startIndex = IntForUnitSelection;
-        do
-        {
-            var NextPawn = ActiveTeamPawns[IntForUnitSelection];
-            if (NextPawn != null && NextPawn.IsInsideTree())
+        if (TrueisNext == true) // Następny pionek
+        {   
+            GD.Print("Następn pionek");
+            GD.Print($"ActiveTeamPawns.Count jest {ActiveTeamPawns[ActiveOrnot].Count}, IndexNum to {IntForUnitSelection + 1} więc {ActiveTeamPawns[ActiveOrnot].Count >= IntForUnitSelection + 2}");
+            if (ActiveTeamPawns[ActiveOrnot].Count >= IntForUnitSelection + 2 == true)
             {
-                SelectPawn(NextPawn);
-                //GD.Print($"int indeksowy to {IntForUnitSelection} dla {NextPawn.Name}"); // naprawięto jednego dnia 
-                if (TrueisNext) // jeśli następny pionek 
-                {
-                    IntForUnitSelection = (IntForUnitSelection + 1) % ActiveTeamPawns.Count;
-                }
-                else // jeśli poprzedni pionek 
-                {
-                    IntForUnitSelection = (IntForUnitSelection - 1) % ActiveTeamPawns.Count;
-                }
-                return;
+                IntForUnitSelection++;
             }
+            else
+            {
+                GD.Print("Reset do zera");
+                IntForUnitSelection = 0;
+            }
+            SelectPawn(ActiveTeamPawns[ActiveOrnot][IntForUnitSelection]);
         }
-        while (IntForUnitSelection != startIndex);    
+        else  // Poprzedni pionek
+        {
+            GD.Print("Poprzedni pionek");
+            GD.Print($"ActiveTeamPawns.Count jest {ActiveTeamPawns[ActiveOrnot].Count}, IndexNum to {IntForUnitSelection - 1} więc {ActiveTeamPawns[ActiveOrnot].Count <= IntForUnitSelection - 1}");
+            if (0 <= IntForUnitSelection - 1 == true)
+            {
+                IntForUnitSelection--;
+            }
+            else
+            {
+                GD.Print("reset na początek");
+                IntForUnitSelection = ActiveTeamPawns[ActiveOrnot].Count - 1;
+            }
+            SelectPawn(ActiveTeamPawns[ActiveOrnot][IntForUnitSelection]);
+        }
+        GD.Print($"IndexNum nonactive is {IntForUnitSelection} IndexNum active is {IntForUnitSelection}");
     }
     public void GenerateActionLog(string Message)
     {
@@ -380,13 +394,18 @@ public partial class GameMNGR_Script : Node2D
         {
             IntForUnitSelection = 0;
         }        
-        ActiveTeamPawns.Clear();
+        ActiveTeamPawns[0].Clear();
+        ActiveTeamPawns[1].Clear();
         foreach (PawnBaseFuncsScript TeamPawn in PawnBucketRef.GetChildren())
         {
             if (TeamPawn.TeamId == Turn)
             {
                 //GD.Print($"do listy dodano {TeamPawn.Name}");
-                ActiveTeamPawns.Add(TeamPawn);
+                ActiveTeamPawns[0].Add(TeamPawn);
+                if (TeamPawn.MP > 0)
+                {
+                    ActiveTeamPawns[1].Add(TeamPawn);
+                }
             }
         }
         //GD.Print("Dodano pionki do listy odczytu dla teamu");
