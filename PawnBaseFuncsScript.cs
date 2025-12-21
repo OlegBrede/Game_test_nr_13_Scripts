@@ -195,7 +195,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             }
         }
         int HitChanceRoll = RNGGEN.RandiRange(0, LocationHitProbabilitytable.Count() - 1);
-        var WantedPart = System.Array.Find(PawnParts, p => p.Name == LocationHitProbabilitytable[HitChanceRoll]);
+        var WantedPart = System.Array.Find(PawnParts, p => p.Name == LocationHitProbabilitytable[HitChanceRoll]); // nie jest wyklucczone że w tym tu krypcie są dwie różne metody na znalezienie danej części w pawn parts, brawo ty, jebany debil
         int indeks = System.Array.IndexOf(PawnParts, WantedPart);
         LocationHitProbabilitytable.Clear(); // na wszelki wypadek
         return indeks;
@@ -233,7 +233,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             PawnParts[PlacementRoll_INDEX].MeleeWeaponCapability,
             PawnParts[PlacementRoll_INDEX].ShootingCapability,
             PawnParts[PlacementRoll_INDEX].EsentialForMovement);
-            foreach (string CriticalPart in CriticalParts)// szukamy czy dana część ciała była krytyczna do funkcjonowania jednostki
+            foreach (string CriticalPart in CriticalParts)// szukamy czy dana część ciała była krytyczna do funkcjonowania jednostki (te biorą piorytet nawet nad wyszukaniem części przymocowanych)
             {
                 if (CriticalPart == PawnParts[PlacementRoll_INDEX].Name && PawnParts[PlacementRoll_INDEX].HP <= 0)// jak była, i nie ma HP
                 {
@@ -254,6 +254,22 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                     }
                     return; // tak na wszelki wypadek by ten kod nie szedł dalej po tym jak już zadecyduje umrzeć 
                 }
+            }
+            // Trzeba jeszcze spwadzić czy jakieś cześci bły przymocowane do tej co teraz się zniszczyła, więc jeśli ręka miała dłoń to zniszczenie ręki powoduje odpadnięcie dłoni 
+            int index = -1; // ustawiamy index na -1 by wyznaczyć nieznalezioną część 
+            for (int i = 0; i < PawnParts.Count(); i++) // iteracja po pawnparts znowu
+            {
+                if (PawnParts[i].ParentPart == PawnParts[PlacementRoll_INDEX].Name)// jeśli dana część ciała ma tego rodzica co teraz został zniszczony
+                {
+                    index = i; // ustawiamy indeks tej części ciała na taki by go TakeDamage() mogło znaeźć 
+                    GD.Print($"{PawnParts[i].Name} miał rodzica {PawnParts[i].ParentPart} więc pionek też to traci");
+                    TakeDamage(PawnParts[i].HP,index);
+                    break;
+                }
+            }
+            if (index == -1)
+            {
+                GD.Print("Nie było części do zabrania wraz z tym urazem");
             }
             if (PawnParts[PlacementRoll_INDEX].ParentPart != null)
             {
@@ -279,7 +295,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             UNIAnimPlayerRef.Play("Damage");
         }
     }
-    int FindPartToDamage(int partIndex)
+    int FindPartToDamage(int partIndex) // funkcja do znajdywania rodzica danej części ciała
     {
         GD.Print("Szukanie części ...");
         PawnPart part = PawnParts[partIndex];

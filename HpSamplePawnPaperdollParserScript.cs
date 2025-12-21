@@ -74,6 +74,17 @@ public partial class HpSamplePawnPaperdollParserScript : Node2D
                     Parts[5].Modulate = Colors.Black;
                 }
                 break;
+            case "Banan": // DO TESTÓW
+                if (PartHP > 0)
+                {
+                    float[] PartHPButfloat = { PartHP, PartMaxHP };
+                    Parts[6].Modulate = ColorChanger(PartHPButfloat[0],PartHPButfloat[1]);
+                }
+                else
+                {
+                    Parts[6].Modulate = Colors.Black;
+                }
+                break;
             default:
                 GD.Print("Parser Nie Poznał części");
                 break;

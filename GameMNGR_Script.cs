@@ -82,7 +82,7 @@ public partial class GameMNGR_Script : Node2D
     public void SetupGameScene()
     {
         UASP.SCS = SCS;
-        UASP.PlaySound(0,false);
+        //UASP.PlaySound(0,false);
         //PlayerGUIRef = GetTree().Root.GetNode<GUIButtonsToPawnScript>("BaseTestScene/Camera2D/GUI_to_Pawn_Input_Translator");
         CamShowActionTimer.Timeout += ShowReactionAfterTimeout;
         SNTWN.Visible = false;
@@ -488,7 +488,6 @@ public partial class GameMNGR_Script : Node2D
             GetTree().ChangeSceneToFile(SceneToLoad);
             return;
         }
-
     }
     public void InitTurnOrder(GameConfig cfg)
     {

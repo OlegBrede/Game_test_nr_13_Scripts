@@ -111,16 +111,15 @@ public partial class UNI_ControlOverPawnScript : Node2D
                     {
                         FinalDMG = FinalDMG * 1.5f;
                         PS.Call("CalculateHit", (int)FinalDMG , 5f,STLI, PawnScript.UnitName,50f);
-                        ASP.PlaySound(2,true);
                     }
                     else // wide wallop
                     {
                         PS.Call("CalculateHit", FinalDMG, 2.5f,STLI, PawnScript.UnitName,50f);
-                        ASP.PlaySound(2,true);
                     }
                 }
             }
         }
+        ASP.PlaySound(2,true);
     }
     public void ActionRangeAttack(bool AimedOrnot,float SFDV, float PartProbability,int STLI,int Firemode) //ShootingTargetLockIndex
     {
@@ -167,7 +166,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 BurstfireARGints[1] = STLI;
                 BurstfireARGfoats[0] = SFDV;
                 BurstfireARGfoats[1] = PartProbability;
-                ASP.PlaySound(0,true);
+                ASP.PlaySound(3,true);
                 BurstFireTimer.Start();
             break;
             case 3: // Shotgun, ilość wystrzelonych pocisków na raz w skrypcie bazowym pionka (ten sam co burst fire)
