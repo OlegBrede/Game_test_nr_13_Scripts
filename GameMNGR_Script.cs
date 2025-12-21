@@ -152,7 +152,7 @@ public partial class GameMNGR_Script : Node2D
         {
             if (pawn.ShootingAllowence > 0)
             {
-                return $"Unit({pawn.UnitType})\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nMP ({pawn.MP})\nAmmo({pawn.WeaponAmmo}/{pawn.WeaponMaxAmmo})";
+                return $"Unit({pawn.UnitType})\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nMP ({pawn.MP})\nAmmo({pawn.WeaponAmmo}/{pawn.WeaponMaxAmmo})\nPawn OV status .: {pawn.OVStatus}";
             }
             else
             {
@@ -350,35 +350,35 @@ public partial class GameMNGR_Script : Node2D
         }
         if (TrueisNext == true) // Następny pionek
         {   
-            GD.Print("Następn pionek");
-            GD.Print($"ActiveTeamPawns.Count jest {ActiveTeamPawns[ActiveOrnot].Count}, IndexNum to {IntForUnitSelection + 1} więc {ActiveTeamPawns[ActiveOrnot].Count >= IntForUnitSelection + 2}");
+            //GD.Print("Następn pionek");
+            //GD.Print($"ActiveTeamPawns.Count jest {ActiveTeamPawns[ActiveOrnot].Count}, IndexNum to {IntForUnitSelection + 1} więc {ActiveTeamPawns[ActiveOrnot].Count >= IntForUnitSelection + 2}");
             if (ActiveTeamPawns[ActiveOrnot].Count >= IntForUnitSelection + 2 == true)
             {
                 IntForUnitSelection++;
             }
             else
             {
-                GD.Print("Reset do zera");
+                //GD.Print("Reset do zera");
                 IntForUnitSelection = 0;
             }
             SelectPawn(ActiveTeamPawns[ActiveOrnot][IntForUnitSelection]);
         }
         else  // Poprzedni pionek
         {
-            GD.Print("Poprzedni pionek");
-            GD.Print($"ActiveTeamPawns.Count jest {ActiveTeamPawns[ActiveOrnot].Count}, IndexNum to {IntForUnitSelection - 1} więc {ActiveTeamPawns[ActiveOrnot].Count <= IntForUnitSelection - 1}");
+            //GD.Print("Poprzedni pionek");
+            //GD.Print($"ActiveTeamPawns.Count jest {ActiveTeamPawns[ActiveOrnot].Count}, IndexNum to {IntForUnitSelection - 1} więc {ActiveTeamPawns[ActiveOrnot].Count <= IntForUnitSelection - 1}");
             if (0 <= IntForUnitSelection - 1 == true)
             {
                 IntForUnitSelection--;
             }
             else
             {
-                GD.Print("reset na początek");
+                //GD.Print("reset na początek");
                 IntForUnitSelection = ActiveTeamPawns[ActiveOrnot].Count - 1;
             }
             SelectPawn(ActiveTeamPawns[ActiveOrnot][IntForUnitSelection]);
         }
-        GD.Print($"IndexNum nonactive is {IntForUnitSelection} IndexNum active is {IntForUnitSelection}");
+        //GD.Print($"IndexNum nonactive is {IntForUnitSelection} IndexNum active is {IntForUnitSelection}");
     }
     public void GenerateActionLog(string Message)
     {
@@ -412,7 +412,7 @@ public partial class GameMNGR_Script : Node2D
     }
     void NextRoundFunc() // Runda (To dłuższe)
     {
-        GD.Print("New round!");
+        GD.Print("###################### New round! ######################");
         RecalculationTeamStatus();
         foreach (var log in LogBucket.GetChildren())
         {
@@ -438,7 +438,8 @@ public partial class GameMNGR_Script : Node2D
             if (child is PawnBaseFuncsScript pawn)
             {
                 //GD.Print("reset MP dokonany");
-                pawn.Call("ResetMP");
+                pawn.ResetMP();
+                pawn.ApllyStatusEffects();
                 if (pawn.TeamId == Turn)
                 {
                     pawn.Call("ResetMoveStatus");
@@ -514,7 +515,7 @@ public partial class GameMNGR_Script : Node2D
         TeamsCollectiveMP = 0;
         RecalculationTeamStatus();
         CalculateActiveTeamPawns(true);
-        GD.Print($"koniec rundy dla drużyny {TeamTurnTable[0]}");
+        GD.Print($"###################### koniec rundy dla drużyny {TeamTurnTable[0]} ######################");
         TeamTurnTable.RemoveAt(0);
         while (TeamTurnTable.Count > 0 && !ActiveTeams.Exists(t => t.name == TeamTurnTable[0]))
         {

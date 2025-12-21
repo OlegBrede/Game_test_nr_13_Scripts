@@ -211,7 +211,7 @@ public partial class GUIButtonsToPawnScript : Node2D
             if (gameMNGR_Script.SelectedPawn.MP > 1) // potrzeba jakoś poinformować gracza że nie może wykonać tego ruchu 
             {
                 EmitSignal(SignalName.AimedShotAction);
-                Parameter = 4;
+                Parameter = 2;
                 PALO(false, false);
             }
             else
@@ -238,7 +238,7 @@ public partial class GUIButtonsToPawnScript : Node2D
         {
             if (gameMNGR_Script.SelectedPawn.MP > 0)
             {
-                GD.Print("MoveAction ordered");
+                //GD.Print("MoveAction ordered");
                 EmitSignal(SignalName.MoveAction);
                 Parameter = 1;
                 PALO(false, false);
@@ -249,6 +249,7 @@ public partial class GUIButtonsToPawnScript : Node2D
     {
         if (gameMNGR_Script.SelectedPawn.MP > 1)
         {
+            GD.Print("Kliknięto Przycisk OV");
             EmitSignal(SignalName.OverwatchAction);
             Parameter = 4;
             PALO(false, false);

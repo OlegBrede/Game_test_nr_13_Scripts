@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 
-public enum PawnMoveState { Standing, Moving, Fainted, Dead}
+public enum PawnMoveState { Stationary, Moving, Fainted, Dead}
 public enum PawnStatusEffect // TEMP
 {
     None = 0,
@@ -32,9 +32,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public int MeleeWeaponAllowence = 0;
     public int ShootingAllowence = 0;
     public int MovinCapability = 0;
-    [Export] bool CanOverwatch = true;
     [Export] bool ZweiHanderShootah = false;
-    public bool OverwatchStatus = false;
+    public bool OVStatus = false;
     [Export]public float Penalty_range = 1.15f;
     [Export]public float Penalty_shooter = 0.64f;
     [Export]public float Penalty_target = 0.42f;
@@ -64,7 +63,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public int kills = 0; // TEMP
     float FightDistance = 0; // dystans w jakim zadziała się akcja, usprawiedliwiający pokazanie walki w wolnym tępie, jest terz obsługiwana w UNI_ControlOverPawnScript, to dlaego że dystans dalej wpywa na aktywację timera
     public Node2D TargetMarkerRef;
-    public PawnMoveState PawnMoveStatus { get; set; } = PawnMoveState.Standing;
+    public PawnMoveState PawnMoveStatus { get; set; } = PawnMoveState.Stationary;
     public PawnStatusEffect PawnsActiveStates = PawnStatusEffect.None;
     GameMNGR_Script gameMNGR_Script;
     Timer ResponseAnimTimer;
@@ -88,7 +87,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             ObjętośćPionka = radius;
         }
         // ustalenie gamemenagera
-        
         if (GetTree().CurrentScene.Name != "BaseTestScene") // hack ale powinien naprawić błąd wyskakujący przy wczytywaniu
         {
             GD.Print($"Scena nie jest BaseTestScene, jest {GetTree().CurrentScene.Name}");
@@ -422,7 +420,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         PawnsActiveStates = PawnStatusEffect.None;
         if (gameMNGR_Script.Turn == TeamId)
         {
-            gameMNGR_Script.TeamsCollectiveMP -= MP; // odjęte punkty MP od ogólnej puli
+            gameMNGR_Script.TeamsCollectiveMP -= MP; // odjęte punkty MP od ogólnej puli oraz deselekcjonuje pionka jak jest jego tura przy jego śmierci
+            gameMNGR_Script.DeselectPawn();
         }
         gameMNGR_Script.GenerateActionLog($"{UnitName} is dead.");
         if (SpecificAnimPlayer != null)
@@ -466,15 +465,22 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         TeamId = teamId;
         ColoredPartsNode.Modulate = TeamColors;
     }
-    void ResetMP()
+    public void ResetMP()
     {
         MP = 2;
+    }
+    public void ApllyStatusEffects()
+    {
+        if (PawnsActiveStates == PawnStatusEffect.Bleeding)
+        {
+            
+        }
     }
     void ResetMoveStatus()
     {
         if (PawnMoveStatus == PawnMoveState.Moving && PawnMoveStatus != PawnMoveState.Fainted)
         {
-            PawnMoveStatus = PawnMoveState.Standing;
+            PawnMoveStatus = PawnMoveState.Stationary;
             SpecificAnimPlayer.Play("None");
             DistanceMovedByThisPawn = 0;
             PrevDistance = 0;

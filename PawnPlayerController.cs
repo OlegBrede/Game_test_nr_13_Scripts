@@ -18,24 +18,23 @@ public partial class PawnPlayerController : Node2D
     [Export] Sprite2D movementsprite;
     [Export] UNI_LOSRayCalcScript ShootingRayScript;
     [Export] Area2D MeleeAttackArea;
-    [Export] Node2D ONB; //overwatch node bucket
     [Export] Node2D UNI_markerRef;
     NodeCompButtonUni1FuncScript YayButton;
     NodeCompButtonUni1FuncScript NayButton;
     Sprite2D UNI_MarkerIcon;
     Node2D MovementAllowenceInyk_ator;
+    GameMNGR_Script gameMNGR_Script;
+    Area2D WideMelee;
+    Area2D StrongMelee;
+    Label ChanceToHitLabel1;
+    Sprite2D MACircleSprite;
+    [Export] Node2D ONB; //overwatch node bucket
+    CollisionPolygon2D OverwatchTriangleHitbox;
     Node2D OverwatchpointRefNode;
-    Node2D OVButtons;
     Node2D OVPoint1Ref;
     Node2D OVPoint2Ref;
     Polygon2D OVDebugPoly;
-    GameMNGR_Script gameMNGR_Script;
     Area2D OverwatchArea;
-    Area2D WideMelee;
-    Area2D StrongMelee;
-    CollisionPolygon2D OverwatchTriangleHitbox;
-    Label ChanceToHitLabel1;
-    Sprite2D MACircleSprite;
     //################################# CALLABLES ######################################
     private Callable callableMove;
     private Callable callableShoot;
@@ -110,16 +109,14 @@ public partial class PawnPlayerController : Node2D
 
         var circle = PawnScript.GetNode<CollisionShape2D>("CollisionShape2D").Shape as CircleShape2D;
         NavAgent.Radius = circle.Radius;
-
-        ONB.Visible = false;
+        // ############################### OVERWATCH ###############################
         OVDebugPoly = ONB.GetNode<Polygon2D>("Polygon2D");
         OverwatchArea = ONB.GetNode<Area2D>("Area2D");
-        //OverwatchArea.BodyEntered += OverwachedAreaEntered;
         OverwatchTriangleHitbox = OverwatchArea.GetNode<CollisionPolygon2D>("CollisionPolygon2D");
         OverwatchpointRefNode = ONB.GetNode<Node2D>("NodeForAreaTriangulation");
         OVPoint1Ref = OverwatchpointRefNode.GetNode<Node2D>("Point1");
         OVPoint2Ref = OverwatchpointRefNode.GetNode<Node2D>("Point2");
-
+        // ############################### OVERWATCH ###############################
     }
     public override void _Process(double delta)
     {
@@ -169,7 +166,7 @@ public partial class PawnPlayerController : Node2D
         }
         if (ChosenAction == PlayersChosenAction.RangeAttackAction || ChosenAction == PlayersChosenAction.AimedRangeAttackAction)
         {
-            ShootFunc(false); // musiało zostać przesunięte zaśmiecało tu funkcje 
+            ShootFunc(); // musiało zostać przesunięte zaśmiecało tu funkcje 
         }
         if (ChosenAction == PlayersChosenAction.MeleeAttackAction || ChosenAction == PlayersChosenAction.StrongMeleeAttackAction) // tu podobnie jak dla akcji aimed range tu też powinna być opcja na jakiś mocny atak 
         {
@@ -200,22 +197,24 @@ public partial class PawnPlayerController : Node2D
         }
         if (ChosenAction == PlayersChosenAction.OverwatchAction)
         {
-            // proponuję zrobić to tak jak w quar-ach area fire, to wtedy nie będzie trzeba się certolić z kierunkiem wzroku
-            if (UNI_markerRef.Visible == false)
+            //GD.Print("ShowinOVPos");
+            var points = OverwatchTriangleHitbox.Polygon;
+            if (UNI_markerRef.Visible == false) // nie dam tego do Ucops bo dla AI musiała by być to osobna kalkulacja, one size fits all nie za bardzo jestem w stanie zrobić 
             {
                 UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
+                ONB.GlobalPosition = GetGlobalMousePosition();
                 OverwatchpointRefNode.LookAt(PawnScript.GlobalPosition);
+                
+                points[0] = OverwatchTriangleHitbox.ToLocal(OVPoint1Ref.GlobalPosition);
+                points[1] = OverwatchTriangleHitbox.ToLocal(PawnScript.GlobalPosition);
+                points[2] = OverwatchTriangleHitbox.ToLocal(OVPoint2Ref.GlobalPosition);
+                OverwatchTriangleHitbox.Polygon = points;
+                OVDebugPoly.Polygon = points;
             }
             if (Input.IsActionJustPressed("MYMOUSELEFT") && UNI_markerRef.Visible == false)
             {
                 UNI_markerRef.Visible = true;
-                var points = OverwatchTriangleHitbox.Polygon;
-                points[0] = OverwatchTriangleHitbox.ToLocal(OVPoint1Ref.GlobalPosition);
-                points[1] = OverwatchTriangleHitbox.ToLocal(PawnScript.GlobalPosition);
-                points[2] = OverwatchTriangleHitbox.ToLocal(OVPoint2Ref.GlobalPosition);
                 //GD.Print($"Pozycja zmieniona dla punktów .: {points[0]},{points[1]},{points[2]}, Pozycja pionka to {PawnScript.GlobalPosition}");
-                OverwatchTriangleHitbox.Polygon = points;
-                OVDebugPoly.Polygon = points;
                 gameMNGR_Script.PlayerGUIRef.PALO(true, false);
             }
         }
@@ -268,7 +267,7 @@ public partial class PawnPlayerController : Node2D
             //GD.Print($"odsubskrybowanie niemożliwe dla już odsubskrybowanego elementu");
         }
     }
-    void ShootFunc(bool OV_Active)
+    void ShootFunc()
     {
         // ################# KALKULOWANIE W UCOPS ######################
         bool AimedOrnot;
@@ -330,61 +329,15 @@ public partial class PawnPlayerController : Node2D
 
             }
         }
-        else if(ChosenAction == PlayersChosenAction.RangeAttackAction || OV_Active == true )
+        else if(ChosenAction == PlayersChosenAction.RangeAttackAction)
         {
-            if (Input.IsActionJustPressed("MYMOUSELEFT") && UNI_markerRef.Visible == false && OV_Active == false)
+            if (Input.IsActionJustPressed("MYMOUSELEFT") && UNI_markerRef.Visible == false)
             {
                 UNI_markerRef.Visible = true;
                 UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
                 PointerNode.LookAt(UNI_markerRef.GlobalPosition);
                 ShootingRayScript.OverrideTarget = UNI_markerRef;
                 gameMNGR_Script.PlayerGUIRef.PALO(true, false);
-            }
-            if (OV_Active == true)
-            {
-                Player_ACT_Confirm(2);
-            }
-            if (OverwatchArea.GetOverlappingBodies().Count > 0)
-            {
-                Node2D FirstEnemy = OverwatchArea.GetOverlappingBodies().First();
-                OverwachedAreaEntered(FirstEnemy); 
-            }
-        }
-    }
-    void OverwachedAreaEntered(Node2D Enemy)
-    {
-        if (Enemy == null)
-        {
-            return;
-        }
-        if (Enemy is CharacterBody2D && gameMNGR_Script.Turn != PawnScript.TeamId && PawnScript.OverwatchStatus == true) // jeśli to w co strzelamy jest char2d i nie jest nasza tura, oraz overwatch jest włączony 
-        {
-            GD.Print("Jest tura przeciwnika, przeciwnik to Character2d i overwatch został włączony");
-            PawnBaseFuncsScript EnemyStats = Enemy as PawnBaseFuncsScript;
-            if (EnemyStats.TeamId != PawnScript.TeamId) // jeśli typo nie jest z naszej drużyny 
-            {
-                GD.Print("Shootfunc aktywowany ");
-                ShootingRayScript.Rayactive = true;
-                ShootingRayScript.OverrideTarget = Enemy;
-                GD.Print($"Cel ustawiony na  {ShootingRayScript.OverrideTarget}");
-                if (ShootingRayScript.RayHittenTarget != null)
-                {
-                    if (PawnScript.WeaponAmmo > 0)
-                    {
-                        ShootFunc(true);
-                    }
-                    else
-                    {
-                        GD.Print("overwatch wydany ");
-                    }
-                    PawnScript.OverwatchStatus = false;
-                    UNI_markerRef.Visible = false;
-                    OVButtons.Visible = true;
-                }
-                else
-                {
-                    GD.Print("Promień nie trafił w cel ");
-                }
             }
         }
     }
@@ -480,10 +433,12 @@ public partial class PawnPlayerController : Node2D
         PointerNode.Visible = true;
         GD.Print("teraz gracz wybiera celny strzał ...");
     }
-    void Player_ACT_Overwatch(int Dump)
+    void Player_ACT_Overwatch()
     {
+        Player_ACT_UNI_ChangeTargetMakerButtonNIcon(11,12);
         gameMNGR_Script.ChosenActionFinished = false;
         ChosenAction = PlayersChosenAction.OverwatchAction;
+        ONB.Visible = true;
         GD.Print("teraz gracz wybiera overwatch ...");
     }
     void Player_ACT_UNI_ChangeTargetMakerButtonNIcon(int ACTI1,int ACTI2)//(Yay/Nay) to wybiera powyższy button ACT (w przyszłości modyfikuj via string, mniej magicznych liczb pls)
@@ -493,6 +448,7 @@ public partial class PawnPlayerController : Node2D
     }
     void Player_ACT_Confirm(int Index)
     {
+        //GD.Print($"->Player_ACT_Confirm o index {Index}"); // jak się okazuje parametry nie działają jak powinny a mimo tego kod działa, więc jebać 
         gameMNGR_Script.PlayerGUIRef.PALO(true, false);
         switch (Index)
         {
@@ -500,7 +456,7 @@ public partial class PawnPlayerController : Node2D
                 UCOPS.ActionMove();
                 ResetActionCommitment(false); // ten reset statusu będzie musiał zostać usunięty z tąd gdyż to że dany pionek zakończył TEN ruch nie oznacza że nie może zrobić kolejnego, więc pomyśl nad sprawdzeniem selekcji i deselekcji by działała poprawnie
                 break;
-            case 2:
+            case 2: // potwierdzenie Shoot
                 bool AimedOrnot;
                 if (PawnScript.ShootingAllowence <= 0 || PawnScript.WeaponAmmo <= 0)
                 {
@@ -519,7 +475,7 @@ public partial class PawnPlayerController : Node2D
                 UCOPS.ActionRangeAttack(AimedOrnot,ShootingFinalDiceVal,PartProbability,ShootingTargetLockIndex,PawnScript.Firemode);
                 ResetActionCommitment(false);
                 break;
-            case 3:
+            case 3: // potwierdzenie Melee
                 if (PawnScript.MeleeAllowence <= 0)
                 {
                     GD.Print("You cant melee fucko' ");
@@ -536,19 +492,9 @@ public partial class PawnPlayerController : Node2D
                 }
                 ResetActionCommitment(false);
                 break;
-            case 4: // overwatch 
-            // jak już rozkminisz jak to zaaranżować to weż to daj do UNIcontroll w UCOPS
-                UNI_markerRef.Visible = true;
-                PawnScript.OverwatchStatus = true;
-                OVButtons.Visible = false;
-                PawnScript.MP -= 2;
-                gameMNGR_Script.TeamsCollectiveMP -= 2;
-                if (PawnScript.MP < 0)
-                {
-                    GD.PrintErr("Błąd kalkulacji MP przy strzale wycelowanym");
-                    gameMNGR_Script.TeamsCollectiveMP++;
-                }
-                ResetActionCommitment(true);
+            case 4: // potwierdzenie overwatch 
+                UCOPS.ActionOverwatch();
+                ResetActionCommitment(false);
                 break;
             default:
                 GD.Print("Nie ma takiej akcji");
@@ -558,6 +504,7 @@ public partial class PawnPlayerController : Node2D
     }
     void Player_ACT_Decline(int Index)
     {
+        //GD.Print($"->Player_ACT_Decline o index {Index}");
         gameMNGR_Script.PlayerGUIRef.PALO(true, false);
         switch (Index)
         {
@@ -576,8 +523,6 @@ public partial class PawnPlayerController : Node2D
                 ResetActionCommitment(false);
                 break;
             case 4:
-                PawnScript.OverwatchStatus = false;
-                OVButtons.Visible = true;
                 ResetActionCommitment(false);
                 break;
             default:
