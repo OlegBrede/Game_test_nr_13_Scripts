@@ -72,6 +72,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     Node2D DMG_Label_bucket;
     PackedScene ThisLabelScene;
+    [Export] UNI_ControlOverPawnScript Ref_UNI_ControlOverPawnScript;
     // 0 = selection sounds
     // 1 = hurt sounds
     int[,] VoicelineRange = {{0,0},{0,0}}; 
@@ -411,8 +412,32 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         foreach (Control Numbers in DMG_Label_bucket.GetChildren())
         {
             Numbers.QueueFree();
-            GD.Print("Damage number deleted");
+            //GD.Print("Damage number deleted");
         }
+    }
+    public void DeductMP(int ByHowMutch)
+    {
+        if (ByHowMutch <= 0)
+        {
+            return;
+        }
+        
+        MP -= ByHowMutch;
+        gameMNGR_Script.TeamsCollectiveMP -= ByHowMutch;
+        GD.Print($"Doszło do dedukcji MP, teraz jest {MP}");
+        int oldMP = MP;
+        MP = Mathf.Max(0, MP - ByHowMutch);
+
+        if (MP != oldMP)
+        {
+            GD.Print("Sygnał emitowany");
+            gameMNGR_Script.CheckOV(this);
+        }
+        
+    } 
+    public void CheckOV_LOS(CharacterBody2D Enimy)
+    {
+        Ref_UNI_ControlOverPawnScript.OverwatchOnEnemyMPChanged(Enimy);
     }
     public void Die()
     {
@@ -456,7 +481,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         }
         else
         {
-            UNIAnimPlayerRef.Stop();
             UNIAnimPlayerRef.Play("StandStill");
         }
     }

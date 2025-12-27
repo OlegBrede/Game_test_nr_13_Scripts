@@ -543,6 +543,21 @@ public partial class GameMNGR_Script : Node2D
         }
         GenerateActionLog($"## Team {Turn} starts thier Turn ##");
     }
+    public void CheckOV(CharacterBody2D MoveReportee) // tak, wiem, robię to chujowo
+    {
+        foreach (PawnBaseFuncsScript Pawn in PawnBucketRef.GetChildren())
+        {
+            if (Pawn.OVStatus == true)
+            {
+                GD.Print("jest pionek który ma overwatch, sprawdzane jest Overwatch");
+                Pawn.CheckOV_LOS(MoveReportee);
+            }
+            else
+            {
+                //GD.Print("ten pionek nie miał overwatch");
+            }
+        }
+    }
     void CalculateAllTeamMP()
     {
         TeamConfig TeamToAccount = ActiveTeams.Find(a => a.name.Contains(Turn)); // zakładając że drużyna jeszcze jest ale to powinno się wyprostować uprzednio 

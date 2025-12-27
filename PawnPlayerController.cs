@@ -472,7 +472,7 @@ public partial class PawnPlayerController : Node2D
                 {
                     AimedOrnot = false;
                 }
-                UCOPS.ActionRangeAttack(AimedOrnot,ShootingFinalDiceVal,PartProbability,ShootingTargetLockIndex,PawnScript.Firemode);
+                UCOPS.ActionRangeAttack(AimedOrnot,ShootingFinalDiceVal,PartProbability,ShootingTargetLockIndex,PawnScript.Firemode,ShootingRayScript.RayHittenTarget,false);
                 ResetActionCommitment(false);
                 break;
             case 3: // potwierdzenie Melee
