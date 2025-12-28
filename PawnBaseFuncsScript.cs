@@ -201,6 +201,10 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     void TakeDamage(int dmg,int Where)
     {
+        if (OVStatus == true)
+        {
+            Ref_UNI_ControlOverPawnScript.ResetOverwatch();
+        }
         responseAnimLexicon = ResponseAnimLexicon.damage;
         string W_co; // nazwa części ciała która dostaje 
         int PlacementRoll_INDEX; // index części ciała która dostaje 
@@ -421,19 +425,11 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         {
             return;
         }
-        
         MP -= ByHowMutch;
         gameMNGR_Script.TeamsCollectiveMP -= ByHowMutch;
         GD.Print($"Doszło do dedukcji MP, teraz jest {MP}");
-        int oldMP = MP;
-        MP = Mathf.Max(0, MP - ByHowMutch);
-
-        if (MP != oldMP)
-        {
-            GD.Print("Sygnał emitowany");
-            gameMNGR_Script.CheckOV(this);
-        }
-        
+        GD.Print("Sygnał emitowany");
+        gameMNGR_Script.CheckOV(this);
     } 
     public void CheckOV_LOS(CharacterBody2D Enimy)
     {

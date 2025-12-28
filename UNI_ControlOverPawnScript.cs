@@ -367,7 +367,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
             ,true
         );
     }
-    void ResetOverwatch()
+    public void ResetOverwatch()
     {
         GD.Print($"Doszło do resetu Overwatch dla pionka {PawnScript.UnitName}");
         OverwatchArea.Monitoring = false;
