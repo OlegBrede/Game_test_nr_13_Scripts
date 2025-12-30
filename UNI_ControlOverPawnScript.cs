@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 public partial class UNI_ControlOverPawnScript : Node2D
 {
     [Export] public PawnBaseFuncsScript PawnScript;
-    [Export] CharacterBody2D PawnRefAsChar;
+    [Export] CharacterBody2D Pawn_Ref_as_Char;
     [Export] NavigationAgent2D NavAgent;
     [Export] RayCast2D ShootingRay;
     [Export] UNI_LOSRayCalcScript ShootingRayScript;
@@ -14,6 +14,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
     [Export] Area2D WideMeleeAttackArea;
     [Export] Area2D StrongMeleeAttackArea;
     [Export] UNI_AudioStreamPlayer2d ASP;
+    [Export] Timer OverwatchReturnFireTimer;
     GameMNGR_Script gameMNGR_Script;
     Node2D UNI_MoveMarker;
     Area2D OverlapingBodiesArea;
@@ -26,10 +27,12 @@ public partial class UNI_ControlOverPawnScript : Node2D
     [Export] Node2D ONB; //overwatch node bucket
     private List<PawnBaseFuncsScript> OverwatchTracked = new List<PawnBaseFuncsScript>(); // lista tych co są w obszarze OV
     Area2D OverwatchArea;
+    CharacterBody2D SetTargetOV;
     // ############################### OVERWATCH ###############################
     int[] BurstfireARGints = {0,0};
     float[] BurstfireARGfoats = {0,0};
     CharacterBody2D SetTarget;
+    
     public override void _Ready()
     {
         if (GetTree().CurrentScene.Name != "BaseTestScene")
@@ -51,6 +54,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
         ASP.SCS = gameMNGR_Script.SCS;
         UNI_MoveMarker = GetNode<Node2D>("UNI_MoveNode");
         OverlapingBodiesArea = UNI_MoveMarker.GetNode<Area2D>("Area2D");
+        OverwatchReturnFireTimer.Timeout += () => ShootOV(SetTargetOV);
     }
     // DO ZROBIENIA SĄ JESZCZE .: 
     // - DODANIE HOVER INFO NA SAMPLEBUTTON 
@@ -145,6 +149,12 @@ public partial class UNI_ControlOverPawnScript : Node2D
         }
         // Najlepiej dla wszystkich będzie jak się upewnie że cel ostał osiągnięty drugi raz 
         GD.Print($"Pionek {PawnScript.UnitName} teraz strzela, początkowy check LOS");
+        PawnBaseFuncsScript Enemy_PBFS = HittenGuy as PawnBaseFuncsScript;
+        if (Enemy_PBFS.PawnMoveStatus == PawnMoveState.Dead)
+        {
+            GD.Print($"Pionek {Enemy_PBFS.UnitName} umiera, nie  przeszkadzać");
+            return;
+        }
         if (HasLineOfSight(HittenGuy) == false && OVShot == true)
         {
             GD.Print($"Pionek {PawnScript.UnitName} nie trafi bo nie ma LOS a jest włączony OV"); // nie dajemy tu return bo check sprawdza śroek nie kawędź pionka, trzeba będzie poprawić kiedyś
@@ -167,7 +177,10 @@ public partial class UNI_ControlOverPawnScript : Node2D
         }
         if (AimedOrnot == false)
         {
-            PawnScript.DeductMP(1);
+            if (OVShot == false)
+            {
+                PawnScript.DeductMP(1);
+            }
             WeaponDamageModified = PawnScript.WeaponDamage;
         }
         else
@@ -211,22 +224,9 @@ public partial class UNI_ControlOverPawnScript : Node2D
         }
         PawnScript.PlayAttackAnim(true);
     }
-    bool HasLineOfSight(CharacterBody2D Target)
+    public bool HasLineOfSight(CharacterBody2D Target)
     {
         //TO DO .: - FIX THIS SHITE 
-        /*
-        var spaceState = GetWorld2D().DirectSpaceState; // pobrany jest stan świata fizyki w danym momencie
-        var query = PhysicsRayQueryParameters2D.Create(GlobalPosition,Target.GlobalPosition); //tworzone jest "zapytanie" promienia, zapewnie "czy ten promień w to trafi ?"
-        query.CollisionMask = 1;
-        query.Exclude = new Godot.Collections.Array<Rid> { Pawn_Ref_as_Char.GetRid() };
-        var result = spaceState.IntersectRay(query);
-
-        if (result.Count == 0) // że promień z niczym nie kolidował <-----  WYMAGA WEYFIKACJI 
-        {
-            return true;
-        }
-        return result["collider"].As<CharacterBody2D>() == Target; // zwraca collider jako Character2D 
-        */
         bool LOS_Sum = false;
         if (Target == null)
         {
@@ -235,12 +235,13 @@ public partial class UNI_ControlOverPawnScript : Node2D
         }
         CheckerRayScript.TargetPosition = Target.GlobalPosition - GlobalPosition;
         GD.Print($"globalna pozycja strzelającego {PawnScript.GlobalPosition}, globalna pozycja celu {Target.GlobalPosition}, pozycja TargetPosition {Target.GlobalPosition}");
+        //await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame); // await może bć tylko async a funkcja tylko void 
         CheckerRayScript.ForceRaycastUpdate();
         if (CheckerRayScript.GetCollider() == Target)
         {
             LOS_Sum = true;   
         }
-        GD.Print($"LOS check to {LOS_Sum} bo CheckerRayScript.GetCollider() == Target to {CheckerRayScript.GetCollider() == Target}");
+        GD.Print($"LOS check to {LOS_Sum} bo to w co trafił ray to {CheckerRayScript.GetCollider()} a celem jest {Target}");
         return LOS_Sum;
     }
     void BurstFireTrigger(int WeaponDamageModified, int STLI, float SFDV, float PartProbability,CharacterBody2D HittenGuy)
@@ -327,13 +328,34 @@ public partial class UNI_ControlOverPawnScript : Node2D
     }
     public void OverwatchOnEnemyMPChanged(CharacterBody2D enemy)
     {
+        if (enemy == null)
+        {
+            GD.Print("Zapomniano podesłać celu do OV script");
+            return; 
+        }
         if (PawnScript.OVStatus == false)// Jeśli pionek nie jest w OV status
         {
             GD.Print("Pionek nie jest w OV status");
             return; 
         }
-        bool TrueIsinArea = false;
+        if (PawnScript.WeaponAmmo <= 0)
+        {
+            GD.Print("Pionek nie ma już amunicji na overwatch ");
+            ResetOverwatch();
+            return;
+        }
+        SetTargetOV = enemy;
         OverwatchArea.ForceUpdateTransform();
+        OverwatchReturnFireTimer.Start();
+    }
+    public void ShootOV(CharacterBody2D enemy)
+    {
+        if (enemy == null)
+        {
+            GD.Print("Zapomniano podesłać celu do OV shoot ? co nie powinno było się wydarzyć ?");
+            return; 
+        }
+        bool TrueIsinArea = false;
         GD.Print($"szukamy {enemy.Name} w area");
         foreach(var PawnS in OverwatchArea.GetOverlappingBodies())
         {
@@ -347,13 +369,6 @@ public partial class UNI_ControlOverPawnScript : Node2D
         if (TrueIsinArea == false)
         {
             GD.Print("nie było tego kogo chcemy w area");
-            return;
-        }
-        GD.Print("PIONEK RUSZYŁ SIĘ W OV AREA, SPRAWDZIĆ LINIĘ STRZAŁU");
-        if (PawnScript.WeaponAmmo <= 0)
-        {
-            GD.Print("Pionek nie ma już amunicji na overwatch ");
-            ResetOverwatch();
             return;
         }
         GD.Print("Strzał OV");
@@ -373,6 +388,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
         OverwatchArea.Monitoring = false;
         PawnScript.OVStatus = false;
         ONB.Visible = false;
+        SetTargetOV = null;
     }
     //######################################## OVERWATCH ##########################################
     // ################################# RUSZANIE SIĘ ################################# 

@@ -29,6 +29,7 @@ public partial class GameMNGR_Script : Node2D
     [Export] VBoxContainer LogBucket;
     [Export] ScrollContainer KontenrLogów;
     [Export] public GUIButtonsToPawnScript PlayerGUIRef;
+    [Export] public Node2D bucketForTheDead;
     string SceneToLoad = "res://Scenes/MultiGameOverScreen.tscn";
     public int Round = 0; // zmienić by kod wchodząc do sceny zaczynał next round i zobaczyć gdzie to nas zaniesie 
     public string Turn = "";
@@ -57,6 +58,13 @@ public partial class GameMNGR_Script : Node2D
     {
         public List<TeamConfig> teams { get; set; } = new List<TeamConfig>(); // lista do inicjalizacji w konfiguracji
     }
+    public class CaptureActionInfo
+    {
+        public Vector2 C_Giver { get; set; }
+        public Vector2 C_Recypiant { get; set; }
+        public bool C_TrueisWideShotNeeded { get; set; }
+    }
+    List<CaptureActionInfo> captureActionInfoQueue = new List<CaptureActionInfo>();
     public List<string> TeamTurnTable = new List<string>(); // lista do tur
     public List<TeamConfig> ActiveTeams = new List<TeamConfig>(); // aktywne w danej grze
     List<PawnBaseFuncsScript>[] ActiveTeamPawns = {new List<PawnBaseFuncsScript>(),new List<PawnBaseFuncsScript>()};
@@ -152,7 +160,7 @@ public partial class GameMNGR_Script : Node2D
         {
             if (pawn.ShootingAllowence > 0)
             {
-                return $"Unit({pawn.UnitType})\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nMP ({pawn.MP})\nAmmo({pawn.WeaponAmmo}/{pawn.WeaponMaxAmmo})\nPawn OV status .: {pawn.OVStatus}";
+                return $"Unit({pawn.UnitType})\nHP ({Mathf.RoundToInt((float)pawn.Integrity / (float)pawn.BaseIntegrity * 100f)}%)\nMP ({pawn.MP})\nAmmo({pawn.WeaponAmmo}/{pawn.WeaponMaxAmmo})";
             }
             else
             {
@@ -165,8 +173,10 @@ public partial class GameMNGR_Script : Node2D
         }
     }
     // ########################################### KAMERA ###########################################
-    public void CaptureAction(Vector2 Giver, Vector2 Recypiant,bool TrueisWideShotNeeded)
+    public void CaptureAction(Vector2 Giver, Vector2 Recypiant,bool TrueisWideShotNeeded) // tu ma być pobrana akcja która następnie czeka w kolejce na swą kolej odegrania
     {
+        //captureActionInfoQueue.Add(new CaptureActionInfo{C_Giver = Giver,C_Recypiant = Recypiant,C_TrueisWideShotNeeded = TrueisWideShotNeeded});
+        // to na dole, musi być dane do LockNloadCamAction by wszystko działało sprawnie
         ActionView = Giver;
         ReactionView = Recypiant;
         if (TrueisWideShotNeeded == true)
@@ -179,7 +189,11 @@ public partial class GameMNGR_Script : Node2D
             FocusCam.GlobalPosition = Recypiant;
         }
     }
-    void ShowActionAfterTimeout()
+    void LockNloadCamAction()
+    {
+        
+    }
+    void ShowActionAfterTimeout() // tu pokazana jest akcja 
     {
         activeTween?.Kill();
         activeTween = GetTree().CreateTween();
@@ -187,7 +201,7 @@ public partial class GameMNGR_Script : Node2D
         CamShowActionTimer.Start();
         //GD.Print("Timer włączony");
     }
-    void ShowReactionAfterTimeout()
+    void ShowReactionAfterTimeout() // tu pokazana jest reakcja 
     {
         activeTween?.Kill();
         activeTween = GetTree().CreateTween();

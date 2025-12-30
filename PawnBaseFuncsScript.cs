@@ -72,6 +72,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     Node2D DMG_Label_bucket;
     PackedScene ThisLabelScene;
+    PackedScene ThisDeathPhantomScene;
     [Export] UNI_ControlOverPawnScript Ref_UNI_ControlOverPawnScript;
     // 0 = selection sounds
     // 1 = hurt sounds
@@ -165,19 +166,24 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     public void CalculateHit(int dmg, float probability,int Where, string Bname,float DamageDistance)
     {
+        if (PawnMoveStatus == PawnMoveState.Dead)
+        {
+            GD.Print("próba kalkulowania uderzenia gdy pionek jest w trakcie umierania");
+            return;
+        }
         FightDistance = DamageDistance;
-        GD.Print($"Engagement Distance is {FightDistance}");
+        //GD.Print($"Engagement Distance is {FightDistance}"); // urzywane do kalkulacj kamery trackującej dostanie dmg 
         float FloatDice = RNGGEN.RandfRange(0, 10);
         if (FloatDice >= probability) // rzucarz na liczbę powyżej kostki
         {
-            //GD.Print($"hit on {FloatDice}");
+            GD.Print($"[{UnitName}] was hit on {FloatDice}");
             gameMNGR_Script.GenerateActionLog($"{Bname} Hit {UnitName}");
             TakeDamage(dmg,Where);
             ShowHitInfoLabel(dmg);
         }
         else
         {
-            //GD.Print($"miss on {FloatDice}");
+            GD.Print($"[{UnitName}] was missed on {FloatDice}");
             gameMNGR_Script.GenerateActionLog($"{Bname} Missed {UnitName}");
             ShowHitInfoLabel(0);
         }
@@ -201,7 +207,12 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     void TakeDamage(int dmg,int Where)
     {
-        if (OVStatus == true)
+        if (PawnMoveStatus == PawnMoveState.Dead)
+        {
+            GD.Print("próba TakeDMG gdy pionek jest w trakcie umierania");
+            return;
+        }
+        if (OVStatus == true)// reset overwatch due to damage 
         {
             Ref_UNI_ControlOverPawnScript.ResetOverwatch();
         }
@@ -212,13 +223,13 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         {
             PlacementRoll_INDEX = Where; //index na wskazaną część ciała
             W_co = PawnParts[Where].Name; // nazwa części ciała
-            GD.Print($"Nielosowy traf w {W_co}");
+            GD.Print($"Nielosowy traf w {W_co} za {dmg} dmg");
         }
         else
         {
             PlacementRoll_INDEX = LocationRollCalc(); // losowy index
             W_co = PawnParts[PlacementRoll_INDEX].Name; // nazwa części ciała
-            GD.Print($"Losowy traf w {W_co}");
+            GD.Print($"Losowy traf w {W_co} za {dmg} dmg");
         }
         int LeftoverDMG = 0;
         if (PawnParts[PlacementRoll_INDEX].HP > dmg)// jeśli DMG jest mniejszy od HP
@@ -242,20 +253,30 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                 {
                     GD.Print($"dany pionek umiera od dostania w {PawnParts[PlacementRoll_INDEX].Name}");
                     responseAnimLexicon = ResponseAnimLexicon.die;
+                    PawnMoveStatus = PawnMoveState.Dead;
+                    PawnsActiveStates = PawnStatusEffect.None;
+                    if (OVStatus == true)
+                    {
+                        FightDistance = 50; // to powinno naprawić bug gdzie pionek nie umiera podczas dostania OV na ryj
+                    }
                     if (FightDistance > 1500f)
                     {
-                        GD.Print("Anim Resp Timer start trigger...");
+                        GD.Print("Śmierć będzie z animowaną kamerą");
                         ResponseAnimTimer.Start();
                     }
                     else
                     {
                         ResponseAnimTimer.Stop(); // nie diała, mimo tego i tak strzelanie powoduje że kamera leci do celu 
-                        GD.Print("Dystans zbyt krótki by angarzować spowolnienie kamery");
+                        GD.Print("Dystans umierania zbyt krótki by angarzować spowolnienie kamery");
                         ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)],true);
                         UNIAnimPlayerRef.Play("Damage");
                         Die();
                     }
                     return; // tak na wszelki wypadek by ten kod nie szedł dalej po tym jak już zadecyduje umrzeć 
+                }
+                else
+                {
+                    GD.Print($"porównywanie {CriticalPart} do {PawnParts[PlacementRoll_INDEX].Name} dało fałsz, część {PawnParts[PlacementRoll_INDEX].Name} miała {PawnParts[PlacementRoll_INDEX].HP} HP");
                 }
             }
             // Trzeba jeszcze spwadzić czy jakieś cześci bły przymocowane do tej co teraz się zniszczyła, więc jeśli ręka miała dłoń to zniszczenie ręki powoduje odpadnięcie dłoni 
@@ -406,7 +427,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         float RandomPosNum = 300f;
         float randomX = (float)GD.RandRange(-RandomPosNum - 100, RandomPosNum); // ta randomizacja nie raandoizuje, proszę poprawić statycznym stołem ala doom jak nie pyknie 
         float randomY = (float)GD.RandRange(-RandomPosNum - 100, RandomPosNum);
-        GD.Print($"random X i Y to {randomX},{randomY}");
+        //GD.Print($"random X i Y to {randomX},{randomY}");
         //randomY = Mathf.Max(randomY, 380); // limit Y
         dmgLabelPosControl.Position = new Vector2(randomX, randomY);
         DMGLabelVisTimer.Start();
@@ -437,33 +458,32 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     public void Die()
     {
-        PawnMoveStatus = PawnMoveState.Dead;
-        PawnsActiveStates = PawnStatusEffect.None;
+        GD.Print($"{UnitName} teraz wykonuje funkcję die");
+        if (PCNP != null)
+        {
+            PawnPlayerController PCNPS = PCNP as PawnPlayerController;
+            PCNPS.UnsubscribeFromUIControlls();
+        }
+        if (SpecificAnimPlayer.IsPlaying())
+        {
+            SpecificAnimPlayer.Stop();
+        }
         if (gameMNGR_Script.Turn == TeamId)
         {
             gameMNGR_Script.TeamsCollectiveMP -= MP; // odjęte punkty MP od ogólnej puli oraz deselekcjonuje pionka jak jest jego tura przy jego śmierci
             gameMNGR_Script.DeselectPawn();
         }
         gameMNGR_Script.GenerateActionLog($"{UnitName} is dead.");
-        if (SpecificAnimPlayer != null)
-        {
-            SpecificAnimPlayer.Play("Death");
-        }
-        else
-        {
-            //GD.Print($"NO_DEAD_ANIM_VER {UnitName} is dead.");
-            ProcessMode = ProcessModeEnum.Disabled;
-            QueueFree();
-        }
+        ThisDeathPhantomScene = GD.Load<PackedScene>("res://Prefabs/DeathPhantomFolder/death_phantom_1.tscn"); // TO DO, WYMAGANE USTAWIENIE ZEWNĘTRZNE Z RACJI NA RÓŻNE TYPY ANIMACJI ŚMIERCI
+        Node2D DeathPhantom = ThisDeathPhantomScene.Instantiate<Node2D>();
+        gameMNGR_Script.bucketForTheDead.AddChild(DeathPhantom);
+        DeathPhantom.GlobalPosition = GlobalPosition;
+        DeathPhantom.Call("ReciveInitInfo",ColoredPartsNode.Modulate,gameMNGR_Script);
+        ProcessMode = ProcessModeEnum.Disabled;
+        QueueFree();
     }
     void OnAnimDone(StringName animName)
     {
-        if (animName == "Death")
-        {
-            //GD.Print($"ANIM_VER {UnitName} is dead.");
-            ProcessMode = ProcessModeEnum.Disabled;
-            QueueFree();
-        }
         if (animName == "Attack" && PawnMoveStatus == PawnMoveState.Moving)
         {
             SpecificAnimPlayer.Play("Walk");
@@ -519,10 +539,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         if (SpecificAnimPlayer != null)
         {
-            if (SpecificAnimPlayer.IsPlaying())
-            {
-                SpecificAnimPlayer.Stop();
-            }
             if (trueisRange == true)
             {
                 SpecificAnimPlayer.Play("Attack"); // trza zmienić nazwę na "Range attack" i "melee Attack"

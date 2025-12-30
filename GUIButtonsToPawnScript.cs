@@ -176,7 +176,7 @@ public partial class GUIButtonsToPawnScript : Node2D
     }
     public void DeletePaperDoll()
     {
-        if (Paperdollref != null)
+        if (Paperdollref != null && IsInstanceValid(Paperdollref))
         {
             Paperdollref.QueueFree();
         }

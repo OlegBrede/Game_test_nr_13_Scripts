@@ -524,6 +524,7 @@ public partial class PawnPlayerController : Node2D
                 break;
             case 4:
                 ResetActionCommitment(false);
+                UCOPS.ResetOverwatch();
                 break;
             default:
                 GD.Print("Nie ma takiej akcji");
