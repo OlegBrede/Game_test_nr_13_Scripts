@@ -35,6 +35,8 @@ public partial class PawnPlayerController : Node2D
     Node2D OVPoint2Ref;
     Polygon2D OVDebugPoly;
     Area2D OverwatchArea;
+    CircleShape2D OVcircle;
+    float OVACR = 0;// overwatch area circle radius
     //################################# CALLABLES ######################################
     private Callable callableMove;
     private Callable callableShoot;
@@ -113,6 +115,8 @@ public partial class PawnPlayerController : Node2D
         OVDebugPoly = ONB.GetNode<Polygon2D>("Polygon2D");
         OverwatchArea = ONB.GetNode<Area2D>("Area2D");
         OverwatchTriangleHitbox = OverwatchArea.GetNode<CollisionPolygon2D>("CollisionPolygon2D");
+        OVcircle = OverwatchArea.GetNode<CollisionShape2D>("CollisionShape2D").Shape as CircleShape2D;
+        OVACR = OVcircle.Radius;
         OverwatchpointRefNode = ONB.GetNode<Node2D>("NodeForAreaTriangulation");
         OVPoint1Ref = OverwatchpointRefNode.GetNode<Node2D>("Point1");
         OVPoint2Ref = OverwatchpointRefNode.GetNode<Node2D>("Point2");
@@ -202,9 +206,12 @@ public partial class PawnPlayerController : Node2D
             if (UNI_markerRef.Visible == false) // nie dam tego do Ucops bo dla AI musiała by być to osobna kalkulacja, one size fits all nie za bardzo jestem w stanie zrobić 
             {
                 UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
-                ONB.GlobalPosition = GetGlobalMousePosition();
+                ShootingRayScript.OverrideTarget = UNI_markerRef;
+                ONB.GlobalPosition = ShootingRayScript.RayEnd;
                 OverwatchpointRefNode.LookAt(PawnScript.GlobalPosition);
-                
+                float circleScale = ShootingRayScript.Raylengh / (3f * PawnScript.ObjętośćPionka);
+                OVcircle.Radius = OVACR * circleScale;
+                OverwatchpointRefNode.Scale = new Vector2(circleScale,circleScale);
                 points[0] = OverwatchTriangleHitbox.ToLocal(OVPoint1Ref.GlobalPosition);
                 points[1] = OverwatchTriangleHitbox.ToLocal(PawnScript.GlobalPosition);
                 points[2] = OverwatchTriangleHitbox.ToLocal(OVPoint2Ref.GlobalPosition);
@@ -437,6 +444,7 @@ public partial class PawnPlayerController : Node2D
     {
         Player_ACT_UNI_ChangeTargetMakerButtonNIcon(11,12);
         gameMNGR_Script.ChosenActionFinished = false;
+        ShootingRayScript.Rayactive = true;
         ChosenAction = PlayersChosenAction.OverwatchAction;
         ONB.Visible = true;
         GD.Print("teraz gracz wybiera overwatch ...");
@@ -524,6 +532,8 @@ public partial class PawnPlayerController : Node2D
                 break;
             case 4:
                 ResetActionCommitment(false);
+                ShootingRayScript.OverrideTarget = null;
+                ShootingRayScript.Rayactive = false;
                 UCOPS.ResetOverwatch();
                 break;
             default:

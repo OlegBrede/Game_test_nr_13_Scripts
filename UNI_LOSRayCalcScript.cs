@@ -7,6 +7,7 @@ public partial class UNI_LOSRayCalcScript : RayCast2D
     public float Raylengh = 0;
     public CharacterBody2D RayHittenTarget;
     public Node2D OverrideTarget;
+    public Vector2 RayEnd = new Vector2(0,0);
     public override void _Process(double delta)
     {
         if (Rayactive == true)
@@ -51,6 +52,7 @@ public partial class UNI_LOSRayCalcScript : RayCast2D
             }
         }
         startPoint = endPoint - (endPoint.Normalized() * 60);
+        RayEnd = ToGlobal(endPoint);
         Vector2 GlobalToLocalPos = ToLocal(GlobalPosition);
         Raylengh = GlobalToLocalPos.DistanceTo(endPoint);
         //GD.Print("Raylengh is " + Raylengh);

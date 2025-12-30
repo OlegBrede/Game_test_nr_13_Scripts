@@ -1,93 +1,32 @@
 using Godot;
 using System;
+using System.Linq;
 
 public partial class HpSamplePawnPaperdollParserScript : Node2D
 {
     [Export] Node2D[] Parts;
-    void HP_InfoParser(string partName, int PartHP, int PartMaxHP)
+    [Export] PaperDollPartRes[] paperdollParts;
+    void HP_InfoParser(string partName, int partHP, int partMaxHP)
     {
-        switch (partName)
+        if(paperdollParts.Count() <= 0)
         {
-            case "head":
-                if (PartHP > 0)
+            GD.Print("Zapomniano dla tego pionka dodać paperdoll");
+            return;
+        }
+        foreach (PaperDollPartRes part in paperdollParts)
+        {
+            if (partName == part.PartName)
+            {
+                if (partHP > 0)
                 {
-                    float[] PartHPButfloat = { PartHP, PartMaxHP };
-                    Parts[0].Modulate = ColorChanger(PartHPButfloat[0],PartHPButfloat[1]);
+                    float[] PartHPButfloat = { partHP, partMaxHP };
+                    Parts[part.PartIndex].Modulate = ColorChanger(PartHPButfloat[0],PartHPButfloat[1]);
                 }
                 else
                 {
-                    Parts[0].Modulate = Colors.Black;
+                    Parts[part.PartIndex].Modulate = Colors.Black;
                 }
-                break;
-            case "Tors":
-                if (PartHP > 0)
-                {
-                    float[] PartHPButfloat = { PartHP, PartMaxHP };
-                    Parts[1].Modulate = ColorChanger(PartHPButfloat[0],PartHPButfloat[1]);
-                }
-                else
-                {
-                    Parts[1].Modulate = Colors.Black;
-                }
-                break;
-            case "RArm":
-                if (PartHP > 0)
-                {
-                    float[] PartHPButfloat = { PartHP, PartMaxHP };
-                    Parts[2].Modulate = ColorChanger(PartHPButfloat[0],PartHPButfloat[1]);
-                }
-                else
-                {
-                    Parts[2].Modulate = Colors.Black;
-                }
-                break;
-            case "LArm":
-                if (PartHP > 0)
-                {
-                    float[] PartHPButfloat = { PartHP, PartMaxHP };
-                    Parts[3].Modulate = ColorChanger(PartHPButfloat[0],PartHPButfloat[1]);
-                }
-                else
-                {
-                    Parts[3].Modulate = Colors.Black;
-                }
-                break;
-            case "RLeg":
-                if (PartHP > 0)
-                {
-                    float[] PartHPButfloat = { PartHP, PartMaxHP };
-                    Parts[4].Modulate = ColorChanger(PartHPButfloat[0],PartHPButfloat[1]);
-                }
-                else
-                {
-                    Parts[4].Modulate = Colors.Black;
-                }
-                break;
-            case "LLeg":
-                if (PartHP > 0)
-                {
-                    float[] PartHPButfloat = { PartHP, PartMaxHP };
-                    Parts[5].Modulate = ColorChanger(PartHPButfloat[0],PartHPButfloat[1]);
-                }
-                else
-                {
-                    Parts[5].Modulate = Colors.Black;
-                }
-                break;
-            case "Banan": // DO TESTÓW
-                if (PartHP > 0)
-                {
-                    float[] PartHPButfloat = { PartHP, PartMaxHP };
-                    Parts[6].Modulate = ColorChanger(PartHPButfloat[0],PartHPButfloat[1]);
-                }
-                else
-                {
-                    Parts[6].Modulate = Colors.Black;
-                }
-                break;
-            default:
-                GD.Print("Parser Nie Poznał części");
-                break;
+            }
         }
     }
     Color ColorChanger(float fHPPart,float fHPMAXPart)
