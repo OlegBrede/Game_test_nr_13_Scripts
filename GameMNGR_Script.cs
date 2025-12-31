@@ -480,6 +480,15 @@ public partial class GameMNGR_Script : Node2D
                     {
                         ActiveTeam.PawnCount++;
                         ActiveTeam.CollectiveMPCount += 2;
+                        if (pawn.OVStatus == true)
+                        {
+                            //pawn.OverwatchNodeBucket.Visible = true; // dla tych których jest teraz tura
+                        }
+                    }
+                    else
+                    {
+                        GD.Print($"Reset Widoczności Overwatch dla {pawn.UnitName}");
+                        //pawn.OverwatchNodeBucket.Visible = false; // dla tych dla których nie ma teraz tury 
                     }
                 }
             }
@@ -561,14 +570,10 @@ public partial class GameMNGR_Script : Node2D
     {
         foreach (PawnBaseFuncsScript Pawn in PawnBucketRef.GetChildren())
         {
-            if (Pawn.OVStatus == true)
+            if (Pawn.OVStatus == true && Pawn.TeamId != Turn)
             {
-                GD.Print("jest pionek który ma overwatch, sprawdzane jest Overwatch");
+                GD.Print($"jest pionek który ma overwatch, jest tura {Turn}, pionek jest drużyny {Pawn.TeamId} sprawdzane jest Overwatch");
                 Pawn.CheckOV_LOS(MoveReportee);
-            }
-            else
-            {
-                //GD.Print("ten pionek nie miał overwatch");
             }
         }
     }

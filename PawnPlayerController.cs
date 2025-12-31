@@ -36,6 +36,7 @@ public partial class PawnPlayerController : Node2D
     Polygon2D OVDebugPoly;
     Area2D OverwatchArea;
     CircleShape2D OVcircle;
+    [Export] Sprite2D MASprite;
     float OVACR = 0;// overwatch area circle radius
     //################################# CALLABLES ######################################
     private Callable callableMove;
@@ -74,6 +75,7 @@ public partial class PawnPlayerController : Node2D
             GD.Print("Scena jest BaseTestScene");
             GD.Print("PawnBaseFuncsScript włączone ... ");
         }
+        MASprite.Visible = false;
         UNI_markerRef.Visible = false;
         YayButton = UNI_markerRef.GetNode<NodeCompButtonUni1FuncScript>("SampleButton3");
         NayButton = UNI_markerRef.GetNode<NodeCompButtonUni1FuncScript>("SampleButton4");
@@ -87,6 +89,7 @@ public partial class PawnPlayerController : Node2D
         callableStrongWallop = new Callable(this, nameof(Player_ACT_StrongPunch));
         callableConfirm = new Callable(this, nameof(Player_ACT_Confirm));
         callableDecline = new Callable(this, nameof(Player_ACT_Decline));
+
 
         ChanceToHitLabel1 = UNI_markerRef.GetNode<Label>("Label");
         ChanceToHitLabel1.Visible = false;
@@ -163,6 +166,7 @@ public partial class PawnPlayerController : Node2D
             //GD.Print($"Pionek rusza się o {PawnScript.DistanceMovedByThisPawn}");
             if (Input.IsActionJustPressed("MYMOUSELEFT") && CanGoThere == true && UNI_markerRef.Visible == false) // można wybrać marker tylko wtedy gdy jego pozycja jest potwierdzona przez dystans 
             {
+                
                 UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
                 UNI_markerRef.Visible = true;
                 gameMNGR_Script.PlayerGUIRef.PALO(true, false);
@@ -230,13 +234,13 @@ public partial class PawnPlayerController : Node2D
     {
         if(gameMNGR_Script.SelectedPawn != null)
         {
-            //GD.Print($"Subscription triggered to {gameMNGR_Script.SelectedPawn.UnitName} ID .:{gameMNGR_Script.SelectedPawn.Name}...");
+            GD.Print($"Subscription triggered to {gameMNGR_Script.SelectedPawn.UnitName} ID .:{gameMNGR_Script.SelectedPawn.Name}...");
         }
         UnsubscribeFromUIControlls();
         if(gameMNGR_Script.PlayerGUIRef.IsConnected(GUIButtonsToPawnScript.SignalName.MoveAction , callableMove) == false) // by zasubskrybować pawn, musi obecny nie być null oraz musi on nie być obecnym nowym pionkiem 
         {
             DEBUG_UIConnectionStatus = true;
-            //GD.Print($"conectting subscription to {gameMNGR_Script.SelectedPawn.UnitName} ID .:{gameMNGR_Script.SelectedPawn.Name}... ");
+            GD.Print($"conectting subscription to {gameMNGR_Script.SelectedPawn.UnitName} ID .:{gameMNGR_Script.SelectedPawn.Name}... ");
             //GUI_BTPS.Connect(GUIButtonsToPawnScript.SignalName.NAZWA, new Callable(this, nameof(SYGNAŁ)));
             gameMNGR_Script.PlayerGUIRef.Connect(GUIButtonsToPawnScript.SignalName.MoveAction , callableMove);
             gameMNGR_Script.PlayerGUIRef.Connect(GUIButtonsToPawnScript.SignalName.NormalShotAction , callableShoot);
@@ -250,14 +254,14 @@ public partial class PawnPlayerController : Node2D
         }
         else
         {
-            //GD.Print("dany pionek ma już subskrybcję do gui");
+            GD.Print("dany pionek ma już subskrybcję do gui");
         }
     }
     public void UnsubscribeFromUIControlls()
     {
         if (gameMNGR_Script.PlayerGUIRef.IsConnected(GUIButtonsToPawnScript.SignalName.MoveAction , callableMove) == true)
         {
-            //GD.Print($"disconectting subscription from prev pawn ... ");
+            GD.Print($"disconectting subscription from prev pawn ... ");
             DEBUG_UIConnectionStatus = false;
             //GUI_BTPS.Disconnect(GUIButtonsToPawnScript.SignalName.NAZWA SYGNAŁU TU , new Callable(this, nameof(NAZWA FUNKCJI)));
             gameMNGR_Script.PlayerGUIRef.Disconnect(GUIButtonsToPawnScript.SignalName.MoveAction , callableMove);
@@ -271,7 +275,7 @@ public partial class PawnPlayerController : Node2D
         }
         else
         {
-            //GD.Print($"odsubskrybowanie niemożliwe dla już odsubskrybowanego elementu");
+            GD.Print($"odsubskrybowanie niemożliwe dla już odsubskrybowanego elementu");
         }
     }
     void ShootFunc()
@@ -404,11 +408,19 @@ public partial class PawnPlayerController : Node2D
     {
         Player_ACT_UNI_ChangeTargetMakerButtonNIcon(1,6);
         ChangeVisibleMovementHitboxSpriteSize();
+
+        MASprite.Visible = true;
+
+        Vector2 Size = MASprite.Texture.GetSize(); 
+        float BaseRad = Size.X / 2f; 
+        float scale = PawnScript.MAD / BaseRad; // do tego tu trzeba będzie dodać objętość pionka ale z jakiegoś powodu to nie działa, dpatrz się dlaczego później 
+        MASprite.Scale = new Vector2(scale, scale);
+
         gameMNGR_Script.ChosenActionFinished = false;
         ChosenAction = PlayersChosenAction.MoveAction;
         MovementAllowenceInyk_ator.Visible = true;
         NavAgent.DebugEnabled = true;
-        GD.Print("teraz gracz wybiera ruch...");
+        GD.Print($"teraz gracz wybiera ruch... {NavAgent.DebugEnabled}");
     }
     void Player_ACT_Shoot()
     {
@@ -461,6 +473,7 @@ public partial class PawnPlayerController : Node2D
         switch (Index)
         {
             case 1: // potwierdzenie ruchu
+                GD.Print("Potwierdzenie ruchu ");
                 UCOPS.ActionMove();
                 ResetActionCommitment(false); // ten reset statusu będzie musiał zostać usunięty z tąd gdyż to że dany pionek zakończył TEN ruch nie oznacza że nie może zrobić kolejnego, więc pomyśl nad sprawdzeniem selekcji i deselekcji by działała poprawnie
                 break;
@@ -556,6 +569,7 @@ public partial class PawnPlayerController : Node2D
         }
         YayButton.Visible = true;
         NayButton.Visible = true;
+        MASprite.Visible = false;
         ShootingRayScript.OverrideTarget = null;
         WideMelee.Visible = false;
         StrongMelee.Visible = false;

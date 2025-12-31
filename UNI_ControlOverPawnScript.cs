@@ -58,18 +58,17 @@ public partial class UNI_ControlOverPawnScript : Node2D
     }
     // DO ZROBIENIA SĄ JESZCZE .: 
     // - DODANIE HOVER INFO NA SAMPLEBUTTON 
-    // - PRZYWRÓĆ OVERWATCH
     // - ZRÓB QUEUE NA TO NA CO MA SKUPIĆ OKO KAMERA CZYLI ZGADUJĘ CAPTURE ACTON POWINNO DOSTAĆ LISTĘ 
     
     public void ActionMove() // wywołanie tej akcji ma sprawić poruszenie się na pozycję PosToMoveTo
     {
+        GD.Print("Action move");
         ResetOverwatch();
         if (PawnScript.MovinCapability < 1)
         {
             GD.Print("Pioek chce się poruszyć ale nie może");
             return;
         }
-        
         var path = NavAgent.GetCurrentNavigationPath();
         if (path.Length > 0)
         {
@@ -147,10 +146,13 @@ public partial class UNI_ControlOverPawnScript : Node2D
         {
             ResetOverwatch();
         }
-        // Najlepiej dla wszystkich będzie jak się upewnie że cel ostał osiągnięty drugi raz 
+        PawnBaseFuncsScript Enemy_PBFS = null;
         GD.Print($"Pionek {PawnScript.UnitName} teraz strzela, początkowy check LOS");
-        PawnBaseFuncsScript Enemy_PBFS = HittenGuy as PawnBaseFuncsScript;
-        if (Enemy_PBFS.PawnMoveStatus == PawnMoveState.Dead)
+        if (HittenGuy != null)
+        {
+            Enemy_PBFS = HittenGuy as PawnBaseFuncsScript;
+        }
+        if (Enemy_PBFS != null && Enemy_PBFS.PawnMoveStatus == PawnMoveState.Dead)
         {
             GD.Print($"Pionek {Enemy_PBFS.UnitName} umiera, nie  przeszkadzać");
             return;
@@ -252,7 +254,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
             if (PawnScript.WeaponAmmo > 0)
             {
                 PawnScript.WeaponAmmo--;
-                if (HittenGuy != null)
+                if (HittenGuy != null && IsInstanceValid(HittenGuy))
                 {
                     HittenGuy.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName, EngagementDistance);
                     GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");

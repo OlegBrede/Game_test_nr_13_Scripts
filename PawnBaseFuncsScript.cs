@@ -5,13 +5,6 @@ using System.ComponentModel;
 using System.Linq;
 
 public enum PawnMoveState { Stationary, Moving, Fainted, Dead}
-public enum PawnStatusEffect // TEMP
-{
-    None = 0,
-    inPain = 1 << 0,
-    Imobalized = 1 << 1,
-    Bleeding = 1 << 2,
-}
 public enum ResponseAnimLexicon // zapewnie będzie więej
 {
     damage,
@@ -57,6 +50,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] string[] CriticalParts; // części ciała pionka bez których nie może on funkcjonować 
     [Export] public PawnPart[] PawnParts { get; set; } // części ciała pionka
     [Export] UNI_AudioStreamPlayer2d ASP;
+    [Export] public Node2D OverwatchNodeBucket;
     public bool Gameplayprimed = false;
     public float PrevDistance = 0;
     public float ObjętośćPionka = 0;
@@ -64,7 +58,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     float FightDistance = 0; // dystans w jakim zadziała się akcja, usprawiedliwiający pokazanie walki w wolnym tępie, jest terz obsługiwana w UNI_ControlOverPawnScript, to dlaego że dystans dalej wpywa na aktywację timera
     public Node2D TargetMarkerRef;
     public PawnMoveState PawnMoveStatus { get; set; } = PawnMoveState.Stationary;
-    public PawnStatusEffect PawnsActiveStates = PawnStatusEffect.None;
     GameMNGR_Script gameMNGR_Script;
     Timer ResponseAnimTimer;
     Timer DMGLabelVisTimer;
@@ -254,7 +247,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                     GD.Print($"dany pionek umiera od dostania w {PawnParts[PlacementRoll_INDEX].Name}");
                     responseAnimLexicon = ResponseAnimLexicon.die;
                     PawnMoveStatus = PawnMoveState.Dead;
-                    PawnsActiveStates = PawnStatusEffect.None;
                     if (OVStatus == true)
                     {
                         FightDistance = 50; // to powinno naprawić bug gdzie pionek nie umiera podczas dostania OV na ryj
@@ -484,7 +476,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     void OnAnimDone(StringName animName)
     {
-        if (animName == "Attack" && PawnMoveStatus == PawnMoveState.Moving)
+        if ((animName == "Range_Attack" || animName == "Melee_Attack") && PawnMoveStatus == PawnMoveState.Moving)
         {
             SpecificAnimPlayer.Play("Walk");
         }
@@ -511,10 +503,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     public void ApllyStatusEffects()
     {
-        if (PawnsActiveStates == PawnStatusEffect.Bleeding)
-        {
-            
-        }
+        
     }
     void ResetMoveStatus()
     {
@@ -541,11 +530,11 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         {
             if (trueisRange == true)
             {
-                SpecificAnimPlayer.Play("Attack"); // trza zmienić nazwę na "Range attack" i "melee Attack"
+                SpecificAnimPlayer.Play("Range_Attack"); 
             }
             else
             {
-                SpecificAnimPlayer.Play("Attack");
+                SpecificAnimPlayer.Play("Melee_Attack");
             }
         }
     }
