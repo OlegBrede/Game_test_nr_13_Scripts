@@ -209,6 +209,14 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 ClusterFire(WeaponDamageModified,STLI,SFDV,PartProbability,ShowActionWideShot,HittenGuy);
                 ASP.PlaySound(1,true);
             break;
+            case 4: // Explosives
+                SpawnExplosiveArea();
+                ASP.PlaySound(4,true);
+            break;
+            case 5: // Area fire (podobnie wygląda do Overwatch, ale strzela do wszystkiego "nawet własnych jednostek" DMG dalej modyfikowany przez dystans w zasięgu rażenias)
+                SpawnAreaFire();
+                ASP.PlaySound(5,true);
+            break;
             default: // to jest jeden czyli inaczej pojedyńczy strzał
                 PawnScript.WeaponAmmo--;
                 if (HittenGuy != null)
@@ -228,7 +236,6 @@ public partial class UNI_ControlOverPawnScript : Node2D
     }
     public bool HasLineOfSight(CharacterBody2D Target)
     {
-        //TO DO .: - FIX THIS SHITE 
         bool LOS_Sum = false;
         if (Target == null)
         {
@@ -283,19 +290,27 @@ public partial class UNI_ControlOverPawnScript : Node2D
     }
     void ClusterFire(int WeaponDamageModified, int STLI, float SFDV, float PartProbability, bool ShowActionWdeShot,CharacterBody2D HittenGuy)
     {
+        PawnScript.WeaponAmmo--;
         if (HittenGuy != null)
         {
             gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, HittenGuy.GlobalPosition,ShowActionWdeShot);
         }
         for (int i = 0; i < PawnScript.ShotsPerMP; i++)
         {
-            PawnScript.WeaponAmmo--;
             if (HittenGuy != null)
             {
                 HittenGuy.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName, EngagementDistance);
                 GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
             }
         }
+    }
+    void SpawnExplosiveArea()
+    {
+        
+    }
+    void SpawnAreaFire()
+    {
+        
     }
     //######################################## OVERWATCH ##########################################
     

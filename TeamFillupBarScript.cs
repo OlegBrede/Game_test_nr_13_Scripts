@@ -88,40 +88,30 @@ public partial class TeamFillupBarScript : Control
         GD.Print($"dodano {Pcount} {unit.ScenePath} do drużyny {teamName}");
         //GD.Print($"PawnCount dla {teamName} jest teraz {PawnCount} powinien być 0 "); // chujowy kod, zły chujowy kod
     }
-    List<PackedScene> LoadUnitPrefabs(string path) // to do, trza okomentować
+    List<PackedScene> LoadUnitPrefabs()
     {
-        var dir = DirAccess.Open(path);
         var prefabs = new List<PackedScene>();
 
-        if (dir == null)
+        if (MenuScript.UnitPrefabs == null || MenuScript.UnitPrefabs.Length == 0)
         {
-            GD.PrintErr($"Nie można otworzyć folderu: {path}");
+            GD.PrintErr("UnitPrefabs jest puste  brak prefabów jednostek");
             return prefabs;
         }
 
-        dir.ListDirBegin();
-        string fileName = dir.GetNext();
-
-        while (fileName != "")
+        foreach (var scene in MenuScript.UnitPrefabs)
         {
-            if (!dir.CurrentIsDir() && fileName.EndsWith(".tscn"))
+            if (scene == null)
             {
-                string fullPath = $"{path}/{fileName}";
-                PackedScene scene = GD.Load<PackedScene>(fullPath);
-
-                if (scene != null)
-                {
-                    prefabs.Add(scene);
-                    GD.Print($"Załadowano prefab: {fileName}");
-                }
+                GD.PrintErr("W UnitPrefabs znajduje się null  sprawdź Inspector");
+                continue;
             }
-            fileName = dir.GetNext();
+
+            prefabs.Add(scene);
+            GD.Print($"Załadowano prefab: {scene.ResourcePath}");
         }
 
-        dir.ListDirEnd();
         return prefabs;
     }
-
     void Button_ACT1() // dodanie nowej drużyny
     {
         Control AddTeam = TeamAddPrefab.Instantiate<Control>();
@@ -165,7 +155,7 @@ public partial class TeamFillupBarScript : Control
         GD.Print("Reset Pawncount");
         PawnCount = 0;
         TFBFAUC.Visible = true;
-        var UnitSelectPrefabs = LoadUnitPrefabs("res://Prefabs/Units/");
+        var UnitSelectPrefabs = LoadUnitPrefabs();
         UnitMenuSelectionPath = GD.Load<PackedScene>("res://Prefabs/UnitMenuSelectionBoxPrefab.tscn");
         MenuScript.ThisTeaMsunitListRoot.Visible = true;
         Dictionary<string, Control> unitBoxes = new();

@@ -19,6 +19,7 @@ public partial class MainMenuScript : Node2D
     [Export] Label NoPawnsWarning;
     [Export] public Control UnitList;
     [Export] public CheckBox DebugModeMenuCheck;
+    [Export] public PackedScene[] UnitPrefabs;
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
     private int VisibleMenuScreenID;
     public int TeamCallInCount = 0;

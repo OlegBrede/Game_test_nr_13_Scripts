@@ -3,6 +3,7 @@ using System;
 
 public partial class UNI_LOSRayCalcScript : RayCast2D
 {
+    // Transf test
     public bool Rayactive;
     public float Raylengh = 0;
     public CharacterBody2D RayHittenTarget;

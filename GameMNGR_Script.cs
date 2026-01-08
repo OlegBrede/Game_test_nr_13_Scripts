@@ -117,6 +117,11 @@ public partial class GameMNGR_Script : Node2D
     }
     public void SelectPawn(PawnBaseFuncsScript pawn)
     {
+        if (IsInstanceValid(pawn) == false || pawn == null)
+        {
+            GD.Print("Nie można zaznaczyć pionka bo nie istnieje");
+            return;
+        }
         if (ChosenActionFinished == true)
         {
             if (SelectedPawn != null) // trzeba wysłać reset do skryptu gracza bo inaczej zaznaczenie się zduplikuje 
