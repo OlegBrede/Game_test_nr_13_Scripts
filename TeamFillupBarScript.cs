@@ -23,6 +23,8 @@ public partial class TeamFillupBarScript : Control
     [Export] CheckBox TeamIsBot;
     [Export] Node2D TFBFAUC; // ThisFuckinButtonForAcceptingUserChoice
     [Export] Node2D TempPawnHolder;
+    [Export] Node2D ButtonAddUnits;
+    [Export] Node2D ButtonSpwanpos;
     PackedScene UnitMenuSelectionPath;
     Label SpawnPosNumLabel;
     private int TeamToMenuID = 0; // to jest numerator potrzebny by nie stworzyć więcej niż osiem drużyn
@@ -251,6 +253,8 @@ public partial class TeamFillupBarScript : Control
     void TextButton_ACT1()
     {
         ColorPanel.Visible = true;
+        ButtonSpwanpos.Call("OnDisablebutton");
+        ButtonAddUnits.Call("OnDisablebutton");
     }
     void TextButton_ACT2()
     {
@@ -258,6 +262,8 @@ public partial class TeamFillupBarScript : Control
         TeamColorCoding = new Color(Colors.Red);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
+        ButtonSpwanpos.Call("OnEnablebutton");
+        ButtonAddUnits.Call("OnEnablebutton");
     }
     void TextButton_ACT3()
     {
@@ -265,6 +271,8 @@ public partial class TeamFillupBarScript : Control
         TeamColorCoding = new Color(Colors.OrangeRed);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
+        ButtonSpwanpos.Call("OnEnablebutton");
+        ButtonAddUnits.Call("OnEnablebutton");
     }
     void TextButton_ACT4()
     {
@@ -272,6 +280,8 @@ public partial class TeamFillupBarScript : Control
         TeamColorCoding = new Color(Colors.White);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
+        ButtonSpwanpos.Call("OnEnablebutton");
+        ButtonAddUnits.Call("OnEnablebutton");
     }
     void TextButton_ACT5()
     {
@@ -279,6 +289,8 @@ public partial class TeamFillupBarScript : Control
         TeamColorCoding = new Color(Colors.Blue);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
+        ButtonSpwanpos.Call("OnEnablebutton");
+        ButtonAddUnits.Call("OnEnablebutton");
     }
     void TextButton_ACT6()
     {
@@ -286,6 +298,8 @@ public partial class TeamFillupBarScript : Control
         TeamColorCoding = new Color(Colors.Green);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
+        ButtonSpwanpos.Call("OnEnablebutton");
+        ButtonAddUnits.Call("OnEnablebutton");
     }
     void TextButton_ACT7()
     {
@@ -293,6 +307,8 @@ public partial class TeamFillupBarScript : Control
         TeamColorCoding = new Color(Colors.Yellow);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
+        ButtonSpwanpos.Call("OnEnablebutton");
+        ButtonAddUnits.Call("OnEnablebutton");
     }
     void TextButton_ACT8()
     {
@@ -300,13 +316,17 @@ public partial class TeamFillupBarScript : Control
         TeamColorCoding = new Color(Colors.SaddleBrown);
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
+        ButtonSpwanpos.Call("OnEnablebutton");
+        ButtonAddUnits.Call("OnEnablebutton");
     }
     void TextButton_ACT9()
     {
         //GD.Print("kolor różowy");
-        TeamColorCoding = new Color(255f, 0f, 255f); // no i teraz to jest róż 
+        TeamColorCoding = new Color(Colors.DeepPink); 
         Colorpickerbutton.SelfModulate = TeamColorCoding;
         ColorPanel.Visible = false;
+        ButtonSpwanpos.Call("OnEnablebutton");
+        ButtonAddUnits.Call("OnEnablebutton");
     }
     // zakaz dodania większej ilości drużyn
     void DisableAddTeamButton()

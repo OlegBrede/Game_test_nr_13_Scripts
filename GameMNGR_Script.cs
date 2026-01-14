@@ -38,6 +38,7 @@ public partial class GameMNGR_Script : Node2D
     public static GameMNGR_Script Instance { get; private set; }
     public PawnBaseFuncsScript SelectedPawn { get; private set; }
     private string SaveFilePath => ProjectSettings.GlobalizePath("user://teams.json");
+    public string Teamcolor = "";
     public class TeamConfig
     {
         public string name { get; set; }
@@ -401,11 +402,15 @@ public partial class GameMNGR_Script : Node2D
     }
     public void GenerateActionLog(string Message)
     {
-        Label Log = new Label();
+        RichTextLabel Log = new RichTextLabel();
+        Log.BbcodeEnabled = true;
+        Log.FitContent = true;
+        Log.ClipContents = false;
+        Log.AutowrapMode = TextServer.AutowrapMode.Off;
         Log.Text = Message;
-        Log.AddThemeFontSizeOverride("font_size", 150);
+        Log.AddThemeFontSizeOverride("normal_font_size", 150);
         LogBucket.AddChild(Log);
-        KontenrLogów.ScrollVertical = (int)KontenrLogów.GetVScrollBar().MaxValue;
+        KontenrLogów.ScrollVertical = (int)KontenrLogów.GetVScrollBar().MaxValue;      
     }
     void CalculateActiveTeamPawns(bool FirstTime)
     {
@@ -451,6 +456,8 @@ public partial class GameMNGR_Script : Node2D
         }
 
         Turn = TeamTurnTable[0];
+        TeamConfig TeamToAccount = ActiveTeams.Find(a => a.name.Contains(Turn));
+        Teamcolor = TeamToAccount.team_colour.ToHtml();
         CalculateAllTeamMP();
         foreach (Node child in UnitsBucket.GetChildren())
         {
@@ -467,6 +474,7 @@ public partial class GameMNGR_Script : Node2D
         }
         UltimatePawnSwitchingFunc(true, false);
         GenerateActionLog($"## Round {Round} ##");
+        GenerateActionLog($"##[color={Teamcolor}] Team {Turn} [/color]starts thier Turn ##");
     }
     void RecalculationTeamStatus() // podlicza żywe drużyny, wyznacza wygraną
     {
@@ -557,6 +565,8 @@ public partial class GameMNGR_Script : Node2D
         }
         // nowa drużyna
         Turn = TeamTurnTable[0];
+        TeamConfig TeamToAccount = ActiveTeams.Find(a => a.name.Contains(Turn));
+        Teamcolor = TeamToAccount.team_colour.ToHtml();
         CalculateAllTeamMP();
         UltimatePawnSwitchingFunc(true, false);
         foreach (Node child in UnitsBucket.GetChildren())
@@ -569,7 +579,7 @@ public partial class GameMNGR_Script : Node2D
                 }
             }
         }
-        GenerateActionLog($"## Team {Turn} starts thier Turn ##");
+        GenerateActionLog($"##[color={Teamcolor}] Team {Turn} [/color]starts thier Turn ##");
     }
     public void CheckOV(CharacterBody2D MoveReportee) // tak, wiem, robię to chujowo
     {

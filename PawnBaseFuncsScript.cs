@@ -170,14 +170,14 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         if (FloatDice >= probability) // rzucarz na liczbę powyżej kostki
         {
             GD.Print($"[{UnitName}] was hit on {FloatDice}");
-            gameMNGR_Script.GenerateActionLog($"{Bname} Hit {UnitName}");
+            gameMNGR_Script.GenerateActionLog($"[color={gameMNGR_Script.Teamcolor}]{Bname}[/color] Hit [color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color]");
             TakeDamage(dmg,Where);
             ShowHitInfoLabel(dmg);
         }
         else
         {
             GD.Print($"[{UnitName}] was missed on {FloatDice}");
-            gameMNGR_Script.GenerateActionLog($"{Bname} Missed {UnitName}");
+            gameMNGR_Script.GenerateActionLog($"[color={gameMNGR_Script.Teamcolor}]{Bname}[/color] Missed [color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}");
             ShowHitInfoLabel(0);
         }
     }
@@ -228,14 +228,15 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         if (PawnParts[PlacementRoll_INDEX].HP > dmg)// jeśli DMG jest mniejszy od HP
         {
             PawnParts[PlacementRoll_INDEX].HP -= dmg; //DMG dociera do części ciała
-            gameMNGR_Script.GenerateActionLog($"{UnitName} took {dmg} damage to the {W_co}");
+            gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] took {dmg} damage to the {W_co}");
         }
         else // równy DMG lub większy od HP to utrata części i/lub przeniesienie DMG dalej
         {
             PawnParts[PlacementRoll_INDEX].HP -= dmg; //odejmujemy DMG
             LeftoverDMG = PawnParts[PlacementRoll_INDEX].HP * -1; //odwracając ujemny DMG dostajemy ile DMG będzie transferowana w górę
+            PawnParts[PlacementRoll_INDEX].HP = 0;
             GD.Print($"Dana część nie wytrzyma DMG, więc reszts obrażeń to ({LeftoverDMG})");
-            gameMNGR_Script.GenerateActionLog($"{UnitName} lost {W_co} due to damage");
+            gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] lost {W_co} due to damage");
             DecreseFightCapability(PawnParts[PlacementRoll_INDEX].MeleeCapability,
             PawnParts[PlacementRoll_INDEX].MeleeWeaponCapability,
             PawnParts[PlacementRoll_INDEX].ShootingCapability,
@@ -266,10 +267,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                     }
                     return; // tak na wszelki wypadek by ten kod nie szedł dalej po tym jak już zadecyduje umrzeć 
                 }
-                else
-                {
-                    GD.Print($"porównywanie {CriticalPart} do {PawnParts[PlacementRoll_INDEX].Name} dało fałsz, część {PawnParts[PlacementRoll_INDEX].Name} miała {PawnParts[PlacementRoll_INDEX].HP} HP");
-                }
             }
             // Trzeba jeszcze spwadzić czy jakieś cześci bły przymocowane do tej co teraz się zniszczyła, więc jeśli ręka miała dłoń to zniszczenie ręki powoduje odpadnięcie dłoni 
             int index = -1; // ustawiamy index na -1 by wyznaczyć nieznalezioną część 
@@ -294,9 +291,11 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             }
         }
         Integrity = 0; // czyszczenie numery który wyświetla integralność pionka (te tamte procenty)
+        GD.Print("======================== HP =======================");
         foreach (var Bodypart in PawnParts)
         {
             Integrity += Bodypart.HP;
+            GD.Print($"{Bodypart.Name} ({Bodypart.HP}/{Bodypart.MAXHP})");
         }
         if (FightDistance > 1500f)
         {
@@ -465,7 +464,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             gameMNGR_Script.TeamsCollectiveMP -= MP; // odjęte punkty MP od ogólnej puli oraz deselekcjonuje pionka jak jest jego tura przy jego śmierci
             gameMNGR_Script.DeselectPawn();
         }
-        gameMNGR_Script.GenerateActionLog($"{UnitName} is dead.");
+        gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] is dead.");
         ThisDeathPhantomScene = GD.Load<PackedScene>("res://Prefabs/DeathPhantomFolder/death_phantom_1.tscn"); // TO DO, WYMAGANE USTAWIENIE ZEWNĘTRZNE Z RACJI NA RÓŻNE TYPY ANIMACJI ŚMIERCI
         Node2D DeathPhantom = ThisDeathPhantomScene.Instantiate<Node2D>();
         gameMNGR_Script.bucketForTheDead.AddChild(DeathPhantom);
