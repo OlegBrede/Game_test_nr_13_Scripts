@@ -350,6 +350,20 @@ public partial class UNI_ControlOverPawnScript : Node2D
             GD.Print("Zapomniano podesłać celu do OV script");
             return; 
         }
+        bool TrueIsMyOV = false;
+        foreach (Node2D EnemyinOV in OverwatchArea.GetOverlappingBodies())
+        {
+            if (EnemyinOV == enemy)
+            {
+                TrueIsMyOV = true;
+                GD.Print("Tak, ten pionek jest w moim Overwatch polu");
+            }
+        }
+        if (TrueIsMyOV == false)
+        {
+            GD.Print("Pionek który się teraz ruszył nie był w moim polu OV");
+            return; 
+        }
         if (PawnScript.OVStatus == false)// Jeśli pionek nie jest w OV status
         {
             GD.Print("Pionek nie jest w OV status");

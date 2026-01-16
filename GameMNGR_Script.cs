@@ -694,7 +694,7 @@ public partial class GameMNGR_Script : Node2D
         {
             if (Pawn.OVStatus == true && Pawn.TeamId != Turn)
             {
-                GD.Print($"jest pionek który ma overwatch, jest tura {Turn}, pionek jest drużyny {Pawn.TeamId} sprawdzane jest Overwatch");
+                GD.Print($"jest pionek który ma overwatch, jest tura {Turn}, pionek jest drużyny {Pawn.TeamId}, sprawdzane jest Overwatch");
                 Pawn.CheckOV_LOS(MoveReportee);
             }
         }
