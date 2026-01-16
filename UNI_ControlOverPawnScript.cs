@@ -169,7 +169,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
         }
         int WeaponDamageModified;
         bool ShowActionWideShot; // w sęsie że kamera przechodzi z celu na cel bo ukazanie tego w jednym kadrze byłoby niemożliwe 
-        if (ShootingRayScript.Raylengh > 1500)
+        if (ShootingRayScript.Raylengh > 1000)
         {
             ShowActionWideShot = true;
         }
@@ -195,7 +195,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
             case 2: // burst fire, ilość wystrzelonych pocisków w skrypcie bazowym pionka
                 if (HittenGuy != null)
                 {
-                    gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, HittenGuy.GlobalPosition,ShowActionWideShot);
+                    gameMNGR_Script.CaptureAction(PawnScript.GlobalPosition, HittenGuy.GlobalPosition,ShowActionWideShot); // ustalenie kolejności wydarzeń ujętyh przez kamerę powinna być ustalona wcześniej
                 }
                 BurstfireARGints[0] = WeaponDamageModified;
                 BurstfireARGints[1] = STLI;
@@ -223,7 +223,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 {
                     HittenGuy.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName, EngagementDistance);
                     GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
-                    gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, HittenGuy.GlobalPosition,ShowActionWideShot);
+                    gameMNGR_Script.CaptureAction(PawnScript.GlobalPosition, HittenGuy.GlobalPosition,ShowActionWideShot);
                 }
                 else
                 {
@@ -293,7 +293,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
         PawnScript.WeaponAmmo--;
         if (HittenGuy != null)
         {
-            gameMNGR_Script.Call("CaptureAction", PawnScript.GlobalPosition, HittenGuy.GlobalPosition,ShowActionWdeShot);
+            gameMNGR_Script.CaptureAction(PawnScript.GlobalPosition, HittenGuy.GlobalPosition,ShowActionWdeShot);
         }
         for (int i = 0; i < PawnScript.ShotsPerMP; i++)
         {

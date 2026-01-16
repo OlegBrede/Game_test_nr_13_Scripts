@@ -12,6 +12,8 @@ public partial class GameMNGR_Script : Node2D
     [Export] Camera2D FocusCam;
     [Export] Timer CamShowActionTimer;
     private float waitDuration = 1f;
+    bool CameraShowingAction = false;
+    bool TrueisShowAction = true;
     private Tween.TransitionType transition = Tween.TransitionType.Sine;
     private Tween.EaseType ease = Tween.EaseType.InOut;
     private Tween activeTween;
@@ -65,7 +67,7 @@ public partial class GameMNGR_Script : Node2D
         public Vector2 C_Recypiant { get; set; }
         public bool C_TrueisWideShotNeeded { get; set; }
     }
-    List<CaptureActionInfo> captureActionInfoQueue = new List<CaptureActionInfo>();
+    //Stack<CaptureActionInfo> captureActionInfoQueue = new Stack<CaptureActionInfo>();
     public List<string> TeamTurnTable = new List<string>(); // lista do tur
     public List<TeamConfig> ActiveTeams = new List<TeamConfig>(); // aktywne w danej grze
     List<PawnBaseFuncsScript>[] ActiveTeamPawns = {new List<PawnBaseFuncsScript>(),new List<PawnBaseFuncsScript>()};
@@ -90,10 +92,11 @@ public partial class GameMNGR_Script : Node2D
 
     public void SetupGameScene()
     {
+        CamShowActionTimer.WaitTime = waitDuration;
         UASP.SCS = SCS;
         //UASP.PlaySound(0,false);
         //PlayerGUIRef = GetTree().Root.GetNode<GUIButtonsToPawnScript>("BaseTestScene/Camera2D/GUI_to_Pawn_Input_Translator");
-        CamShowActionTimer.Timeout += ShowReactionAfterTimeout;
+        CamShowActionTimer.Timeout += ShowReactionAfterTimeout; // powinno być tu CameraActionTimerSwitch ale ten na to pomysł jest chwilowo zaryglowany albo na sequel albo na rewrite czy coś w ten deseń 
         SNTWN.Visible = false;
         UnitsBucket = GetNode<Node>("UnitsBucket");
         ESCMenu.Visible = false;
@@ -179,6 +182,84 @@ public partial class GameMNGR_Script : Node2D
         }
     }
     // ########################################### KAMERA ###########################################
+    /*
+    public void CaptureAction(PawnBaseFuncsScript GiverTrigger,Vector2 Giver, Vector2 Recypiant,bool TrueisWideShotNeeded) // tu ma być pobrana akcja która następnie czeka w kolejce na swą kolej odegrania
+    {
+        if (TrueisWideShotNeeded == true) // nie jest chyba koniecznym by tam w CaptureActionInfo był TrueisWideShotNeeded
+        {
+            FocusCam.GlobalPosition = Recypiant;
+            return;
+        }
+        if (CameraShowingAction == true)
+        {
+            GD.Print($"Akcja musi czekać w kolejce obecny czas czekania {captureActionInfoQueue.Count}");
+            captureActionInfoQueue.Push(new CaptureActionInfo{C_Giver = Giver,C_Recypiant = Recypiant,C_TrueisWideShotNeeded = TrueisWideShotNeeded});
+        }
+        else
+        {
+            CameraShowingAction = true;
+            GD.Print("Capture action wywołało ukazywanie akcji");
+            captureActionInfoQueue.Push(new CaptureActionInfo{C_Giver = Giver,C_Recypiant = Recypiant,C_TrueisWideShotNeeded = TrueisWideShotNeeded});
+            //CamShowActionTimer.WaitTime = 0.1f;
+            FocusCam.GlobalPosition = Giver;
+            LockNloadCamAction(captureActionInfoQueue.Peek());
+        }
+    }
+    void LockNloadCamAction(CaptureActionInfo CAIQ)
+    {
+        CamShowActionTimer.Start();
+        ChosenActionFinished = false;
+        ActionView = CAIQ.C_Giver;
+        ReactionView = CAIQ.C_Recypiant;
+        //FocusCam.GlobalPosition = CAIQ.C_Recypiant; // to miało być na bool C_TrueisWideShotNeeded ale to za chwilę ogarnę 
+    }
+    void CameraActionTimerSwitch()
+    {
+        if (captureActionInfoQueue.Count <= 0)
+        {
+            CameraShowingAction = false;
+            CamShowActionTimer.Stop();
+            ChosenActionFinished = true;
+            GD.Print("Koniec pokazywania akcji");
+            return;
+        }
+        if (TrueisShowAction == true)
+        {
+            ShowActionAfterTimeout();
+            return; // to powinno dezaktywować ten if na samym dole by nie zmieniał kolejności rzeczy 
+        }
+        else
+        {
+            ShowReactionAfterTimeout();
+        }
+        if (captureActionInfoQueue.Count > 0 && TrueisShowAction == true) // że ten tu zatrzymać <---
+        {
+            GD.Print("kolejna akcja wykonuje się - stara idzie, nowa wchodzi");
+            captureActionInfoQueue.Pop();// zabicie akcji zaraz po tym jak zostaje ona zaprezentowana
+            if (captureActionInfoQueue.Count > 0) // ta idiotycznie podwójnie sprawdzać ale... 
+            {
+                LockNloadCamAction(captureActionInfoQueue.Peek());
+            }
+        }
+    }
+    void ShowActionAfterTimeout() // tu pokazana jest akcja 
+    {
+        //CamShowActionTimer.WaitTime = waitDuration;
+        activeTween?.Kill();
+        activeTween = GetTree().CreateTween();
+        activeTween.TweenProperty(FocusCam,"global_position",ActionView,0.05f).SetTrans(transition).SetEase(ease);
+        TrueisShowAction = false;
+        GD.Print("Rzut kamerą na akcję");
+    }
+    void ShowReactionAfterTimeout() // tu pokazana jest reakcja 
+    {
+        activeTween?.Kill();
+        activeTween = GetTree().CreateTween();
+        activeTween.TweenProperty(FocusCam,"global_position",ReactionView,0.05f).SetTrans(transition).SetEase(ease);
+        TrueisShowAction = true;
+        GD.Print("Rzut kamerą na reakcję");
+    }
+    */
     public void CaptureAction(Vector2 Giver, Vector2 Recypiant,bool TrueisWideShotNeeded) // tu ma być pobrana akcja która następnie czeka w kolejce na swą kolej odegrania
     {
         //captureActionInfoQueue.Add(new CaptureActionInfo{C_Giver = Giver,C_Recypiant = Recypiant,C_TrueisWideShotNeeded = TrueisWideShotNeeded});
@@ -194,10 +275,6 @@ public partial class GameMNGR_Script : Node2D
         {
             FocusCam.GlobalPosition = Recypiant;
         }
-    }
-    void LockNloadCamAction()
-    {
-        
     }
     void ShowActionAfterTimeout() // tu pokazana jest akcja 
     {
@@ -233,18 +310,38 @@ public partial class GameMNGR_Script : Node2D
     }
     void Button_ACT1() // to samo co spacja robi
     {
+        if (ChosenActionFinished == false)
+        {
+            GD.Print("Gracz nie zakończył akcji");
+            return;
+        }
         AccessNextTurnPopup = true;
     }
     void Button_ACT2() // next unit
     {
+        if (ChosenActionFinished == false)
+        {
+            GD.Print("Gracz nie zakończył akcji");
+            return;
+        }
         UltimatePawnSwitchingFunc(true, false);
     }
     void Button_ACT3() // prev unit 
     {
+        if (ChosenActionFinished == false)
+        {
+            GD.Print("Gracz nie zakończył akcji");
+            return;
+        }
         UltimatePawnSwitchingFunc(false, false);
     }
     void Button_ACT4() //current active
     {
+        if (ChosenActionFinished == false)
+        {
+            GD.Print("Gracz nie zakończył akcji");
+            return;
+        }
         if (PrevSelectedPawn != null)
         {
             SelectPawn(PrevSelectedPawn);
@@ -252,10 +349,20 @@ public partial class GameMNGR_Script : Node2D
     }
     void Button_ACT5() // prev active
     {
+        if (ChosenActionFinished == false)
+        {
+            GD.Print("Gracz nie zakończył akcji");
+            return;
+        }
         UltimatePawnSwitchingFunc(true, true);
     }
     void Button_ACT6() // next active
     {
+        if (ChosenActionFinished == false)
+        {
+            GD.Print("Gracz nie zakończył akcji");
+            return;
+        }
         UltimatePawnSwitchingFunc(false, true);
     }
     void Button_ACT7() // Escape Menu

@@ -234,13 +234,13 @@ public partial class PawnPlayerController : Node2D
     {
         if(gameMNGR_Script.SelectedPawn != null)
         {
-            GD.Print($"Subscription triggered to {gameMNGR_Script.SelectedPawn.UnitName} ID .:{gameMNGR_Script.SelectedPawn.Name}...");
+            //GD.Print($"Subscription triggered to {gameMNGR_Script.SelectedPawn.UnitName} ID .:{gameMNGR_Script.SelectedPawn.Name}...");
         }
         UnsubscribeFromUIControlls();
         if(gameMNGR_Script.PlayerGUIRef.IsConnected(GUIButtonsToPawnScript.SignalName.MoveAction , callableMove) == false) // by zasubskrybować pawn, musi obecny nie być null oraz musi on nie być obecnym nowym pionkiem 
         {
             DEBUG_UIConnectionStatus = true;
-            GD.Print($"conectting subscription to {gameMNGR_Script.SelectedPawn.UnitName} ID .:{gameMNGR_Script.SelectedPawn.Name}... ");
+            //GD.Print($"conectting subscription to {gameMNGR_Script.SelectedPawn.UnitName} ID .:{gameMNGR_Script.SelectedPawn.Name}... ");
             //GUI_BTPS.Connect(GUIButtonsToPawnScript.SignalName.NAZWA, new Callable(this, nameof(SYGNAŁ)));
             gameMNGR_Script.PlayerGUIRef.Connect(GUIButtonsToPawnScript.SignalName.MoveAction , callableMove);
             gameMNGR_Script.PlayerGUIRef.Connect(GUIButtonsToPawnScript.SignalName.NormalShotAction , callableShoot);
@@ -254,14 +254,14 @@ public partial class PawnPlayerController : Node2D
         }
         else
         {
-            GD.Print("dany pionek ma już subskrybcję do gui");
+            //GD.Print("dany pionek ma już subskrybcję do gui");
         }
     }
     public void UnsubscribeFromUIControlls()
     {
         if (gameMNGR_Script.PlayerGUIRef.IsConnected(GUIButtonsToPawnScript.SignalName.MoveAction , callableMove) == true)
         {
-            GD.Print($"disconectting subscription from prev pawn ... ");
+            //GD.Print($"disconectting subscription from prev pawn ... ");
             DEBUG_UIConnectionStatus = false;
             //GUI_BTPS.Disconnect(GUIButtonsToPawnScript.SignalName.NAZWA SYGNAŁU TU , new Callable(this, nameof(NAZWA FUNKCJI)));
             gameMNGR_Script.PlayerGUIRef.Disconnect(GUIButtonsToPawnScript.SignalName.MoveAction , callableMove);
@@ -275,7 +275,7 @@ public partial class PawnPlayerController : Node2D
         }
         else
         {
-            GD.Print($"odsubskrybowanie niemożliwe dla już odsubskrybowanego elementu");
+            //GD.Print($"odsubskrybowanie niemożliwe dla już odsubskrybowanego elementu");
         }
     }
     void ShootFunc()
