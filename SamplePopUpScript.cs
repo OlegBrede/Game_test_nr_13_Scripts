@@ -4,18 +4,16 @@ using System;
 public partial class SamplePopUpScript : Node2D
 {
     [Export] Label DescriptionLabel;
-    GameMNGR_Script GameMenagerScript;
-    bool InternalTrueIsRound = false;
+    GameMNGR_Script gameMNGR_Script;
     public override void _Ready()
     {
-        GameMenagerScript = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
+        gameMNGR_Script = GetTree().Root.GetNode<GameMNGR_Script>("BaseTestScene");
         Visible = false;
     }
-    void PopUpContentsFunc(string PopUpMessageGet, bool TrueIsRound) // prawda to zakończenie rundy (w sensie całej gry), fałsz to zakończenie tury (twojej czy mojej itp)
+    void PopUpContentsFunc(string PopUpMessageGet) // prawda to zakończenie rundy (w sensie całej gry), fałsz to zakończenie tury (twojej czy mojej itp)
     {
         Visible = true;
         DescriptionLabel.Text = PopUpMessageGet;
-        InternalTrueIsRound = TrueIsRound;
     }
     void Button_ACT1() // cancel
     {
@@ -24,13 +22,13 @@ public partial class SamplePopUpScript : Node2D
     void Button_ACT2() // confirm
     {
         Visible = false;
-        if (InternalTrueIsRound == true)
+        if (gameMNGR_Script.TeamTurnTable.Count <= 1)
         {
-            GameMenagerScript.Call("NextRoundFunc");
+            gameMNGR_Script.Call("NextRoundFunc");
         }
         else
         {
-            GameMenagerScript.Call("NextTurnFunc");
+            gameMNGR_Script.Call("NextTurnFunc");
         }
         
     }

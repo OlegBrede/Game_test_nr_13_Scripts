@@ -13,6 +13,7 @@ public partial class PawnSpawnerScript : Node2D
     Node2D PawnBucketRef;
     RandomNumberGenerator RNGGEN = new RandomNumberGenerator();
     [Export] RngNameToolScript rngNameToolScript;
+    [Export] string AI_Commander_Prefab;
     [Export] Node2D Spawn1;
     [Export] Node2D Spawn2;
     [Export] Node2D Spawn3;
@@ -47,6 +48,7 @@ public partial class PawnSpawnerScript : Node2D
 
         foreach (var team in cfg.teams) // na karzdą drużynę ... 
         {
+            
             ASSPEP[0] = 0; // reset uprzedniego offsetu spawnu 
             ASSPEP[1] = 0;
             bool iniLastPawnSpawnAllowence = false; // urzywane do sprawdzenia czy można zmieścić jeszcze pionak w danym miejscu 
@@ -84,7 +86,6 @@ public partial class PawnSpawnerScript : Node2D
                         // ustawienie parametrów pionka 
                         Pawn.Call("SetTeam", team.name, team.team_colour);
                         Pawn.Call("ActivateCollision");
-                        Pawn.Call("DeleteUnusedControlNodes", team.AI_Active);
 
                         int Gender = RNGGEN.RandiRange(0, 1); 
                         string Category;
@@ -130,6 +131,15 @@ public partial class PawnSpawnerScript : Node2D
                     }
                     // inicjalizacja pionka
                 }
+            }
+            if (team.AI_Active == true) // jeśli drużyna ma aktywnego bota do gry 
+            { // tu generalnie nastawia się bota do gry 
+                PawnScene = GD.Load<PackedScene>(AI_Commander_Prefab);
+                Node2D AI_Commander = PawnScene.Instantiate<Node2D>();
+                gameMNGR_Script.AIPlayersBucket.AddChild(AI_Commander);
+                AI_StategyBotScript AI_Commander_Script = AI_Commander as AI_StategyBotScript;
+                AI_Commander_Script.gameMNGR_Script = gameMNGR_Script;
+                AI_Commander_Script.MyteamID = team.name;
             }
         }
     }

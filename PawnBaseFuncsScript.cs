@@ -43,7 +43,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public string TeamId = "";
     [Export] Node2D ColoredPartsNode;
     [Export] Node2D PCNP; // player controller node path
-    [Export] Node2D AICNP; // AI controller node path
+    [Export] public Node2D AICNP; // AI controller node path
     [Export] AnimationPlayer UNIAnimPlayerRef;
     [Export] public AnimationPlayer SpecificAnimPlayer;
     [Export] public Sprite2D ProfilePick;
@@ -535,19 +535,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             {
                 SpecificAnimPlayer.Play("Melee_Attack");
             }
-        }
-    }
-    void DeleteUnusedControlNodes(bool TrueisAI)
-    {
-        if (TrueisAI == true)
-        {
-            PCNP.QueueFree();
-            //GD.Print($"kontrola Gracza Usunięta z {UnitName} od drużyny {TeamId}");
-        }
-        else
-        {
-            AICNP.QueueFree();
-            //GD.Print($"kontrola AI Usunięta z {UnitName} od drużyny {TeamId}");
         }
     }
     public void RSSP() // reset selected status player

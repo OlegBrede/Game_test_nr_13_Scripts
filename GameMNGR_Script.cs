@@ -24,6 +24,9 @@ public partial class GameMNGR_Script : Node2D
     [Export] public SoundControlScript SCS;
     [Export] UNI_AudioStreamPlayer2d UASP;
     // ####################### SOUNDS #######################
+    // ####################### AI #######################
+    public Node2D AIPlayersBucket;
+    // ####################### AI #######################
     [Export] Label UnitInfoGuiLabel;
     [Export] Label TotalMPLabel;
     [Export] Label ULTIMATENAMELABEL;
@@ -74,8 +77,7 @@ public partial class GameMNGR_Script : Node2D
     private PawnBaseFuncsScript PrevSelectedPawn;
     Node2D PopUpRef;
     Node2D ScrollPopUpRef;
-    Node2D PawnBucketRef;
-    Node UnitsBucket;
+    public Node2D PawnBucketRef;
     SamplePopUpScript PopUpRefScript;
     Label GameInfoLabelRef;
     CanvasLayer CamUICanvasRef;
@@ -98,9 +100,9 @@ public partial class GameMNGR_Script : Node2D
         //PlayerGUIRef = GetTree().Root.GetNode<GUIButtonsToPawnScript>("BaseTestScene/Camera2D/GUI_to_Pawn_Input_Translator");
         CamShowActionTimer.Timeout += ShowReactionAfterTimeout; // powinno być tu CameraActionTimerSwitch ale ten na to pomysł jest chwilowo zaryglowany albo na sequel albo na rewrite czy coś w ten deseń 
         SNTWN.Visible = false;
-        UnitsBucket = GetNode<Node>("UnitsBucket");
         ESCMenu.Visible = false;
         UnitInfoGuiLabel.Text = "";
+        AIPlayersBucket = GetNode<Node2D>("AIPlayersBucket");
         PawnBucketRef = GetTree().Root.GetNode<Node2D>("BaseTestScene/UnitsBucket");
         pawnSpawnerScript = GetNode<PawnSpawnerScript>("SpawnPoints");
         CamUICanvasRef = GetTree().Root.GetNode<CanvasLayer>("BaseTestScene/Camera2D/CanvasLayer");
@@ -430,11 +432,11 @@ public partial class GameMNGR_Script : Node2D
             {
                 if (TeamTurnTable.Count <= 1)
                 {
-                    PopUpRefScript.Call("PopUpContentsFunc", $"Do you want to end round {Round} ?", true);
+                    PopUpRefScript.Call("PopUpContentsFunc", $"Do you want to end round {Round} ?");
                 }
                 else
                 {
-                    PopUpRefScript.Call("PopUpContentsFunc", "Do you want to end your turn ?", false);
+                    PopUpRefScript.Call("PopUpContentsFunc", "Do you want to end your turn ?");
                 }
                 AccessNextTurnPopup = false;
             }
@@ -566,7 +568,7 @@ public partial class GameMNGR_Script : Node2D
         TeamConfig TeamToAccount = ActiveTeams.Find(a => a.name.Contains(Turn));
         Teamcolor = TeamToAccount.team_colour.ToHtml();
         CalculateAllTeamMP();
-        foreach (Node child in UnitsBucket.GetChildren())
+        foreach (Node child in PawnBucketRef.GetChildren())
         {
             if (child is PawnBaseFuncsScript pawn)
             {
@@ -582,15 +584,16 @@ public partial class GameMNGR_Script : Node2D
         UltimatePawnSwitchingFunc(true, false);
         GenerateActionLog($"## Round {Round} ##");
         GenerateActionLog($"##[color={Teamcolor}] Team {Turn} [/color]starts thier Turn ##");
+        ActivateAICommanders();
     }
-    void RecalculationTeamStatus() // podlicza żywe drużyny, wyznacza wygraną
+    void RecalculationTeamStatus() // podlicza żywe drużyny, wyznacza wygraną, jeśli drużyna jest kontrolowana przez ai to mówi tej drużynie że może zaczynac kalkulowanie 
     {
         foreach (TeamConfig ActiveTeam in ActiveTeams)
         {
             ActiveTeam.PawnCount = 0;
             ActiveTeam.CollectiveMPCount = 0;
         }
-        foreach (Node child in UnitsBucket.GetChildren())
+        foreach (Node child in PawnBucketRef.GetChildren())
         {
             if (child is PawnBaseFuncsScript pawn)
             {
@@ -631,6 +634,22 @@ public partial class GameMNGR_Script : Node2D
             GD.Print("Game Over! Winner: " + (ActiveTeams.Count == 1 ? ActiveTeams[0].name : "None"));
             GetTree().ChangeSceneToFile(SceneToLoad);
             return;
+        }
+    }
+    void ActivateAICommanders()
+    {
+        foreach (var AI_Team in ActiveTeams)
+        {
+            if (AI_Team.AI_Active == true)
+            {
+                foreach(AI_StategyBotScript AI_Commander in AIPlayersBucket.GetChildren())
+                {
+                    if (AI_Commander.MyteamID == Turn)
+                    {
+                        AI_Commander.Call("Activate");
+                    }
+                }
+            }
         }
     }
     public void InitTurnOrder(GameConfig cfg)
@@ -676,7 +695,7 @@ public partial class GameMNGR_Script : Node2D
         Teamcolor = TeamToAccount.team_colour.ToHtml();
         CalculateAllTeamMP();
         UltimatePawnSwitchingFunc(true, false);
-        foreach (Node child in UnitsBucket.GetChildren())
+        foreach (Node child in PawnBucketRef.GetChildren())
         {
             if (child is PawnBaseFuncsScript pawn)
             {
@@ -687,6 +706,7 @@ public partial class GameMNGR_Script : Node2D
             }
         }
         GenerateActionLog($"##[color={Teamcolor}] Team {Turn} [/color]starts thier Turn ##");
+        ActivateAICommanders();
     }
     public void CheckOV(CharacterBody2D MoveReportee) // tak, wiem, robię to chujowo
     {
