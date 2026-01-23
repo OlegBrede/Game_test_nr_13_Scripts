@@ -129,11 +129,11 @@ public partial class UNI_ControlOverPawnScript : Node2D
                     if (StrongOrNot == true) // strong wallop 
                     {
                         FinalDMG = FinalDMG * 1.5f;
-                        PS.Call("CalculateHit", (int)FinalDMG , 5f,STLI, PawnScript.UnitName,50f);
+                        PS.Call("CalculateHit", (int)FinalDMG , 5f,STLI,0, PawnScript.UnitName,50f); // tu powinna być szansa na trafienie z krwawieniem
                     }
                     else // wide wallop
                     {
-                        PS.Call("CalculateHit", FinalDMG, 2.5f,STLI, PawnScript.UnitName,50f);
+                        PS.Call("CalculateHit", (int)FinalDMG, 2.5f,STLI,0, PawnScript.UnitName,50f);
                     }
                 }
             }
@@ -221,7 +221,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 PawnScript.WeaponAmmo--;
                 if (HittenGuy != null)
                 {
-                    HittenGuy.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName, EngagementDistance);
+                    HittenGuy.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI,1, PawnScript.UnitName, EngagementDistance);
                     GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
                     gameMNGR_Script.CaptureAction(PawnScript.GlobalPosition, HittenGuy.GlobalPosition,ShowActionWideShot);
                 }
@@ -263,7 +263,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
                 PawnScript.WeaponAmmo--;
                 if (HittenGuy != null && IsInstanceValid(HittenGuy))
                 {
-                    HittenGuy.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName, EngagementDistance);
+                    HittenGuy.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI,1, PawnScript.UnitName, EngagementDistance);
                     GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
                 }
             }
@@ -299,7 +299,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
         {
             if (HittenGuy != null)
             {
-                HittenGuy.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI, PawnScript.UnitName, EngagementDistance);
+                HittenGuy.Call("CalculateHit", WeaponDamageModified, SFDV + PartProbability,STLI,1, PawnScript.UnitName, EngagementDistance);
                 GD.Print($"Kość floatDice10 musi przebić nad {SFDV} dodatkowe Part probability było {PartProbability} więc razem {SFDV + PartProbability}");
             }
         }

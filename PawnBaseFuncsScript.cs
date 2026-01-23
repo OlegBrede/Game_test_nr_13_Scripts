@@ -25,7 +25,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     public int MeleeWeaponAllowence = 0;
     public int ShootingAllowence = 0;
     public int MovinCapability = 0;
-    [Export] bool ZweiHanderShootah = false;
     public bool OVStatus = false;
     [Export]public float Penalty_range = 1.15f;
     [Export]public float Penalty_shooter = 0.64f;
@@ -51,6 +50,10 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public PawnPart[] PawnParts { get; set; } // części ciała pionka
     [Export] UNI_AudioStreamPlayer2d ASP;
     [Export] public Node2D OverwatchNodeBucket;
+    // ##################### BLEEDING #####################
+    public int EntryWounds = 0;
+    List<PawnPart> YourPartsToBleed = new List<PawnPart>();
+    // ##################### BLEEDING #####################
     public bool Gameplayprimed = false;
     public float PrevDistance = 0;
     public float ObjętośćPionka = 0;
@@ -157,7 +160,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         ASP.PlaySound(VoicelineRange[0,RNGGEN.RandiRange(0,1)],true);
     }
-    public void CalculateHit(int dmg, float probability,int Where, string Bname,float DamageDistance)
+    public void CalculateHit(int dmg, float probability,int Where,int Wounds, string Bname,float DamageDistance)
     {
         if (PawnMoveStatus == PawnMoveState.Dead)
         {
@@ -171,7 +174,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         {
             GD.Print($"[{UnitName}] was hit on {FloatDice}");
             gameMNGR_Script.GenerateActionLog($"[color={gameMNGR_Script.Teamcolor}]{Bname}[/color] Hit [color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color]");
-            TakeDamage(dmg,Where);
+            TakeDamage(dmg,Where,false,Wounds);
             ShowHitInfoLabel(dmg);
         }
         else
@@ -198,8 +201,9 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         LocationHitProbabilitytable.Clear(); // na wszelki wypadek
         return indeks;
     }
-    void TakeDamage(int dmg,int Where)
+    void TakeDamage(int dmg,int Where,bool Bleeding,int Wounds)
     {
+        GD.Print($"Take damage aktywowany dla {UnitName} z parametrami dmg {dmg}, where {Where}, bleedin {Bleeding}, wounds {Wounds}");
         if (PawnMoveStatus == PawnMoveState.Dead)
         {
             GD.Print("próba TakeDMG gdy pionek jest w trakcie umierania");
@@ -210,12 +214,14 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             Ref_UNI_ControlOverPawnScript.ResetOverwatch();
         }
         responseAnimLexicon = ResponseAnimLexicon.damage;
+        bool bleedin = Bleeding;
         string W_co; // nazwa części ciała która dostaje 
         int PlacementRoll_INDEX; // index części ciała która dostaje 
         if (Where <= PawnParts.Count()) // to działą na zasadzie takiej że lokacja obrażeń danego miejsca jest predefiniowana do czasu jak nie wyjdzie poza zakres, a zakres zewnętrznie ustalony jest na 999 (chyba nie będzie nigdy pionka z 1000 części ciała)
         {
             PlacementRoll_INDEX = Where; //index na wskazaną część ciała
             W_co = PawnParts[Where].Name; // nazwa części ciała
+            
             GD.Print($"Nielosowy traf w {W_co} za {dmg} dmg");
         }
         else
@@ -224,11 +230,21 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             W_co = PawnParts[PlacementRoll_INDEX].Name; // nazwa części ciała
             GD.Print($"Losowy traf w {W_co} za {dmg} dmg");
         }
+
+        if (PawnParts[PlacementRoll_INDEX].CausesBleedin == true) // sprawdzane czy od dostania w tą część ciała pionek będzie krwawił
+        {
+            EntryWounds += Wounds;
+        }
+        GD.Print($" traf w {W_co} sprawi krwawiene jest {PawnParts[PlacementRoll_INDEX].CausesBleedin} więc wounds jest {EntryWounds}");
+
         int LeftoverDMG = 0;
         if (PawnParts[PlacementRoll_INDEX].HP > dmg)// jeśli DMG jest mniejszy od HP
         {
             PawnParts[PlacementRoll_INDEX].HP -= dmg; //DMG dociera do części ciała
-            gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] took {dmg} damage to the {W_co}");
+            if (bleedin == false)
+            {
+                gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] took {dmg} damage to the {W_co}");
+            }
         }
         else // równy DMG lub większy od HP to utrata części i/lub przeniesienie DMG dalej
         {
@@ -236,7 +252,14 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             LeftoverDMG = PawnParts[PlacementRoll_INDEX].HP * -1; //odwracając ujemny DMG dostajemy ile DMG będzie transferowana w górę
             PawnParts[PlacementRoll_INDEX].HP = 0;
             GD.Print($"Dana część nie wytrzyma DMG, więc reszts obrażeń to ({LeftoverDMG})");
-            gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] lost {W_co} due to damage");
+            if (bleedin == false)
+            {
+                gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] lost {W_co} due to damage");
+            }
+            else
+            {
+                gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] lost {W_co} due to bleeding");
+            }
             DecreseFightCapability(PawnParts[PlacementRoll_INDEX].MeleeCapability,
             PawnParts[PlacementRoll_INDEX].MeleeWeaponCapability,
             PawnParts[PlacementRoll_INDEX].ShootingCapability,
@@ -276,7 +299,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
                 {
                     index = i; // ustawiamy indeks tej części ciała na taki by go TakeDamage() mogło znaeźć 
                     GD.Print($"{PawnParts[i].Name} miał rodzica {PawnParts[i].ParentPart} więc pionek też to traci");
-                    TakeDamage(PawnParts[i].HP,index);
+                    TakeDamage(PawnParts[i].HP,index,bleedin,Wounds);
                     break;
                 }
             }
@@ -287,7 +310,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             if (PawnParts[PlacementRoll_INDEX].ParentPart != null)
             {
                 GD.Print("DMG idzie w górę hierarchii");
-                TakeDamage(LeftoverDMG,FindPartToDamage(PlacementRoll_INDEX)); // okej, teraz rekurencja nie powinna crash-ować gry
+                TakeDamage(LeftoverDMG,FindPartToDamage(PlacementRoll_INDEX),bleedin,Wounds); // okej, teraz rekurencja nie powinna crash-ować gry
             }
         }
         Integrity = 0; // czyszczenie numery który wyświetla integralność pionka (te tamte procenty)
@@ -309,6 +332,33 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)],true);
             UNIAnimPlayerRef.Play("Damage");
         }
+    }
+    public void FuncBleed()
+    {
+        YourPartsToBleed.Clear();
+        foreach (PawnPart Part in PawnParts)
+        {
+            if (Part.HP > 0)
+            {
+                YourPartsToBleed.Add(Part);
+            }
+        }
+        // tu kod dodający części ciała do listy 
+        int BleedDMG = 0;
+        foreach (PawnPart Part in YourPartsToBleed)
+        {
+            if (Part.CausesBleedin == true)
+            {
+                TakeDamage(EntryWounds,YourPartsToBleed.IndexOf(Part),true,0);
+                BleedDMG += EntryWounds;
+            }
+        }
+        gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] bleeds {BleedDMG} damage"); // to powinno być później bo teraz pokazuje zły nr damage 
+    }
+    public void BandageWounds()
+    {
+        EntryWounds = 0;
+        gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] stops the bleeding with a bandage");
     }
     int FindPartToDamage(int partIndex) // funkcja do znajdywania rodzica danej części ciała
     {
@@ -342,7 +392,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     void DecreseFightCapability(bool Melee, bool MeleeWeapon, bool Shootah, bool Legs)// nie ma tu melee weapon
     {
-        GD.Print("Częśćciała zniszczona, efektywność walki zmniejszona");
+        GD.Print("[DecreseFightCapability] Częśćciała zniszczona, efektywność walki zmniejszona");
         if (Melee == true)
         {
             MeleeAllowence--;
@@ -353,20 +403,14 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         }
         if (Shootah == true)
         {
-            if (ZweiHanderShootah == true)
-            {
-                ShootingAllowence -= 2; //albo lewa albo prawa ręka musi zostać usunięta by broń została dezaktywowana
-            }
-            else
-            {
-                ShootingAllowence--;
-            }
+            ShootingAllowence--;
         }
         if (Legs == true)
         {
             MAD = MAD / MovinCapability; // tu odejmowana jest możliwość szybszego ruchu gdy postać ma mniej nóg
             MovinCapability--;
         }
+        GD.Print($"[DecreseFightCapability] MeleeAllowence {MeleeAllowence}, MeleeWeaponAllowence {MeleeWeaponAllowence}, ShootingAllowence {ShootingAllowence}, MovinCapability {MovinCapability} ");
     }
 
     void AnimAwaitResponse()

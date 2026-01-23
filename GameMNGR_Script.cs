@@ -568,6 +568,10 @@ public partial class GameMNGR_Script : Node2D
         TeamConfig TeamToAccount = ActiveTeams.Find(a => a.name.Contains(Turn));
         Teamcolor = TeamToAccount.team_colour.ToHtml();
         CalculateAllTeamMP();
+        
+        UltimatePawnSwitchingFunc(true, false);
+        GenerateActionLog($"## Round {Round} ##");
+        GenerateActionLog($"##[color={Teamcolor}] Team {Turn} [/color]starts thier Turn ##");
         foreach (Node child in PawnBucketRef.GetChildren())
         {
             if (child is PawnBaseFuncsScript pawn)
@@ -578,12 +582,14 @@ public partial class GameMNGR_Script : Node2D
                 if (pawn.TeamId == Turn)
                 {
                     pawn.Call("ResetMoveStatus");
+                    if (pawn.EntryWounds > 0)
+                    {
+                        GD.Print("Krwawienie aktywowane dla tego pionka");
+                        pawn.FuncBleed();
+                    }
                 }
             }
         }
-        UltimatePawnSwitchingFunc(true, false);
-        GenerateActionLog($"## Round {Round} ##");
-        GenerateActionLog($"##[color={Teamcolor}] Team {Turn} [/color]starts thier Turn ##");
         ActivateAICommanders();
     }
     void RecalculationTeamStatus() // podlicza żywe drużyny, wyznacza wygraną, jeśli drużyna jest kontrolowana przez ai to mówi tej drużynie że może zaczynac kalkulowanie 
@@ -695,17 +701,22 @@ public partial class GameMNGR_Script : Node2D
         Teamcolor = TeamToAccount.team_colour.ToHtml();
         CalculateAllTeamMP();
         UltimatePawnSwitchingFunc(true, false);
-        foreach (Node child in PawnBucketRef.GetChildren())
+        GenerateActionLog($"##[color={Teamcolor}] Team {Turn} [/color]starts thier Turn ##");
+        foreach (Node child in PawnBucketRef.GetChildren()) // TO DO .: - dać to do funkcji bo się powtarza, ale w tym drugim jest reset MP
         {
             if (child is PawnBaseFuncsScript pawn)
             {
                 if (pawn.TeamId == Turn)
                 {
                     pawn.Call("ResetMoveStatus");
+                    if (pawn.EntryWounds > 0)
+                    {
+                        GD.Print("Krwawienie aktywowane dla tego pionka");
+                        pawn.FuncBleed();
+                    }
                 }
             }
         }
-        GenerateActionLog($"##[color={Teamcolor}] Team {Turn} [/color]starts thier Turn ##");
         ActivateAICommanders();
     }
     public void CheckOV(CharacterBody2D MoveReportee) // tak, wiem, robię to chujowo

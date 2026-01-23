@@ -58,7 +58,9 @@ public partial class UNI_AudioStreamPlayer2d : AudioStreamPlayer2D
             PitchScale = 1;
         }
         Stream = AFSB[SoundBankndex];
-        
-        Play();
+        if (this.IsInsideTree())
+        {
+            Play(); // TO DO .: - bo jak pionek umiera to to się odgrywa podczas gdy pionek nie jest już w scenie, napraw sprawdzając czy player dźwięk jest w scenie 
+        }
     }
 }
