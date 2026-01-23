@@ -46,7 +46,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] AnimationPlayer UNIAnimPlayerRef;
     [Export] public AnimationPlayer SpecificAnimPlayer;
     [Export] public Sprite2D ProfilePick;
-    [Export] string[] CriticalParts; // części ciała pionka bez których nie może on funkcjonować 
     [Export] public PawnPart[] PawnParts { get; set; } // części ciała pionka
     [Export] UNI_AudioStreamPlayer2d ASP;
     [Export] public Node2D OverwatchNodeBucket;
@@ -241,6 +240,19 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         if (PawnParts[PlacementRoll_INDEX].HP > dmg)// jeśli DMG jest mniejszy od HP
         {
             PawnParts[PlacementRoll_INDEX].HP -= dmg; //DMG dociera do części ciała
+            if (PawnParts[PlacementRoll_INDEX].Vitality > 0 && Bleeding == false)
+            {
+                RNGGEN.Randomize();
+                float Vitalitycheck = RNGGEN.RandfRange(0,10);
+                GD.Print($"rzut na save {Vitalitycheck} musi przebić vitality równe {PawnParts[PlacementRoll_INDEX].Vitality}");
+                if (PawnParts[PlacementRoll_INDEX].Vitality > Vitalitycheck)
+                {
+                    gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] CRITICAL HIT !");
+                    ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)],true);
+                    UNIAnimPlayerRef.Play("Damage");
+                    Die();
+                }
+            }
             if (bleedin == false)
             {
                 gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] took {dmg} damage to the {W_co}");
@@ -264,33 +276,31 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             PawnParts[PlacementRoll_INDEX].MeleeWeaponCapability,
             PawnParts[PlacementRoll_INDEX].ShootingCapability,
             PawnParts[PlacementRoll_INDEX].EsentialForMovement);
-            foreach (string CriticalPart in CriticalParts)// szukamy czy dana część ciała była krytyczna do funkcjonowania jednostki (te biorą piorytet nawet nad wyszukaniem części przymocowanych)
+            if (PawnParts[PlacementRoll_INDEX].Vitality > 0f && PawnParts[PlacementRoll_INDEX].HP <= 0)// jak była, i nie ma HP
             {
-                if (CriticalPart == PawnParts[PlacementRoll_INDEX].Name && PawnParts[PlacementRoll_INDEX].HP <= 0)// jak była, i nie ma HP
+                GD.Print($"dany pionek umiera od dostania w {PawnParts[PlacementRoll_INDEX].Name}");
+                responseAnimLexicon = ResponseAnimLexicon.die;
+                PawnMoveStatus = PawnMoveState.Dead;
+                if (OVStatus == true)
                 {
-                    GD.Print($"dany pionek umiera od dostania w {PawnParts[PlacementRoll_INDEX].Name}");
-                    responseAnimLexicon = ResponseAnimLexicon.die;
-                    PawnMoveStatus = PawnMoveState.Dead;
-                    if (OVStatus == true)
-                    {
-                        FightDistance = 50; // to powinno naprawić bug gdzie pionek nie umiera podczas dostania OV na ryj
-                    }
-                    if (FightDistance > 1500f)
-                    {
-                        GD.Print("Śmierć będzie z animowaną kamerą");
-                        ResponseAnimTimer.Start();
-                    }
-                    else
-                    {
-                        ResponseAnimTimer.Stop(); // nie diała, mimo tego i tak strzelanie powoduje że kamera leci do celu 
-                        GD.Print("Dystans umierania zbyt krótki by angarzować spowolnienie kamery");
-                        ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)],true);
-                        UNIAnimPlayerRef.Play("Damage");
-                        Die();
-                    }
-                    return; // tak na wszelki wypadek by ten kod nie szedł dalej po tym jak już zadecyduje umrzeć 
+                    FightDistance = 50; // to powinno naprawić bug gdzie pionek nie umiera podczas dostania OV na ryj
                 }
+                if (FightDistance > 1500f)
+                {
+                    GD.Print("Śmierć będzie z animowaną kamerą");
+                    ResponseAnimTimer.Start();
+                }
+                else
+                {
+                    ResponseAnimTimer.Stop(); // nie diała, mimo tego i tak strzelanie powoduje że kamera leci do celu 
+                    GD.Print("Dystans umierania zbyt krótki by angarzować spowolnienie kamery");
+                    ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)],true);
+                    UNIAnimPlayerRef.Play("Damage");
+                    Die();
+                }
+                return; // tak na wszelki wypadek by ten kod nie szedł dalej po tym jak już zadecyduje umrzeć 
             }
+            
             // Trzeba jeszcze spwadzić czy jakieś cześci bły przymocowane do tej co teraz się zniszczyła, więc jeśli ręka miała dłoń to zniszczenie ręki powoduje odpadnięcie dłoni 
             int index = -1; // ustawiamy index na -1 by wyznaczyć nieznalezioną część 
             for (int i = 0; i < PawnParts.Count(); i++) // iteracja po pawnparts znowu
