@@ -159,7 +159,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         ASP.PlaySound(VoicelineRange[0,RNGGEN.RandiRange(0,1)],true);
     }
-    public void CalculateHit(int dmg, float probability,int Where,int Wounds, string Bname,float DamageDistance)
+    public void CalculateHit(int dmg, float probability,int Where,int Wounds, PawnBaseFuncsScript TheCuntThatShootingYou,float DamageDistance)
     {
         if (PawnMoveStatus == PawnMoveState.Dead)
         {
@@ -172,14 +172,14 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         if (FloatDice >= probability) // rzucarz na liczbę powyżej kostki
         {
             GD.Print($"[{UnitName}] was hit on {FloatDice}");
-            gameMNGR_Script.GenerateActionLog($"[color={gameMNGR_Script.Teamcolor}]{Bname}[/color] Hit [color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color]");
+            gameMNGR_Script.GenerateActionLog($"[color={TheCuntThatShootingYou.ColoredPartsNode.Modulate.ToHtml()}]{TheCuntThatShootingYou.UnitName}[/color] Hit [color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color]");
             TakeDamage(dmg,Where,false,Wounds);
             ShowHitInfoLabel(dmg);
         }
         else
         {
             GD.Print($"[{UnitName}] was missed on {FloatDice}");
-            gameMNGR_Script.GenerateActionLog($"[color={gameMNGR_Script.Teamcolor}]{Bname}[/color] Missed [color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}");
+            gameMNGR_Script.GenerateActionLog($"[color={TheCuntThatShootingYou.ColoredPartsNode.Modulate.ToHtml()}]{TheCuntThatShootingYou.UnitName}[/color] Missed [color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}");
             ShowHitInfoLabel(0);
         }
     }
@@ -342,6 +342,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)],true);
             UNIAnimPlayerRef.Play("Damage");
         }
+        gameMNGR_Script.PlayerGUIRef.SelectionUpdater();
     }
     public void FuncBleed()
     {

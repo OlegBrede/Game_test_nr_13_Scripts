@@ -140,12 +140,7 @@ public partial class GameMNGR_Script : Node2D
             SelectedPawn.SetUISubscription(); // Subskrypcja do UI
             PrevSelectedPawn = SelectedPawn;
             PlayerGUIRef.PALO(false,true); // pokaż akcje które może podjąć pionek na GUI
-            PlayerGUIRef.RecivePaperdoll(pawn.PathToPaperDoll);
-            PlayerGUIRef.ReciveWellBeingInfo(pawn); // pokaż które akcje może podjąć pionek , ale teraz sprawdzając zrdowie pionka 
-            foreach (PawnPart part in pawn.PawnParts)
-            {
-                PlayerGUIRef.ReciveWellBeingInfo(part.Name,part.HP,part.MAXHP);
-            }
+            PlayerGUIRef.SelectionUpdater();
             //GD.Print($"Selected Pawn Now is {SelectedPawn}");
             if (FocusCam != null)
             {

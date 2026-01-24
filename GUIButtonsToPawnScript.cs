@@ -32,6 +32,22 @@ public partial class GUIButtonsToPawnScript : Node2D
         Actions.Visible = false;
         Confirmations.Visible = false;
     }
+    public void SelectionUpdater() // uaktualnia info o pionku 
+    {
+        if (gameMNGR_Script.SelectedPawn != null)
+        {
+            ReciveWellBeingInfo(gameMNGR_Script.SelectedPawn);
+            RecivePaperdoll(gameMNGR_Script.SelectedPawn.PathToPaperDoll);
+            foreach(PawnPart part in gameMNGR_Script.SelectedPawn.PawnParts)
+            {
+                ReciveWellBeingInfo(part.Name,part.HP,part.MAXHP);
+            }
+        }
+        else
+        {
+            DeletePaperDoll();
+        }
+    } 
     public void ReciveWellBeingInfo(PawnBaseFuncsScript PawnScript)
     {
         if (PawnScript.ShootingAllowence <= 0 || PawnScript.WeaponAmmo <= 0)
@@ -176,13 +192,9 @@ public partial class GUIButtonsToPawnScript : Node2D
     }
     public void DeletePaperDoll()
     {
-        if (Paperdollref != null && IsInstanceValid(Paperdollref))
+        foreach (Node2D child in PaperDoll.GetChildren())
         {
-            Paperdollref.QueueFree();
-        }
-        else
-        {
-            GD.Print("Nie ma paperdoll do usunięcia");
+            child.QueueFree();
         }
     }
     public void ReciveWellBeingInfo(string Part, int HP,int MAXHP)
