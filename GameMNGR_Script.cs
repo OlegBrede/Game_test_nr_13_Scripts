@@ -35,6 +35,7 @@ public partial class GameMNGR_Script : Node2D
     [Export] ScrollContainer KontenrLogów;
     [Export] public GUIButtonsToPawnScript PlayerGUIRef;
     [Export] public Node2D bucketForTheDead;
+    [Export] Node2D PickupsBucket;
     string SceneToLoad = "res://Scenes/MultiGameOverScreen.tscn";
     public int Round = 0; // zmienić by kod wchodząc do sceny zaczynał next round i zobaczyć gdzie to nas zaniesie 
     public string Turn = "";
@@ -572,8 +573,13 @@ public partial class GameMNGR_Script : Node2D
             if (child is PawnBaseFuncsScript pawn)
             {
                 //GD.Print("reset MP dokonany");
-                pawn.ResetMP();
                 pawn.ApllyStatusEffects();
+                pawn.ResetMP();
+                if (pawn.PawnMoveStatus == PawnMoveState.Fainted)
+                {
+                    GD.Print("Fainted set to recovery");
+                    pawn.FaintRecoveryBool = true;
+                }
                 if (pawn.TeamId == Turn)
                 {
                     pawn.Call("ResetMoveStatus");
@@ -714,7 +720,7 @@ public partial class GameMNGR_Script : Node2D
         }
         ActivateAICommanders();
     }
-    public void CheckOV(CharacterBody2D MoveReportee) // tak, wiem, robię to chujowo
+    public void RefreshTableSituationStatus(CharacterBody2D MoveReportee) // tak, wiem, robię to chujowo
     {
         foreach (PawnBaseFuncsScript Pawn in PawnBucketRef.GetChildren())
         {
@@ -723,6 +729,11 @@ public partial class GameMNGR_Script : Node2D
                 GD.Print($"jest pionek który ma overwatch, jest tura {Turn}, pionek jest drużyny {Pawn.TeamId}, sprawdzane jest Overwatch");
                 Pawn.CheckOV_LOS(MoveReportee);
             }
+        }
+        foreach (UNI_pickupscript Pickup in PickupsBucket.GetChildren())
+        {
+            GD.Print("Dokonano sprawdzenia pickupu");
+            Pickup.StartTimer();
         }
     }
     void CalculateAllTeamMP()

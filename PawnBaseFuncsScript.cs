@@ -19,6 +19,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public int PV = 1; // precalculated point value
     public int Integrity = 0; //TEMP
     public int BaseIntegrity = 0;
+    [Export] public float Shock10Val = 8; // Szok jakiego może doznać jednostka, wyższe wartości dają większą odporność na szok 
+    public bool FaintRecoveryBool = false;
     [Export] public float MAD = 3750; // movement allowence distance
     public float DistanceMovedByThisPawn = 0;
     public int MeleeAllowence = 0;
@@ -40,7 +42,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public int MeleeWeaponDamage = 120;
     [Export] public int MP = 2; //movement points (how many times can a pawn move in one turn)
     public string TeamId = "";
-    [Export] Node2D ColoredPartsNode;
+    [Export] Node2D SpriteBucket;
+    [Export] public Node2D ColoredPartsNode;
     [Export] Node2D PCNP; // player controller node path
     [Export] public Node2D AICNP; // AI controller node path
     [Export] AnimationPlayer UNIAnimPlayerRef;
@@ -148,7 +151,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             VoicelineRange[0,1] = 1;
             VoicelineRange[1,0] = 2;
             VoicelineRange[1,1] = 3;
-        }else{// female
+        }else{                 // female
             VoicelineRange[0,0] = 4;
             VoicelineRange[0,1] = 5;
             VoicelineRange[1,0] = 6;
@@ -220,7 +223,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         {
             PlacementRoll_INDEX = Where; //index na wskazaną część ciała
             W_co = PawnParts[Where].Name; // nazwa części ciała
-            
             GD.Print($"Nielosowy traf w {W_co} za {dmg} dmg");
         }
         else
@@ -229,10 +231,14 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             W_co = PawnParts[PlacementRoll_INDEX].Name; // nazwa części ciała
             GD.Print($"Losowy traf w {W_co} za {dmg} dmg");
         }
-
         if (PawnParts[PlacementRoll_INDEX].CausesBleedin == true) // sprawdzane czy od dostania w tą część ciała pionek będzie krwawił
         {
             EntryWounds += Wounds;
+            Shock10Val -= EntryWounds/8 * Mathf.Sqrt(EntryWounds); // to daje nam płynne przeniesienie mocy uderzeia, im bardziej pionek dostaje tym słabszy jest, patrz (x * pierwiastek z x) na desmos
+            if (Bleeding == false)
+            {
+                RollForFaint(Shock10Val); // orginalnie miało to działać tak że shock to miała być wartość danej cześci ciała ale jednym słowem, jebać, nie chce mi sie 
+            }
         }
         GD.Print($" traf w {W_co} sprawi krwawiene jest {PawnParts[PlacementRoll_INDEX].CausesBleedin} więc wounds jest {EntryWounds}");
 
@@ -496,7 +502,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         gameMNGR_Script.TeamsCollectiveMP -= ByHowMutch;
         GD.Print($"Doszło do dedukcji MP, teraz jest {MP}");
         GD.Print("Sygnał emitowany");
-        gameMNGR_Script.CheckOV(this);
+        gameMNGR_Script.RefreshTableSituationStatus(this); // to wysyła do gamemngr info o tym że dany pionek zakończył ruch i trzeba np sprawdzić czy jest on w zasięgu OV lub czy nie stoi na apteczce
+        gameMNGR_Script.PlayerGUIRef.SelectionUpdater();
     } 
     public void CheckOV_LOS(CharacterBody2D Enimy)
     {
@@ -553,11 +560,51 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     }
     public void ResetMP()
     {
-        MP = 2;
+        if (FaintRecoveryBool == true)
+        {
+            GD.Print("Faint recovery succesfull");
+            PawnMoveStatus = PawnMoveState.Stationary;
+            gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] recovered.");
+            SpriteBucket.Rotation = 0f;
+            FaintRecoveryBool = false;
+        }
+        if (PawnMoveStatus != PawnMoveState.Fainted)
+        {
+            MP = 2;
+        }
+        else
+        {
+            MP = 0;
+            GD.Print($"No MP reset Due to Faint MP at {MP}");
+        }
     }
     public void ApllyStatusEffects()
     {
         
+    }
+    void RollForFaint(float ShockVal)
+    {
+        float FaintRange = RNGGEN.RandfRange(0,10);
+        GD.Print($"ROLL NA FAINT {ShockVal} musi przebić {FaintRange} co dało wynik {ShockVal > FaintRange}");
+        if (ShockVal > FaintRange)
+        {
+            ResetMoveStatus();
+            SpriteBucket.Rotation = Mathf.DegToRad(90f);
+            MP = 0;
+            if (PawnMoveStatus != PawnMoveState.Fainted)
+            {
+                gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] fainted.");
+                PawnMoveStatus = PawnMoveState.Fainted;
+            }
+            else
+            {
+                gameMNGR_Script.GenerateActionLog($"[color={ColoredPartsNode.Modulate.ToHtml()}]{UnitName}[/color] fainted again.");
+                GD.Print("Dystans umierania zbyt krótki by angarzować spowolnienie kamery");
+                ASP.PlaySound(VoicelineRange[1,RNGGEN.RandiRange(0,1)],true);
+                UNIAnimPlayerRef.Play("Damage");
+                Die();
+            }
+        }
     }
     void ResetMoveStatus()
     {
@@ -569,8 +616,9 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
             PrevDistance = 0;
         }
     }
-    void ReplenishAmmo(int ByHowMuch)
+    void ReplenishAmmo()
     {
+        int ByHowMuch = 999;
         GD.Print("Amunicja uzupełniona");
         WeaponAmmo += ByHowMuch;
         if (WeaponAmmo > WeaponMaxAmmo)
@@ -596,7 +644,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     {
         if(PCNP == null)
         {
-            GD.Print($"pionek nie ma kontrolera gracza ");
+            GD.Print("pionek nie ma kontrolera gracza ");
             return;
         }  
         PCNP.Call("ResetSelectedStatus");
