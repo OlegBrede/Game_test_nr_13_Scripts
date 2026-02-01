@@ -609,7 +609,10 @@ public partial class GameMNGR_Script : Node2D
                     if (ActiveTeam.name == pawn.TeamId)
                     {
                         ActiveTeam.PawnCount++;
-                        ActiveTeam.CollectiveMPCount += 2;
+                        if (pawn.PawnMoveStatus != PawnMoveState.Fainted)
+                        {
+                            ActiveTeam.CollectiveMPCount += 2;
+                        }
                         if (pawn.OVStatus == true)
                         {
                             //pawn.OverwatchNodeBucket.Visible = true; // dla tych których jest teraz tura

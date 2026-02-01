@@ -234,10 +234,11 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
         if (PawnParts[PlacementRoll_INDEX].CausesBleedin == true) // sprawdzane czy od dostania w tą część ciała pionek będzie krwawił
         {
             EntryWounds += Wounds;
-            Shock10Val -= EntryWounds/8 * Mathf.Sqrt(EntryWounds); // to daje nam płynne przeniesienie mocy uderzeia, im bardziej pionek dostaje tym słabszy jest, patrz (x * pierwiastek z x) na desmos
             if (Bleeding == false)
             {
                 RollForFaint(Shock10Val); // orginalnie miało to działać tak że shock to miała być wartość danej cześci ciała ale jednym słowem, jebać, nie chce mi sie 
+                Shock10Val -= (float)EntryWounds/7 * Mathf.Sqrt((float)EntryWounds); // to daje nam płynne przeniesienie mocy uderzeia, im bardziej pionek dostaje tym słabszy jest, patrz (x * pierwiastek z x) na desmos
+                GD.Print($"Shock10Val dla faint to teraz {Shock10Val} EntryWounds = {EntryWounds}");
             }
         }
         GD.Print($" traf w {W_co} sprawi krwawiene jest {PawnParts[PlacementRoll_INDEX].CausesBleedin} więc wounds jest {EntryWounds}");
@@ -585,8 +586,8 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     void RollForFaint(float ShockVal)
     {
         float FaintRange = RNGGEN.RandfRange(0,10);
-        GD.Print($"ROLL NA FAINT {ShockVal} musi przebić {FaintRange} co dało wynik {ShockVal > FaintRange}");
-        if (ShockVal > FaintRange)
+        GD.Print($"ROLL NA FAINT {FaintRange} musi przebić {ShockVal} co dało wynik {ShockVal < FaintRange}");
+        if (ShockVal < FaintRange)
         {
             ResetMoveStatus();
             SpriteBucket.Rotation = Mathf.DegToRad(90f);
