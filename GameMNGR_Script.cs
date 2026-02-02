@@ -513,7 +513,7 @@ public partial class GameMNGR_Script : Node2D
         Log.ClipContents = false;
         Log.AutowrapMode = TextServer.AutowrapMode.Off;
         Log.Text = Message;
-        Log.AddThemeFontSizeOverride("normal_font_size", 150);
+        Log.AddThemeFontSizeOverride("normal_font_size", 20);
         LogBucket.AddChild(Log);
         KontenrLogów.ScrollVertical = (int)KontenrLogów.GetVScrollBar().MaxValue;      
     }
@@ -564,7 +564,6 @@ public partial class GameMNGR_Script : Node2D
         TeamConfig TeamToAccount = ActiveTeams.Find(a => a.name.Contains(Turn));
         Teamcolor = TeamToAccount.team_colour.ToHtml();
         CalculateAllTeamMP();
-        
         UltimatePawnSwitchingFunc(true, false);
         GenerateActionLog($"## Round {Round} ##");
         GenerateActionLog($"##[color={Teamcolor}] Team {Turn} [/color]starts thier Turn ##");
@@ -575,11 +574,6 @@ public partial class GameMNGR_Script : Node2D
                 //GD.Print("reset MP dokonany");
                 pawn.ApllyStatusEffects();
                 pawn.ResetMP();
-                if (pawn.PawnMoveStatus == PawnMoveState.Fainted)
-                {
-                    GD.Print("Fainted set to recovery");
-                    pawn.FaintRecoveryBool = true;
-                }
                 if (pawn.TeamId == Turn)
                 {
                     pawn.Call("ResetMoveStatus");
@@ -591,10 +585,11 @@ public partial class GameMNGR_Script : Node2D
                 }
             }
         }
-        OverwatchVisibilityFunc();
+        FaintCheckFunc();
+        OverwatchVisibilityCheckFunc();
         ActivateAICommanders();
     }
-    void OverwatchVisibilityFunc()
+    void OverwatchVisibilityCheckFunc()
     {
         foreach (Node child in PawnBucketRef.GetChildren())
         {
@@ -607,6 +602,20 @@ public partial class GameMNGR_Script : Node2D
                 else
                 {
                     pawn.Ref_UNI_ControlOverPawnScript.OverwatchVisibility(false);
+                }
+            }
+        }
+    }
+    void FaintCheckFunc()
+    {
+        foreach (Node child in PawnBucketRef.GetChildren())
+        {
+            if (child is PawnBaseFuncsScript pawn)
+            {
+                if (pawn.PawnMoveStatus == PawnMoveState.Fainted && pawn.TeamId == Turn)
+                {
+                    GD.Print("Fainted set to recovery");
+                    pawn.FaintRecoveryBool = true;
                 }
             }
         }
@@ -730,7 +739,8 @@ public partial class GameMNGR_Script : Node2D
                 }
             }
         }
-        OverwatchVisibilityFunc();
+        FaintCheckFunc();
+        OverwatchVisibilityCheckFunc();
         ActivateAICommanders();
     }
     public void RefreshTableSituationStatus(CharacterBody2D MoveReportee) // tak, wiem, robię to chujowo
