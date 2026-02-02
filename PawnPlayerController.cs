@@ -145,7 +145,6 @@ public partial class PawnPlayerController : Node2D
         // ################# AKCJE PONIŻEJ I ICH BLOK #########################
         if (ChosenAction == PlayersChosenAction.MoveAction)
         {
-            bool CanGoThere;
             if (UNI_markerRef.Visible == false)
             { // jeśli nie ma postawionego punktu ruchu śledź kursor
                 MovementAllowenceInyk_ator.GlobalPosition = GetGlobalMousePosition();
@@ -155,21 +154,19 @@ public partial class PawnPlayerController : Node2D
             if (UCOPS.MovementAllowenceCalculationResult(MovementAllowenceInyk_ator.GlobalPosition) == true) // pokazujemy graczu że może tam stanąć 
             {
                 movementsprite.Modulate = new Color(0, 1, 0);
-                CanGoThere = true;
             }
             else
             {
                 movementsprite.Modulate = new Color(1, 0, 0);
-                CanGoThere = false;
             }
             UCOPS.DistanceMovedUpdate(); // podanie ile się rusznął ruch dystansowy resetuje się przy poruszeniu się dwa razy ale to celowo, tu po prostu zaufam instynktowi który mówi mi że tak jest poprawnie
+            Vector2[] path = NavAgent.GetCurrentNavigationPath();
             //GD.Print($"Pionek rusza się o {PawnScript.DistanceMovedByThisPawn}");
-            if (Input.IsActionJustPressed("MYMOUSELEFT") && CanGoThere == true && UNI_markerRef.Visible == false) // można wybrać marker tylko wtedy gdy jego pozycja jest potwierdzona przez dystans 
+            if (Input.IsActionJustPressed("MYMOUSELEFT") && UNI_markerRef.Visible == false) // można wybrać marker tylko wtedy gdy jego pozycja jest potwierdzona przez dystans 
             {
-                
-                UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
                 UNI_markerRef.Visible = true;
                 gameMNGR_Script.PlayerGUIRef.PALO(true, false);
+                UNI_markerRef.GlobalPosition = GetGlobalMousePosition();
             }
         }
         if (ChosenAction == PlayersChosenAction.RangeAttackAction || ChosenAction == PlayersChosenAction.AimedRangeAttackAction)

@@ -59,7 +59,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
     // DO ZROBIENIA SĄ JESZCZE .: 
     // - DODANIE HOVER INFO NA SAMPLEBUTTON 
     // - ZRÓB QUEUE NA TO NA CO MA SKUPIĆ OKO KAMERA CZYLI ZGADUJĘ CAPTURE ACTON POWINNO DOSTAĆ LISTĘ 
-    
+    //######################################## MOVE ##########################################
     public void ActionMove() // wywołanie tej akcji ma sprawić poruszenie się na pozycję PosToMoveTo
     {
         GD.Print("Action move");
@@ -72,8 +72,8 @@ public partial class UNI_ControlOverPawnScript : Node2D
         var path = NavAgent.GetCurrentNavigationPath();
         if (path.Length > 0)
         {
-            var targetPos = path[path.Length - 1];
-            PawnScript.GlobalPosition = targetPos;
+            Vector2 CurrentPos = PawnScript.GlobalPosition;
+            PawnScript.GlobalPosition = GetReachablePointOnPath(NavAgent.GetCurrentNavigationPath(),CurrentPos,PawnScript.MAD);;
             if (PawnScript.PawnMoveStatus == PawnMoveState.Moving)
             {
                 float Addtive = PawnScript.PrevDistance + PawnScript.DistanceMovedByThisPawn;
@@ -89,6 +89,35 @@ public partial class UNI_ControlOverPawnScript : Node2D
         }
         PawnScript.DeductMP(1); // Akcja opóźniona z racji na overwatch
     }
+    public Vector2 GetReachablePointOnPath(Vector2[] path,Vector2 startPosition,float maxDistance)
+    {
+        if (path == null || path.Length == 0)
+            return startPosition;
+
+        float remainingDistance = maxDistance;
+        Vector2 currentPos = startPosition;
+
+        foreach (var nextPoint in path)
+        {
+            float segmentLength = currentPos.DistanceTo(nextPoint);
+
+            // Cały segment się mieści
+            if (segmentLength <= remainingDistance)
+            {
+                remainingDistance -= segmentLength;
+                currentPos = nextPoint;
+            }
+            else
+            {
+                // Jesteśmy w środku segmentu
+                float t = remainingDistance / segmentLength;
+                return currentPos.Lerp(nextPoint, t);
+            }
+        }
+        // Jeśli cała ścieżka krótsza niż limit
+        return currentPos;
+    }
+    //######################################## MOVE ##########################################
     public void ActionMeleeAttack(bool StrongOrNot,int STLI) // wywołanie tej akcji ma zadać DMG do odpowiednich celów
     {
         ResetOverwatch();
