@@ -591,7 +591,25 @@ public partial class GameMNGR_Script : Node2D
                 }
             }
         }
+        OverwatchVisibilityFunc();
         ActivateAICommanders();
+    }
+    void OverwatchVisibilityFunc()
+    {
+        foreach (Node child in PawnBucketRef.GetChildren())
+        {
+            if (child is PawnBaseFuncsScript pawn)
+            {
+                if (pawn.OVStatus == true && pawn.TeamId == Turn) // dla tych których jest teraz tura
+                {
+                    pawn.Ref_UNI_ControlOverPawnScript.OverwatchVisibility(true);
+                }
+                else
+                {
+                    pawn.Ref_UNI_ControlOverPawnScript.OverwatchVisibility(false);
+                }
+            }
+        }
     }
     void RecalculationTeamStatus() // podlicza żywe drużyny, wyznacza wygraną, jeśli drużyna jest kontrolowana przez ai to mówi tej drużynie że może zaczynac kalkulowanie 
     {
@@ -613,15 +631,6 @@ public partial class GameMNGR_Script : Node2D
                         {
                             ActiveTeam.CollectiveMPCount += 2;
                         }
-                        if (pawn.OVStatus == true)
-                        {
-                            //pawn.OverwatchNodeBucket.Visible = true; // dla tych których jest teraz tura
-                        }
-                    }
-                    else
-                    {
-                        GD.Print($"Reset Widoczności Overwatch dla {pawn.UnitName}");
-                        //pawn.OverwatchNodeBucket.Visible = false; // dla tych dla których nie ma teraz tury 
                     }
                 }
             }
@@ -721,6 +730,7 @@ public partial class GameMNGR_Script : Node2D
                 }
             }
         }
+        OverwatchVisibilityFunc();
         ActivateAICommanders();
     }
     public void RefreshTableSituationStatus(CharacterBody2D MoveReportee) // tak, wiem, robię to chujowo

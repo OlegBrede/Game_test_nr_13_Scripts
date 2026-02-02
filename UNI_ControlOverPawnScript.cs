@@ -46,7 +46,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
             GD.Print("Scena jest BaseTestScene");
             GD.Print("UNI_ControlOverPawnScript włączone ... ");
         }
-        ONB.Visible = false;
+        OverwatchVisibility(false);
         OverwatchArea = ONB.GetNode<Area2D>("Area2D");
         BurstFireTimer = GetNode<Timer>("BurstFireTimer");
         BurstFireTimer.Timeout += () => BurstFireTrigger(BurstfireARGints[0],BurstfireARGints[1],BurstfireARGfoats[0],BurstfireARGfoats[1],SetTarget);
@@ -342,7 +342,10 @@ public partial class UNI_ControlOverPawnScript : Node2D
         
     }
     //######################################## OVERWATCH ##########################################
-    
+    public void OverwatchVisibility(bool TrueIsVisible)
+    {
+        ONB.Visible = TrueIsVisible;
+    }
     public void ActionOverwatch()
     {
         GD.Print("Kod PRzeszel przez ActionOverwatch");
@@ -447,7 +450,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
         GD.Print($"Doszło do resetu Overwatch dla pionka {PawnScript.UnitName}");
         OverwatchArea.Monitoring = false;
         PawnScript.OVStatus = false;
-        ONB.Visible = false;
+        OverwatchVisibility(false);
         SetTargetOV = null;
     }
     //######################################## OVERWATCH ##########################################

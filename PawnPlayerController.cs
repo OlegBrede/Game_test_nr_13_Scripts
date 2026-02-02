@@ -27,6 +27,7 @@ public partial class PawnPlayerController : Node2D
     Area2D WideMelee;
     Area2D StrongMelee;
     Label ChanceToHitLabel1;
+    [Export] Node2D ChanceToHitLabelParent;
     Sprite2D MACircleSprite;
     [Export] Node2D ONB; //overwatch node bucket
     CollisionPolygon2D OverwatchTriangleHitbox;
@@ -90,8 +91,7 @@ public partial class PawnPlayerController : Node2D
         callableConfirm = new Callable(this, nameof(Player_ACT_Confirm));
         callableDecline = new Callable(this, nameof(Player_ACT_Decline));
 
-
-        ChanceToHitLabel1 = UNI_markerRef.GetNode<Label>("Label");
+        ChanceToHitLabel1 = ChanceToHitLabelParent.GetNode<Label>("Label");
         ChanceToHitLabel1.Visible = false;
         //GD.Print("PAMIĘTAJ by zawsze sprawdzić na którym pionku testujesz swe dodatki");
         WideMelee = MeleeSlcieNode.GetNode<Area2D>("Area2DMeleeWideAttackRange");
@@ -160,7 +160,6 @@ public partial class PawnPlayerController : Node2D
                 movementsprite.Modulate = new Color(1, 0, 0);
             }
             UCOPS.DistanceMovedUpdate(); // podanie ile się rusznął ruch dystansowy resetuje się przy poruszeniu się dwa razy ale to celowo, tu po prostu zaufam instynktowi który mówi mi że tak jest poprawnie
-            Vector2[] path = NavAgent.GetCurrentNavigationPath();
             //GD.Print($"Pionek rusza się o {PawnScript.DistanceMovedByThisPawn}");
             if (Input.IsActionJustPressed("MYMOUSELEFT") && UNI_markerRef.Visible == false) // można wybrać marker tylko wtedy gdy jego pozycja jest potwierdzona przez dystans 
             {
@@ -295,6 +294,7 @@ public partial class PawnPlayerController : Node2D
         if ((UNI_markerRef.Visible == false && ChosenAction == PlayersChosenAction.RangeAttackAction) || (UNI_markerRef.Visible == false && ChosenAction == PlayersChosenAction.AimedRangeAttackAction))
         {
             PointerNode.LookAt(GetGlobalMousePosition());
+            ChanceToHitLabelParent.GlobalPosition = GetGlobalMousePosition();
             //GD.Print($"chance is {ChanceToHitLabel1.Text}% (or {ShootingFinalDiceVal})");
         }
         // #################################### KLIKNIĘCIE ###################################
@@ -455,9 +455,10 @@ public partial class PawnPlayerController : Node2D
         gameMNGR_Script.ChosenActionFinished = false;
         ShootingRayScript.Rayactive = true;
         ChosenAction = PlayersChosenAction.OverwatchAction;
-        ONB.Visible = true;
+        UCOPS.OverwatchVisibility(true);
         GD.Print("teraz gracz wybiera overwatch ...");
     }
+    
     void Player_ACT_UNI_ChangeTargetMakerButtonNIcon(int ACTI1,int ACTI2)//(Yay/Nay) to wybiera powyższy button ACT (w przyszłości modyfikuj via string, mniej magicznych liczb pls)
     {
         YayButton.OnChangeButtonFunc(ACTI1);

@@ -51,7 +51,6 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     [Export] public Sprite2D ProfilePick;
     [Export] public PawnPart[] PawnParts { get; set; } // części ciała pionka
     [Export] UNI_AudioStreamPlayer2d ASP;
-    [Export] public Node2D OverwatchNodeBucket;
     // ##################### BLEEDING #####################
     public int EntryWounds = 0;
     List<PawnPart> YourPartsToBleed = new List<PawnPart>();
@@ -71,7 +70,7 @@ public partial class PawnBaseFuncsScript : CharacterBody2D
     Node2D DMG_Label_bucket;
     PackedScene ThisLabelScene;
     PackedScene ThisDeathPhantomScene;
-    [Export] UNI_ControlOverPawnScript Ref_UNI_ControlOverPawnScript;
+    [Export] public UNI_ControlOverPawnScript Ref_UNI_ControlOverPawnScript;
     // 0 = selection sounds
     // 1 = hurt sounds
     int[,] VoicelineRange = {{0,0},{0,0}}; 
