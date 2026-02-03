@@ -55,6 +55,8 @@ public partial class UNI_ControlOverPawnScript : Node2D
         UNI_MoveMarker = GetNode<Node2D>("UNI_MoveNode");
         OverlapingBodiesArea = UNI_MoveMarker.GetNode<Area2D>("Area2D");
         OverwatchReturnFireTimer.Timeout += () => ShootOV(SetTargetOV);
+        NavAgent.AvoidanceEnabled = true;
+        NavAgent.Radius = PawnScript.ObjętośćPionka;
     }
     // DO ZROBIENIA SĄ JESZCZE .: 
     // - DODANIE HOVER INFO NA SAMPLEBUTTON 
@@ -73,7 +75,8 @@ public partial class UNI_ControlOverPawnScript : Node2D
         if (path.Length > 0)
         {
             Vector2 CurrentPos = PawnScript.GlobalPosition;
-            PawnScript.GlobalPosition = GetReachablePointOnPath(NavAgent.GetCurrentNavigationPath(),CurrentPos,PawnScript.MAD);;
+            PawnScript.GlobalPosition = GetReachablePointOnPath(NavAgent.GetCurrentNavigationPath(),CurrentPos,PawnScript.MAD);
+            //PawnScript.MoveAndSlide();// to PRAWIE rozwiązalo cały problem gdyby nie body blocking 
             if (PawnScript.PawnMoveStatus == PawnMoveState.Moving)
             {
                 float Addtive = PawnScript.PrevDistance + PawnScript.DistanceMovedByThisPawn;
@@ -94,28 +97,26 @@ public partial class UNI_ControlOverPawnScript : Node2D
         if (path == null || path.Length == 0)
             return startPosition;
 
-        float remainingDistance = maxDistance;
-        Vector2 currentPos = startPosition;
-
-        foreach (var nextPoint in path)
+        float remainingDistance = maxDistance; //MAD
+        Vector2 currentPos = startPosition;//pozycja w której pionek teraz jest 
+        foreach (var nextPoint in path) // dla każdego punktu ścierzki
         {
-            float segmentLength = currentPos.DistanceTo(nextPoint);
+            float segmentLength = currentPos.DistanceTo(nextPoint); //długośćc segmentu od pozycji w której pionek jest 
 
-            // Cały segment się mieści
+            // jeśli cały segment się mieści w MAD 
             if (segmentLength <= remainingDistance)
             {
                 remainingDistance -= segmentLength;
-                currentPos = nextPoint;
+                currentPos = nextPoint; // pozycja podana tu jest tą pozycją co 
             }
             else
             {
-                // Jesteśmy w środku segmentu
-                float t = remainingDistance / segmentLength;
+                // długość segmentu jest dłuższa od MAD
+                float t = remainingDistance / segmentLength; //t to jest waga dla lerp danej pozycji dzieli to MAD na długość segmentu co daje ostateczną pozycję będącą przyciętym ostatnim możliwym punktem ścierzki 
                 return currentPos.Lerp(nextPoint, t);
             }
         }
-        // Jeśli cała ścieżka krótsza niż limit
-        return currentPos;
+        return currentPos; // tu miałbyć jeszcze checker czy dana pozycja jest ok według MovementAllowenceCalculationResult problem wynika z tego że, skoro nie tu to gdzie ? 
     }
     //######################################## MOVE ##########################################
     public void ActionMeleeAttack(bool StrongOrNot,int STLI) // wywołanie tej akcji ma zadać DMG do odpowiednich celów
@@ -478,7 +479,7 @@ public partial class UNI_ControlOverPawnScript : Node2D
         {
             if (body is StaticBody2D)
                 return false;
-            if (body is CharacterBody2D && body.GetInstanceId != PawnScript.GetInstanceId)
+            if (body is CharacterBody2D && body.GetInstanceId != PawnScript.GetInstanceId) // pionek który decyduje się ruszyć nie powinien być blokowany przez samego siebie w drodze dokąś 
                 return false;
         }
         return true;

@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 public partial class AI_StategyBotScript : Node2D
@@ -7,10 +8,15 @@ public partial class AI_StategyBotScript : Node2D
     public string MyteamID = "";
     public GameMNGR_Script gameMNGR_Script;
     bool Activated = false; // środek prewencyjny przed inicjalizowaniem AI dwa razy 
+    enum Tactic
+    {
+        attack,retreat,defend,justDoWhatever
+    }
+    Tactic ChosenTactic = Tactic.justDoWhatever;
     class CommanderCommand
     {
         public PawnBaseFuncsScript Com_Pawn { get; set; } // commanded pawn
-        public PawnAiControlerNodeScript Com_PawnController { get; set; }
+        public PawnAiControlerNodeScript Com_PawnController { get; set; } // commanded pawn controller
         public enum FirstActionsForThisPawn
         {
             Move,Melee_Attack,Strong_Melee_Attack,Range_Attack,Aim_Shot,Overwatch
@@ -20,8 +26,13 @@ public partial class AI_StategyBotScript : Node2D
             Move,Melee_Attack,Strong_Melee_Attack,Range_Attack
         }
     }
+    class PawnAndItsController
+    {
+        public PawnBaseFuncsScript PBFS { get; set; }
+        public PawnAiControlerNodeScript PAICS { get; set; }
+    }
     // #################### PAMIĘĆ BOTA #######################
-    Dictionary<PawnBaseFuncsScript,PawnAiControlerNodeScript> MyPawnDictionay = new Dictionary<PawnBaseFuncsScript, PawnAiControlerNodeScript>(); // bo do obsługi pionka, jest potrzebny pionek i jego kontroller odpowiedniego typu względem wykonawcy 
+    List<PawnAndItsController> MyPawnDictionay = new List<PawnAndItsController>(); // bo do obsługi pionka, jest potrzebny pionek i jego kontroller odpowiedniego typu względem wykonawcy 
     List<PawnBaseFuncsScript> EnemyPawnsList = new List<PawnBaseFuncsScript>();
     Stack<CommanderCommand>plannedActionsqueue = new Stack<CommanderCommand>();
     // #################### PAMIĘĆ BOTA #######################
@@ -49,13 +60,28 @@ public partial class AI_StategyBotScript : Node2D
         {
             if (MyPawns.TeamId == MyteamID)
             {
-                MyPawnDictionay.Add(MyPawns,MyPawns.AICNP as PawnAiControlerNodeScript);
+                MyPawnDictionay.Add(new PawnAndItsController {PBFS = MyPawns,PAICS = MyPawns.AICNP as PawnAiControlerNodeScript});
                 GD.Print($"[AI team {MyteamID}] MÓJ PIONEK TO {MyPawns.UnitName}");
             }
             else
             {
                 EnemyPawnsList.Add(MyPawns);
                 GD.Print($"[AI team {MyteamID}] PIONEK DRUŻYNY {MyPawns.TeamId} WYKRYTY");
+            }
+        }
+
+    }
+    void ChoseActioneer()
+    {
+        foreach (PawnAndItsController MyChosenPawn in MyPawnDictionay)
+        {
+            if (MyChosenPawn.PAICS.SeeFucker().Item1 == true)// jak widzi strzela
+            {
+                MyChosenPawn.PAICS.Shoot(MyChosenPawn.PAICS.SeeFucker().Item2);
+            }
+            else // jak nie widzi to podchodzi by strzelić
+            {
+                MyChosenPawn.PAICS.Move();// jak nie może atakować to się rusza
             }
         }
     }
@@ -71,6 +97,10 @@ public partial class AI_StategyBotScript : Node2D
         if (plannedActionsqueue.Count == 0)
         {
             Deactivate();
+        }
+        else
+        {
+            // tutaj będzie lista która wyszukuje o kij chodzi z daną akcją tóra ma zostać wykonana i jak ją zrobić 
         }
     }
     void Deactivate()

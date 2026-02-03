@@ -26,6 +26,8 @@ public partial class GameMNGR_Script : Node2D
     // ####################### SOUNDS #######################
     // ####################### AI #######################
     public Node2D AIPlayersBucket;
+    [Export] Label AIInfoBucket;
+    public bool AIInfoBucketVisibility = false;
     // ####################### AI #######################
     [Export] Label UnitInfoGuiLabel;
     [Export] Label TotalMPLabel;
@@ -95,6 +97,7 @@ public partial class GameMNGR_Script : Node2D
 
     public void SetupGameScene()
     {
+        AIInfoBucket.Visible = AIInfoBucketVisibility;
         CamShowActionTimer.WaitTime = waitDuration;
         UASP.SCS = SCS;
         //UASP.PlaySound(0,false);
@@ -745,13 +748,14 @@ public partial class GameMNGR_Script : Node2D
     }
     public void RefreshTableSituationStatus(CharacterBody2D MoveReportee) // tak, wiem, robię to chujowo
     {
-        foreach (PawnBaseFuncsScript Pawn in PawnBucketRef.GetChildren())
+        foreach (PawnBaseFuncsScript Pawn in PawnBucketRef.GetChildren()) 
         {
-            if (Pawn.OVStatus == true && Pawn.TeamId != Turn)
+            if (Pawn.OVStatus == true && Pawn.TeamId != Turn) // check na Overwatch
             {
                 GD.Print($"jest pionek który ma overwatch, jest tura {Turn}, pionek jest drużyny {Pawn.TeamId}, sprawdzane jest Overwatch");
                 Pawn.CheckOV_LOS(MoveReportee);
             }
+            Pawn.MoveAndSlide(); // sprawdzenie czy nikt ze sobą nie koliduje, może być to lekko kosztowne procesowo ale chuj
         }
         foreach (UNI_pickupscript Pickup in PickupsBucket.GetChildren())
         {
